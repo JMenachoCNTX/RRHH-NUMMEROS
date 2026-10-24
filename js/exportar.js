@@ -74,23 +74,33 @@
     return /^\d{1,15}$/.test(s) ? Number(s) : s;
   }
   X.limpiarCodigo = limpiarCodigo;
+  /* ¿A quién se le deposita? Al trabajador, o al tercero autorizado si está activo */
+  X.destinoPago = function (e) {
+    if (e.terceroActivo === '1' && e.terceroNombre && e.terceroCuenta) {
+      return { tercero: true, nombre: String(e.terceroNombre).replace(/\s+/g, ' ').trim(), ci: e.terceroCi, banco: e.terceroBanco, cuenta: e.terceroCuenta };
+    }
+    return { tercero: false, nombre: [U.apellidos(e), e.nombres].filter(Boolean).join(' ').replace(/\s+/g, ' ').trim(), ci: e.ci, banco: e.banco, cuenta: e.cuenta };
+  };
   X.bancoGanadero = function (empresa, p, calc, fechaPago, glosa) {
     var cab = ['NRO. DE ORDEN', 'CODIGO DE CLIENTE', 'NRO.DECUENTA', 'NOMBRE DE CLIENTE', 'DOC DE IDENTIDAD', 'IMPORTE', 'FECHA DE PAGO', 'FORMA DE PAGO',
       'MONEDA DESTINO', 'ENTIDAD DESTINO', 'SUCURSAL DESTINO', 'GLOSA', 'CODIGO UNICO', 'EMAIL NOTIFICACION', 'NRO_DOC_TERCERO', 'NOMBRE_TERCERO'];
     var estCab = { font: { name: 'Calibri', sz: 11, bold: true, color: { rgb: 'FFFFFF' } }, fill: { patternType: 'solid', fgColor: { rgb: '00672B' } } };
     var estDato = function () { return { font: { name: 'Century Gothic', sz: 9 } }; }; // un objeto nuevo por celda
-    var ws = {}, faltan = [], fila = 0;
+    var ws = {}, faltan = [], terceros = [], fila = 0;
     var poner = function (c, r, celda) { ws[XLSX.utils.encode_cell({ c: c, r: r })] = celda; };
     cab.forEach(function (t, c) { poner(c, 0, { t: 's', v: t, s: JSON.parse(JSON.stringify(estCab)) }); });
     var fecha = serialExcel(fechaPago);
     calc.filas.filter(function (x) { return x.r.liquido > 0; }).forEach(function (x) {
-      var e = x.emp, b = D.bancoPorAbrev(e.banco);
-      if (!e.cuenta || !b) faltan.push(U.nombreCompleto(e));
+      var e = x.emp;
+      /* Pago a un tercero autorizado (con carta de respaldo): SOLO cambia los datos de este archivo del banco */
+      var pago = X.destinoPago(e);
+      if (pago.tercero) terceros.push(U.nombreCompleto(e) + ' → ' + pago.nombre);
+      var b = D.bancoPorAbrev(pago.banco);
+      if (!pago.cuenta || !b) faltan.push(U.nombreCompleto(e));
       var esGanadero = b && b.abrev === 'GANADERO';
       fila++;
-      var nombre = [U.apellidos(e), e.nombres].filter(Boolean).join(' ').replace(/\s+/g, ' ').trim();
       var vals = [
-        fila, null, comoNumero(e.cuenta), nombre, comoNumero(e.ci), r2(x.r.liquido), fecha,
+        fila, null, comoNumero(pago.cuenta), pago.nombre, comoNumero(pago.ci), r2(x.r.liquido), fecha,
         esGanadero ? 1 : 3, esGanadero ? 0 : 1, esGanadero ? 0 : (b ? Number(b.ach) : ''), esGanadero ? 0 : (empresa.sucursalBanco || 'SCZ'),
         glosa, null, e.correo || null, null, null
       ];
@@ -108,6 +118,7 @@
     var wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Hoja1');
     XLSX.writeFile(wb, X.nombreArchivoGanadero(empresa, p));
+    faltan.terceros = terceros;
     return faltan;
   };
 

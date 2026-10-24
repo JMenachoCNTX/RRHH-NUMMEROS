@@ -271,6 +271,7 @@
           var falta = !k.cuenta || !k.cua || !k.fechaNac;
           var retirado = (k.estado || 'ACTIVO') === 'RETIRADO';
           return '<tr data-id="' + k.id + '" style="cursor:pointer"' + (verTodos && retirado ? ' class="fila-retirada"' : '') + '><td class="nombre fija">' + e(nombreSegunOrden(k, filtroPers.orden)) + (falta ? ' <span class="etiqueta borrador" title="Faltan datos (cuenta, CUA o fecha de nacimiento)">Completar</span>' : '') +
+            (k.terceroActivo === '1' ? ' <span class="etiqueta" title="El banco paga a: ' + e(k.terceroNombre || '') + '">Pago a tercero</span>' : '') +
             '</td><td>' + e(k.ci) + '</td><td>' + e(k.cargo) + '</td><td>' + U.fecha(k.fechaIngreso) + '</td><td class="num">' + bs(k.sueldoBasico) + '</td><td>' + e(k.banco) +
             '</td><td>' + e(k.cuenta) + '</td><td>' + e(k.cua) + '</td><td><span class="etiqueta ' + (retirado ? (verTodos ? 'retirado-rojo' : 'retirado') : '') + '">' + e(k.estado || 'ACTIVO') + '</span></td></tr>';
         }).join('') || '<tr><td colspan="9" class="suave">No hay resultados.</td></tr>';
@@ -317,6 +318,15 @@
       '<fieldset class="ancho"><legend>Pago y banco</legend><div class="form">' +
       campo('Banco', 'banco', x.banco, 'select', { opciones: bancos }) + campo('N° de cuenta', 'cuenta', x.cuenta) +
       '</div></fieldset>' +
+      '<fieldset class="ancho"><legend>Pago a un tercero autorizado</legend>' +
+      '<p class="suave peq" style="margin-bottom:10px">Solo si el trabajador autorizó por escrito que su sueldo se deposite a otra persona. Estos datos se usan <b>únicamente en el Excel del Banco Ganadero</b>; boletas, planillas, certificados y entidades siguen con los datos del trabajador.</p><div class="form">' +
+      campo('¿Pagar a un tercero?', 'terceroActivo', x.terceroActivo || '0', 'select', { opciones: [['0', 'No'], ['1', 'Sí, con autorización']] }) +
+      campo('Nombre completo del tercero', 'terceroNombre', x.terceroNombre, 'text', { ph: 'Como figura en su cuenta' }) +
+      campo('CI del tercero', 'terceroCi', x.terceroCi) +
+      campo('Banco del tercero', 'terceroBanco', x.terceroBanco, 'select', { opciones: bancos }) +
+      campo('N° de cuenta del tercero', 'terceroCuenta', x.terceroCuenta) +
+      campo('Respaldo', 'terceroRespaldo', x.terceroRespaldo, 'text', { ph: 'Ej. Carta de autorización del 15/03/2025', ancho: true }) +
+      '</div></fieldset>' +
       '<fieldset class="ancho"><legend>Seguridad social e impuestos</legend><div class="form">' +
       campo('CUA / NUA (Gestora)', 'cua', x.cua) + campo('Código dependiente RC-IVA (CUR)', 'codDependiente', x.codDependiente, 'text', { ayuda: 'Código del F-110 (ej. 5896481019)' }) +
       campo('Código Caja de Salud', 'cajaSaludCod', x.cajaSaludCod, 'text', { ph: 'Vacío = el de la empresa' }) + campo('Código AFP (Ministerio)', 'afpCod', x.afpCod || '3') +
@@ -343,6 +353,7 @@
         var dup = D.empleadoPorCi(d.ci, d.empresaId);
         if (dup && dup.id !== x.id) { U.aviso('Ya existe un trabajador con ese CI', 'error'); return false; }
         if (d.estado === 'RETIRADO' && !d.fechaRetiro) { U.aviso('Indica la fecha de retiro', 'error'); return false; }
+        if (d.terceroActivo === '1' && (!d.terceroNombre || !d.terceroCi || !d.terceroBanco || !d.terceroCuenta)) { U.aviso('Completa nombre, CI, banco y cuenta del tercero autorizado', 'error'); return false; }
         D.guardarEmpleado(d); App.refrescar(); U.aviso('Datos guardados');
       } }
     ].filter(Boolean), { ancho: true });
@@ -790,7 +801,9 @@
       },
       ganadero: function () {
         var c = xl(function () { return X.bancoGanadero(emp, p, calc, fecha, glosa); });
-        return { titulo: c.nombre.replace(/\.xlsx$/, ''), vistas: [{ libro: c.wb, aviso: faltanTxt(c.resultado, 'el banco o la cuenta') }], acciones: [accExcel('ganadero')] };
+        var ter = (c.resultado && c.resultado.terceros) || [];
+        var avisoT = ter.length ? 'Pago a tercero autorizado (con carta de respaldo): <b>' + e(ter.join(' · ')) + '</b>. Solo este archivo del banco lleva los datos del tercero.' : '';
+        return { titulo: c.nombre.replace(/\.xlsx$/, ''), vistas: [{ libro: c.wb, aviso: [faltanTxt(c.resultado, 'el banco o la cuenta'), avisoT].filter(Boolean).join('<br>') }], acciones: [accExcel('ganadero')] };
       },
       min: function () { var c = xl(function () { X.ministerio(emp, p, calc); }); return { titulo: 'Ministerio de Trabajo' + per, vistas: [{ libro: c.wb }], acciones: [accExcel('min')] }; },
       gestora: function () {
