@@ -53,7 +53,13 @@
 
   /* La empresa ya no paga sueldos por el BMSC: se borran sus datos guardados para evitar cruces */
   function limpiarBancoMercantil() {
-    estado.empresas.forEach(function (e) { delete e.bmsc; delete e.bancoPagos; });
+    estado.empresas.forEach(function (e) {
+      delete e.bmsc; delete e.bancoPagos;
+      /* MILTHAGOR S.R.L. opera como MTG Delivery: se le asigna su logo si no tiene uno */
+      if (/MILTHAGOR/i.test(e.razonSocial || '') && !e.logo) {
+        e.logo = 'assets/empresas/mtg-delivery-negro.svg'; e.logoOscuro = 'assets/empresas/mtg-delivery-blanco.svg';
+      }
+    });
   }
 
   /* v3: horas extra calculadas como el cliente (recargo 50 %, valor hora sin redondear).

@@ -284,7 +284,6 @@ table.doc tfoot td { font-weight: 700; background: #EEF7F0; }
   .app.menu-mini .lateral .menu a { white-space: nowrap; padding-left: 14px; }
   .app.menu-mini .lateral:not(:hover) .txt,
   .app.menu-mini .lateral:not(:hover) .grupo,
-  .app.menu-mini .lateral:not(:hover) .pie-menu,
   .app.menu-mini .lateral:not(:hover) .marca small,
   .app.menu-mini .lateral:not(:hover) .marca .logo-claro,
   .app.menu-mini .lateral:not(:hover) .marca .logo-oscuro { display: none !important; }
@@ -318,3 +317,40 @@ body.sin-scroll { overflow: hidden; }
 .visor-tabla th { position: sticky; top: 0; }
 @media (max-width: 700px) { .visor-acc [data-pc] span { display: none; } }
 .tabla tbody tr:hover td.fija { background: var(--campo); }
+
+/* ===== Marcas: empresa (arriba, grande) · NUMMEROS sistema · CONTAX servicio ===== */
+.marca-empresa { display: flex; flex-direction: column; align-items: center; gap: 6px; text-decoration: none; color: inherit; padding: 6px 6px 14px; border-bottom: 1px solid rgba(35, 83, 71, .15); }
+.marca-empresa .logo-emp { width: 100%; max-width: 190px; max-height: 150px; object-fit: contain; }
+.marca-empresa small { font: 600 11px var(--display); letter-spacing: .1em; text-transform: uppercase; opacity: .7; text-align: center; }
+.marca-empresa .nombre-emp { font: 700 22px/1.1 var(--display); text-align: center; }
+.pie-menu { display: flex; flex-direction: column; gap: 10px; padding: 12px 8px 0; border-top: 1px solid rgba(35, 83, 71, .15); opacity: 1; }
+.firma-marca { display: flex; flex-direction: column; gap: 4px; }
+.firma-marca small { font: 600 10px var(--display); letter-spacing: .12em; text-transform: uppercase; opacity: .65; }
+.firma-marca img { height: 18px; width: auto; max-width: 150px; object-fit: contain; object-position: left; }
+.pie-menu .logo-mini { height: 26px; width: auto; margin: 0 auto; }
+/* Logo de empresa sin versión oscura: en modo oscuro va sobre una placa blanca */
+@media (prefers-color-scheme: dark) { :root:not([data-tema="claro"]) .marca-empresa .logo-fijo { background: #fff; border-radius: 10px; padding: 8px; } }
+:root[data-tema="oscuro"] .marca-empresa .logo-fijo { background: #fff; border-radius: 10px; padding: 8px; }
+@media (min-width: 901px) {
+  .app.menu-mini .lateral:not(:hover) .marca-empresa { padding: 2px 0 10px; }
+  .app.menu-mini .lateral:not(:hover) .marca-empresa .logo-emp { max-width: 46px; max-height: 46px; }
+  .app.menu-mini .lateral:not(:hover) .marca-empresa small,
+  .app.menu-mini .lateral:not(:hover) .firma-marca { display: none !important; }
+  .app.menu-mini .lateral:not(:hover) .marca-empresa .nombre-emp { font-size: 13px; }
+  .app.menu-mini .lateral:not(:hover) .pie-menu { padding: 10px 0 0; }
+}
+/* Documentos impresos */
+.doc-cab { align-items: center; justify-content: flex-start; }
+.logo-emp-doc { height: 66px; width: auto; max-width: 150px; object-fit: contain; }
+.boleta .logo-emp-doc { height: 54px; }
+.tarjeta .logo-tarjeta { height: 70px; max-width: 160px; object-fit: contain; margin-bottom: 10px; }
+.pie-doc { display: flex; align-items: center; justify-content: center; gap: 6px; }
+.pie-doc span { font-size: 8px; color: #557363; }
+.pie-doc .sep { margin: 0 4px; }
+.pie-doc img { width: auto; display: inline-block; }
+/* Formulario: vista previa del logo */
+.logo-carga { display: flex; flex-direction: column; gap: 8px; }
+.logo-prev { height: 110px; border: 1px dashed var(--borde-control); border-radius: var(--r-md); display: grid; place-items: center; padding: 10px; }
+.logo-prev img { max-height: 90px; max-width: 100%; object-fit: contain; }
+.logo-prev.claro { background: #fff; }
+.logo-prev.oscuro { background: #051F20; }

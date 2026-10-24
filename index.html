@@ -16,15 +16,22 @@
 <body>
   <div class="app" id="app">
     <aside class="lateral" aria-label="Menú principal">
-      <a class="marca" href="#/inicio" aria-label="Inicio">
-        <img class="logo-claro" src="assets/logos/nummeros-logotipo-horizontal-principal.svg" alt="NUMMEROS">
-        <img class="logo-oscuro" src="assets/logos/nummeros-logotipo-horizontal-claro.svg" alt="NUMMEROS">
-        <img class="logo-mini logo-mini-claro" src="assets/logos/nummeros-isotipo-principal.svg" alt="">
-        <img class="logo-mini logo-mini-oscuro" src="assets/logos/nummeros-isotipo-claro.svg" alt="">
-        <small>Recursos Humanos</small>
-      </a>
+      <!-- 1) Logo de la empresa (protagonista) -->
+      <a class="marca-empresa" id="marcaEmpresa" href="#/inicio" aria-label="Inicio"></a>
       <nav class="menu" id="menu"></nav>
-      <div class="pie-menu"><b>NUMMEROS by CONTAX</b><br>Sistemas a la medida de tu empresa.</div>
+      <!-- 2) NUMMEROS: el sistema · 3) CONTAX: el servicio -->
+      <div class="pie-menu">
+        <div class="firma-marca"><small>Sistema</small>
+          <img class="logo-claro" src="assets/logos/nummeros-logotipo-horizontal-principal.svg" alt="NUMMEROS">
+          <img class="logo-oscuro" src="assets/logos/nummeros-logotipo-horizontal-claro.svg" alt="NUMMEROS">
+        </div>
+        <div class="firma-marca"><small>Servicio contable</small>
+          <img class="logo-claro" src="assets/logos/contax-horizontal-color.svg" alt="CONTAX">
+          <img class="logo-oscuro" src="assets/logos/contax-horizontal-blanco.svg" alt="CONTAX">
+        </div>
+        <img class="logo-mini logo-mini-claro" src="assets/logos/nummeros-isotipo-principal.svg" alt="NUMMEROS">
+        <img class="logo-mini logo-mini-oscuro" src="assets/logos/nummeros-isotipo-claro.svg" alt="NUMMEROS">
+      </div>
     </aside>
 
     <div class="principal">

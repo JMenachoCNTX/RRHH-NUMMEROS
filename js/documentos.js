@@ -5,12 +5,17 @@
   var bs = function (n) { return U.bs(n); };
   var e = U.esc;
 
-  function cabecera(emp, derecha) {
-    return '<div class="doc-cab"><div class="emp"><b>' + e(emp.razonSocial) + '</b>NIT: ' + e(emp.nit) +
-      (emp.direccion ? '<br>' + e(emp.direccion) : '') + '<br>' + e(U.mayus(emp.ciudad || 'Santa Cruz')) + ' - BOLIVIA</div>' +
-      '<div class="marca-doc">' + (derecha || '') + '</div></div>';
+  /* Encabezado: logo de la empresa (protagonista) + sus datos */
+  function cabecera(emp) {
+    var logo = emp.logo ? '<img class="logo-emp-doc" src="' + e(emp.logo) + '" alt="' + e(emp.razonSocial) + '">' : '';
+    return '<div class="doc-cab">' + logo + '<div class="emp"><b>' + e(emp.razonSocial) + '</b>NIT: ' + e(emp.nit) +
+      (emp.direccion ? '<br>' + e(emp.direccion) : '') + '<br>' + e(U.mayus(emp.ciudad || 'Santa Cruz')) + ' - BOLIVIA</div></div>';
   }
-  function pie() { return '<div class="pie-doc">Generado con NUMMEROS RRHH · NUMMEROS by CONTAX</div>'; }
+  /* Pie: NUMMEROS (sistema) y CONTAX (servicio contable) */
+  function pie() {
+    return '<div class="pie-doc"><span>Sistema</span><img src="assets/logos/nummeros-logotipo-horizontal-principal.svg" alt="NUMMEROS" style="height:9px">' +
+      '<span class="sep">·</span><span>Servicio contable</span><img src="assets/logos/contax-horizontal-color.svg" alt="CONTAX" style="height:11px"></div>';
+  }
 
   var Doc = {};
 
@@ -42,7 +47,7 @@
         '</td><td>' + U.fecha(em.fechaIngreso) + '</td><td class="n">' + bs(r.basico) + '</td><td class="n">' + r.dias + '</td><td class="n">' + r.horasDia + '</td>' +
         M.map(function (c) { return celda(c, r[c[1]]); }).join('') + '<td style="width:60px"></td></tr>';
     }).join('');
-    var html = '<div class="hoja horizontal">' + cabecera(empresa, '<img src="assets/logos/nummeros-logotipo-horizontal-principal.svg" alt="">NUMMEROS RRHH') +
+    var html = '<div class="hoja horizontal">' + cabecera(empresa) +
       '<div class="doc-titulo"><h2>PLANILLA DE SUELDOS Y SALARIOS</h2><p>Correspondiente al mes de ' + mesTxt + ' de ' + p.anio + ' · (Expresado en bolivianos)</p></div>' +
       '<table class="doc"><thead><tr><th>Nro</th><th>CI</th><th>Nombre(s)</th><th>Apellido(s)</th><th>Nacionalidad</th><th>Fecha de nacimiento</th><th>Sexo</th><th>Ocupación que desempeña</th><th>Fecha de ingreso</th>' +
       '<th>Sueldo básico</th><th>Días pagados</th><th>Horas/día</th>' + M.map(function (c) { return '<th>' + c[0] + '</th>'; }).join('') + '<th>Firma</th></tr></thead>' +
@@ -62,7 +67,7 @@
         '</td><td class="n">' + bs(r.provIndemnizacion) + '</td><td class="n">' + bs(r.provAguinaldo) + '</td></tr>';
     }).join('');
     var t = calc.totales;
-    return '<div class="hoja">' + cabecera(empresa, 'NUMMEROS RRHH') +
+    return '<div class="hoja">' + cabecera(empresa) +
       '<div class="doc-titulo"><h2>PLANILLA DE APORTES Y PREVISIONES</h2><p>' + Calc.MESES[p.mes - 1] + ' ' + p.anio + ' · (Expresado en bolivianos)</p></div>' +
       '<table class="doc"><thead><tr><th>Nro</th><th>CI</th><th>Nombre</th><th>Total ganado</th><th>Caja de salud ' + cfg.cajaSalud + '%</th><th>Gestora patronal ' + String(cfg.gestoraPatronal).replace('.', ',') +
       '%</th><th>Gestora laboral</th><th>Total a pagar Gestora</th><th>Prev. indemnización</th><th>Prev. aguinaldo</th></tr></thead><tbody>' + filas +
@@ -75,7 +80,7 @@
   function boleta(empresa, p, x) {
     var em = x.emp, r = x.r, mes = Calc.MESES[p.mes - 1];
     var ingresos = r.totalGanado, egresos = r.totalDescuentos;
-    return '<div class="boleta">' + cabecera(empresa, '<img src="assets/logos/nummeros-logotipo-horizontal-principal.svg" alt="">') +
+    return '<div class="boleta">' + cabecera(empresa) +
       '<div class="doc-titulo" style="margin:0"><h2>BOLETA DE PAGO</h2><p>(Expresado en bolivianos)</p></div>' +
       '<div class="datos"><div><span>NOMBRE:</span> <b>' + e(U.nombreCompleto(em)) + '</b></div><div><span>SUELDO BÁSICO:</span> ' + bs(r.basico) + '</div>' +
       '<div><span>C.I.:</span> ' + e(em.ci) + (em.complemento ? '-' + e(em.complemento) : '') + '</div><div><span>DÍAS TRABAJADOS:</span> ' + r.dias + '</div>' +
@@ -120,7 +125,7 @@
       : 'trabajó en nuestra empresa desde el ' + U.fechaLarga(em.fechaIngreso) + ' hasta el ' + U.fechaLarga(em.fechaRetiro);
     var sueldo = opc.conSueldo ? ', percibiendo un haber básico mensual de Bs ' + bs(em.sueldoBasico) + ' (' + Calc.numeroALetras(em.sueldoBasico).toLowerCase() + ')' : '';
     var conducta = opc.textoConducta || 'Durante su permanencia demostró responsabilidad, honestidad y dedicación en las funciones encomendadas.';
-    return '<div class="hoja">' + cabecera(empresa, '<img src="assets/logos/nummeros-logotipo-horizontal-principal.svg" alt="">') +
+    return '<div class="hoja">' + cabecera(empresa) +
       '<div class="cert"><h2>CERTIFICADO DE TRABAJO</h2>' +
       '<p>Quien suscribe, <b>' + e(empresa.representante || '________________') + '</b>, en calidad de ' + e(empresa.cargoRepresentante || 'Gerente General') + ' de <b>' + e(empresa.razonSocial) +
       '</b>, con NIT ' + e(empresa.nit) + ':</p>' +
@@ -142,7 +147,7 @@
         '</td>' + f.meses.map(function (m) { return '<td class="n">' + bs(m) + '</td>'; }).join('') + '<td class="n">' + bs(f.a.promedio) + '</td><td class="n">' + f.a.meses +
         '</td><td class="n">' + f.a.dias + '</td><td class="n"><b>' + bs(f.a.aguinaldo) + '</b></td><td style="width:60px"></td></tr>';
     }).join('');
-    return '<div class="hoja horizontal">' + cabecera(empresa, 'NUMMEROS RRHH') +
+    return '<div class="hoja horizontal">' + cabecera(empresa) +
       '<div class="doc-titulo"><h2>PLANILLA DE AGUINALDO DE NAVIDAD</h2><p>Gestión ' + anio + ' · (Expresado en bolivianos)</p></div>' +
       '<table class="doc"><thead><tr><th>Nro</th><th>CI</th><th>Nombre</th><th>Cargo</th><th>Fecha ingreso</th><th>Septiembre</th><th>Octubre</th><th>Noviembre</th><th>Promedio</th><th>Meses</th><th>Días</th><th>Aguinaldo</th><th>Firma</th></tr></thead>' +
       '<tbody>' + cuerpo + '</tbody><tfoot><tr><td colspan="11">TOTAL</td><td class="n">' + bs(tot) + '</td><td></td></tr></tfoot></table>' +
@@ -182,7 +187,7 @@
     var sd = 0, sh = 0, filas = '';
     a.debe.forEach(function (l) { sd += l[1]; filas += '<tr><td>' + e(l[0]) + '</td><td class="n">' + bs(l[1]) + '</td><td></td></tr>'; });
     a.haber.forEach(function (l) { sh += l[1]; filas += '<tr><td style="padding-left:28px">' + e(l[0]) + '</td><td></td><td class="n">' + bs(l[1]) + '</td></tr>'; });
-    return '<div class="hoja">' + cabecera(empresa, 'NUMMEROS RRHH') +
+    return '<div class="hoja">' + cabecera(empresa) +
       '<div class="doc-titulo"><h2>ASIENTO CONTABLE DE PLANILLA DE SUELDOS</h2><p>' + Calc.MESES[p.mes - 1] + ' ' + p.anio + ' · (Expresado en bolivianos)</p></div>' +
       '<table class="doc"><thead><tr><th style="text-align:left">Cuenta</th><th>Debe</th><th>Haber</th></tr></thead><tbody>' + filas +
       '</tbody><tfoot><tr><td>SUMAS IGUALES</td><td class="n">' + bs(sd) + '</td><td class="n">' + bs(sh) + '</td></tr></tfoot></table>' +

@@ -104,7 +104,7 @@
       h += '<div class="rejilla r3">' + lista.map(function (x) {
         var n = D.empleados(x.id).filter(function (k) { return k.estado !== 'RETIRADO'; }).length;
         var activa = (D.empresaActiva() || {}).id === x.id;
-        return '<div class="tarjeta"><div class="tarjeta-cab" style="margin-bottom:8px"><div><h3>' + e(x.razonSocial) + '</h3><p class="suave peq">NIT ' + e(x.nit) + ' · ' + e(x.ciudad || '') + '</p></div>' +
+        return '<div class="tarjeta">' + (x.logo ? '<img class="logo-tarjeta" src="' + e(x.logo) + '" alt="">' : '') + '<div class="tarjeta-cab" style="margin-bottom:8px"><div><h3>' + e(x.razonSocial) + '</h3><p class="suave peq">NIT ' + e(x.nit) + ' · ' + e(x.ciudad || '') + '</p></div>' +
           (activa ? '<span class="etiqueta cerrada">En uso</span>' : '') + '</div><p class="peq">' + n + ' trabajador(es) activo(s)</p>' +
           '<div class="acciones" style="margin-top:14px">' + (activa ? '' : '<button class="btn btn-sm btn-primario" data-usar="' + x.id + '">Usar esta empresa</button>') +
           '<button class="btn btn-sm" data-editar="' + x.id + '">' + ic('editar') + 'Editar</button></div></div>';
@@ -150,6 +150,11 @@
       campo('Representante legal', 'representante', x.representante) + campo('Cargo del representante', 'cargoRepresentante', x.cargoRepresentante || 'Gerente General') +
       campo('Firma en boletas', 'firmaBoleta', x.firmaBoleta || 'Jefe Dpto. Adm. y Finanzas', 'text', { ayuda: 'Texto bajo la segunda firma de la boleta' }) +
       '</div></fieldset>' +
+      '<fieldset class="ancho"><legend>Logo de la empresa</legend><p class="suave peq" style="margin-bottom:10px">Se muestra arriba del menú y en todos los documentos (planillas, boletas, certificados). Usa PNG con fondo transparente o SVG.</p>' +
+      '<div class="rejilla r2"><div class="logo-carga"><span class="peq"><b>Para fondo claro</b></span><div class="logo-prev claro" id="prevLogo">' + (x.logo ? '<img src="' + e(x.logo) + '" alt="">' : '<span class="suave peq">Sin logo</span>') + '</div>' +
+      '<div class="acciones"><button type="button" class="btn btn-sm" data-sube="logo">' + ic('subir') + 'Subir logo</button><button type="button" class="btn btn-sm btn-fantasma" data-quita="logo">Quitar</button></div></div>' +
+      '<div class="logo-carga"><span class="peq"><b>Para modo oscuro</b> (opcional)</span><div class="logo-prev oscuro" id="prevLogoOscuro">' + (x.logoOscuro ? '<img src="' + e(x.logoOscuro) + '" alt="">' : '<span class="peq" style="color:#8EB69B">Opcional: versión blanca</span>') + '</div>' +
+      '<div class="acciones"><button type="button" class="btn btn-sm" data-sube="logoOscuro">' + ic('subir') + 'Subir logo</button><button type="button" class="btn btn-sm btn-fantasma" data-quita="logoOscuro">Quitar</button></div></div></div></fieldset>' +
       '<fieldset class="ancho"><legend>Seguridad social y Ministerio</legend><div class="form">' +
       campo('N° de empleador (Ministerio)', 'nroEmpleadorMinisterio', x.nroEmpleadorMinisterio) + campo('N° patronal Caja de Salud', 'nroPatronalCaja', x.nroPatronalCaja) +
       campo('Código Caja de Salud (Ministerio)', 'cajaSaludCod', x.cajaSaludCod || '6', 'text', { ayuda: 'Código que pide el formulario del Ministerio (ej. 6)' }) +
@@ -157,18 +162,38 @@
       '<fieldset class="ancho"><legend>Pago de sueldos · Banco Ganadero</legend><div class="form">' +
       campo('Sucursal destino (Ganadero)', 'sucursalBanco', x.sucursalBanco || 'SCZ', 'text', { ayuda: 'Se usa en las transferencias ACH a otros bancos' }) +
       '</div></fieldset></form>';
-    U.modal(x.id ? 'Editar empresa' : 'Nueva empresa', html, [
+    var logos = { logo: x.logo || '', logoOscuro: x.logoOscuro || '' };
+    var mEmp = U.modal(x.id ? 'Editar empresa' : 'Nueva empresa', html, [
       x.id ? { texto: 'Eliminar', clase: 'btn btn-fantasma', accion: function () { U.confirmar('Eliminar empresa', 'Se borrará la empresa con todo su personal y planillas. Esta acción no se puede deshacer.', 'Eliminar', function () { D.eliminarEmpresa(x.id); App.refrescar(); }, true); } } : null,
       { texto: 'Cancelar', clase: 'btn btn-fantasma' },
       { texto: 'Guardar', clase: 'btn btn-primario', accion: function (m) {
         var f = U.$('#fEmp', m);
         if (!f.reportValidity()) return false;
         var d = leerForm(f); d.id = x.id; delete d.bmsc; delete d.bancoPagos;
+        d.logo = logos.logo; d.logoOscuro = logos.logoOscuro;
         D.guardarEmpresa(d);
         if (!x.id) D.activarEmpresa(d.id);
         App.refrescar(); U.aviso('Empresa guardada');
       } }
     ].filter(Boolean), { ancho: true });
+    var prev = function (k) {
+      var box = U.$(k === 'logo' ? '#prevLogo' : '#prevLogoOscuro', mEmp.el);
+      box.innerHTML = logos[k] ? '<img src="' + e(logos[k]) + '" alt="">' : '<span class="peq suave">Sin logo</span>';
+    };
+    U.$$('[data-sube]', mEmp.el).forEach(function (bt) {
+      bt.onclick = function () {
+        var inp = document.createElement('input'); inp.type = 'file'; inp.accept = 'image/png,image/jpeg,image/svg+xml,image/webp';
+        inp.onchange = function () {
+          var f = inp.files[0]; if (!f) return;
+          if (f.size > 600 * 1024) { U.aviso('El logo pesa mucho (máx. 600 KB). Usa una versión más liviana.', 'error'); return; }
+          var r = new FileReader();
+          r.onload = function () { logos[bt.dataset.sube] = r.result; prev(bt.dataset.sube); };
+          r.readAsDataURL(f);
+        };
+        inp.click();
+      };
+    });
+    U.$$('[data-quita]', mEmp.el).forEach(function (bt) { bt.onclick = function () { logos[bt.dataset.quita] = ''; prev(bt.dataset.quita); }; });
   }
   V.formEmpresa = formEmpresa;
 

@@ -27,6 +27,11 @@ Jhonny (CONTAX / NUMMEROS, Santa Cruz, Bolivia). No es programador: Claude hace 
 - Bono de antigüedad sobre 3 SMN y RC-IVA con crédito del 13 % de 2 SMN: confirmados por Jhonny (24/10/2026).
 - Todas las tasas son editables en Configuración.
 
+## Marcas (3 niveles)
+- Logo de la empresa cliente arriba del menú (grande) y en el encabezado de todos los documentos; se sube en Empresas → Editar → Logo (claro y oscuro opcional).
+- NUMMEROS = el sistema y CONTAX = servicio contable: abajo del menú y al pie de cada documento.
+- MILTHAGOR S.R.L. opera como MTG Delivery: logo vectorizado en assets/empresas/ (Alfa Slab One + Montserrat), se asigna solo.
+
 ## Interfaz
 - Personal y Planilla se ordenan por nombre o apellido (A-Z / Z-A); el orden de la planilla también define el orden de los archivos.
 - Planilla → "Datos del cliente": se pegan (Ctrl+V) las filas de la hoja de Google del cliente (Nombre(s), Apellido(s), Total Ganado, Fecha Fin, Horas extra, Hr/Extra) o se sube el Excel; solo se actualizan las horas extra de quienes vienen en la lista, con revisión antes de aplicar. Se descartó leer capturas (OCR): los números salían mal.
