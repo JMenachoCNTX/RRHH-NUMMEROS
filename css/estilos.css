@@ -365,3 +365,107 @@ body.sin-scroll { overflow: hidden; }
 .marcas-doc .m-ctx { height: 14px; }
 .boleta .marcas-doc .m-num { height: 9px; }
 .boleta .marcas-doc .m-ctx { height: 12px; }
+
+/* =========================================================
+   DOCUMENTOS — diseño CONTAX · NUMMEROS (carta)
+   Medidas tomadas del modelo de estados financieros
+   ========================================================= */
+.hoja.doc-n { --dn-osc: #163832; --dn-sec: #6A8476; --dn-linea: #235347; --dn-gris: #557363; --dn-sep: #DAF1DE;
+  background: #fff; color: var(--dn-osc); font: 9pt/1.35 Questrial, "Century Gothic", sans-serif; display: flex; flex-direction: column;
+  min-height: 756pt; padding: 0; box-sizing: border-box; }
+.hoja.doc-n.horizontal { min-height: 576pt; }
+.doc-n * { box-sizing: border-box; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+.doc-n img { display: block; }
+/* encabezado */
+.dn-top { display: flex; align-items: flex-end; justify-content: space-between; padding-bottom: 5pt; border-bottom: 1pt solid var(--dn-linea); }
+.dn-marcas { display: flex; align-items: center; gap: 9pt; }
+.dn-l-num { height: 10.5pt; width: auto; }
+.dn-l-ctx { height: 13pt; width: auto; }
+.dn-div { width: 1pt; height: 12pt; background: var(--dn-sep); }
+.dn-lema { font-size: 5.2pt; letter-spacing: .14em; text-transform: uppercase; color: var(--dn-gris); }
+.dn-cab { display: flex; align-items: center; gap: 10pt; padding: 5pt 0; border-bottom: 1pt solid var(--dn-linea); }
+.dn-logo-cli { height: 30pt; width: auto; max-width: 70pt; object-fit: contain; }
+.dn-datos { font-size: 7.5pt; color: var(--dn-gris); flex: 1; }
+.dn-tcorto { font: 700 9pt Akshar, "Arial Narrow", sans-serif; color: var(--dn-osc); }
+.dn-isos { display: flex; align-items: center; gap: 6pt; margin-left: 14pt; }
+.dn-isos img { height: 15pt; width: auto; }
+/* título */
+.dn-titulo { text-align: center; margin: 11pt 0 10pt; }
+.dn-titulo h2 { font: 400 10.5pt Questrial, "Century Gothic", sans-serif; color: var(--dn-osc); letter-spacing: .02em; margin: 0; }
+.dn-titulo p { font-size: 7.5pt; color: var(--dn-gris); margin-top: 2pt; }
+/* tablas */
+.dn-t { width: 100%; border-collapse: collapse; }
+.dn-t th { background: var(--dn-osc); color: #fff; font: 400 9pt Questrial, sans-serif; text-transform: uppercase; text-align: left; padding: 5pt 7pt; vertical-align: middle; }
+.dn-t td { padding: 3.5pt 7pt; border-bottom: 1pt solid var(--dn-sep); vertical-align: middle; }
+.dn-t td.c { font: 600 7.5pt Akshar, "Arial Narrow", sans-serif; color: var(--dn-gris); }
+.dn-t td.n, .dn-t th.n { text-align: right; white-space: nowrap; font: 600 9pt Akshar, "Arial Narrow", sans-serif; }
+.dn-t th.n { font: 400 9pt Questrial, sans-serif; }
+.dn-t td.fuerte { font-weight: 700; }
+.dn-t tfoot td { background: var(--dn-osc); color: #fff; border-bottom: 0; padding: 5pt 7pt; font: 400 9pt Questrial, sans-serif; }
+.dn-t tfoot td.n { font: 600 9pt Akshar, sans-serif; color: #fff; }
+.dn-t.dn-sec th, .dn-t.dn-sec tfoot td { background: var(--dn-sec); }
+.dn-t .dn-gris { color: var(--dn-gris); font-size: 7.5pt; }
+.dn-mini th { font-size: 5.6pt; padding: 3pt 2.5pt; text-align: center; line-height: 1.15; }
+.dn-mini td { font-size: 6.2pt; padding: 2.5pt 2.5pt; }
+.dn-mini td.n, .dn-mini tfoot td, .dn-mini tfoot td.n { font-size: 6.4pt; padding: 3pt 2.5pt; }
+.dn-mini td.c { font-size: 6pt; }
+.dn-col-firma { width: 46pt; }
+.dn-dos { display: grid; grid-template-columns: 1fr 1fr; gap: 14pt; align-items: start; }
+.dn-control { font: 600 7.5pt Akshar, sans-serif; color: var(--dn-osc); margin: 8pt 0 0 9pt; }
+.dn-glosa { font-size: 7.5pt; color: var(--dn-gris); margin-top: 8pt; }
+/* firmas */
+.dn-firmas { display: flex; justify-content: center; gap: 70pt; margin-top: 64pt; }
+.dn-firma { width: 190pt; border-top: 1pt solid var(--dn-osc); padding-top: 9pt; text-align: center; display: flex; flex-direction: column; gap: 1pt; }
+.dn-firma b { font: 400 8.2pt Questrial, sans-serif; color: var(--dn-osc); min-height: 10pt; }
+.dn-firma span { font-size: 7.5pt; color: var(--dn-gris); }
+/* pie */
+.dn-pie { margin-top: auto; padding-top: 10pt; border-top: 1pt solid var(--dn-osc); display: flex; align-items: center; justify-content: space-between; }
+.dn-pie > span { font-size: 5.2pt; color: var(--dn-gris); padding-left: 9pt; }
+.dn-pie > span b { color: var(--dn-osc); font-weight: 400; }
+.dn-pie .dn-isos img { height: 12pt; }
+.doc-n > .dn-pie { margin-top: auto; }
+.doc-n .dn-firmas + .dn-pie, .doc-n .dn-control + .dn-pie { margin-top: auto; }
+/* boletas: dos por hoja */
+.dn-hoja-boletas { justify-content: space-between; }
+.dn-boleta { display: flex; flex-direction: column; height: 368pt; }
+.dn-boleta .dn-titulo { margin: 6pt 0 6pt; }
+.dn-boleta .dn-firmas { margin-top: auto; padding-top: 26pt; gap: 50pt; }
+.dn-boleta .dn-firma { width: 170pt; padding-top: 5pt; }
+.dn-boleta .dn-pie { margin-top: 8pt; padding-top: 5pt; }
+.dn-boleta .dn-t th { padding: 3pt 7pt; }
+.dn-boleta .dn-t td { padding: 2.2pt 7pt; }
+.dn-boleta .dn-t tfoot td { padding: 3pt 7pt; }
+.dn-corte { border-top: 1pt dashed #b8c7be; margin: 6pt 0; }
+.dn-datos-trab { display: grid; grid-template-columns: 1.4fr 1fr; gap: 2pt 20pt; margin-bottom: 7pt; }
+.dn-datos-trab div { display: flex; gap: 6pt; font-size: 8pt; }
+.dn-datos-trab span { color: var(--dn-gris); min-width: 74pt; }
+.dn-datos-trab b { font-weight: 400; }
+.dn-barra-total { display: flex; justify-content: space-between; align-items: center; background: var(--dn-osc); color: #fff; padding: 5pt 7pt; margin-top: 7pt; }
+.dn-barra-total b { font: 600 10pt Akshar, sans-serif; }
+.dn-letras { font-size: 6.5pt; color: var(--dn-gris); margin-top: 3pt; }
+/* certificado */
+.dn-carta { font-size: 10pt; line-height: 1.75; padding: 6pt 26pt; }
+.dn-carta p { margin: 0 0 11pt; text-align: justify; }
+.dn-certifica { text-align: center !important; letter-spacing: .3em; color: var(--dn-osc); margin: 14pt 0 !important; }
+.dn-lugar { text-align: right !important; margin-top: 18pt !important; }
+.dn-firmas-carta { margin-top: 80pt; }
+/* vista previa en pantalla: simula la hoja carta */
+.vista-previa .hoja.doc-n { width: 612pt; min-height: 792pt; padding: 18pt 22pt; margin: 0 auto 16px; box-shadow: 0 2px 10px rgba(0,0,0,.2); max-width: none; }
+.vista-previa .hoja.doc-n.horizontal { width: 792pt; min-height: 612pt; }
+.vista-previa .hoja.doc-n.dn-hoja-boletas .dn-boleta { height: 368pt; }
+@media print {
+  .hoja.doc-n { page-break-after: always; break-after: page; }
+  .hoja.doc-n:last-child { page-break-after: auto; break-after: auto; }
+}
+
+.dn-mini td.nom { white-space: nowrap; }
+.dn-t tfoot { display: table-row-group; } /* los totales solo al final, no en cada hoja */
+.dn-t tr { break-inside: avoid; page-break-inside: avoid; }
+.dn-mini .dn-col-firma { width: 40pt; }
+
+.dn-mini td { padding: 1.6pt 2.5pt; }
+.dn-mini td.cargo { white-space: nowrap; max-width: 92pt; overflow: hidden; text-overflow: ellipsis; font-size: 5.8pt; }
+.dn-mini td.nom { font-size: 5.9pt; line-height: 1.15; }
+.doc-n.horizontal .dn-firmas { margin-top: 30pt; }
+.doc-n.horizontal .dn-firma { padding-top: 5pt; }
+.doc-n.horizontal .dn-titulo { margin: 8pt 0 7pt; }

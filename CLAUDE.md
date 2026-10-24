@@ -27,9 +27,11 @@ Jhonny (CONTAX / NUMMEROS, Santa Cruz, Bolivia). No es programador: Claude hace 
 - Bono de antigüedad sobre 3 SMN y RC-IVA con crédito del 13 % de 2 SMN: confirmados por Jhonny (24/10/2026).
 - Todas las tasas son editables en Configuración.
 
-## Marcas
+## Marcas y diseño de documentos
 - El sistema (menú) lleva la marca NUMMEROS; abajo del menú, CONTAX como servicio contable. El logo del cliente NO va en la interfaz.
-- Documentos que se generan: logo y datos del cliente a la izquierda (protagonista); NUMMEROS ("Sistema") y CONTAX ("Servicio contable") arriba a la derecha, más pequeños.
+- TODOS los documentos (js/documentos.js, clases .doc-n / .dn-*) copian el formato de estados financieros CONTAX · NUMMEROS: carta, márgenes 18/22 pt, Questrial + Akshar,
+  verde #163832 (barras), #6A8476 (segundo nivel), gris #557363, separadores #DAF1DE. Encabezado: NUMMEROS + CONTAX (mismo tamaño) y lema; barra con logo del cliente,
+  "RAZÓN | NIT | periodo", título corto e isotipos N y CONTAX; título centrado; firmas; pie "Elaborado por CONTAX · NUMMEROS" + isotipos.
 - Logo del cliente: Empresas → Editar → Logo. MILTHAGOR S.R.L. = MTG Delivery (assets/empresas/, se asigna solo).
 
 ## Interfaz

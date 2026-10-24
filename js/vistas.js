@@ -147,7 +147,7 @@
       '<fieldset class="ancho"><legend>Datos generales</legend><div class="form">' +
       campo('Razón social', 'razonSocial', x.razonSocial, 'text', { req: true, ph: 'Ej. MILTHAGOR S.R.L.' }) + campo('NIT', 'nit', x.nit, 'text', { req: true }) +
       campo('Ciudad', 'ciudad', x.ciudad || 'Santa Cruz') + campo('Dirección', 'direccion', x.direccion) +
-      campo('Representante legal', 'representante', x.representante) + campo('Cargo del representante', 'cargoRepresentante', x.cargoRepresentante || 'Gerente General') +
+      campo('Representante legal', 'representante', x.representante) + campo('C.I. del representante', 'ciRepresentante', x.ciRepresentante, 'text', { ayuda: 'Aparece bajo su firma en los documentos' }) + campo('Cargo del representante', 'cargoRepresentante', x.cargoRepresentante || 'Gerente General') +
       campo('Firma en boletas', 'firmaBoleta', x.firmaBoleta || 'Jefe Dpto. Adm. y Finanzas', 'text', { ayuda: 'Texto bajo la segunda firma de la boleta' }) +
       '</div></fieldset>' +
       '<fieldset class="ancho"><legend>Logo de la empresa</legend><p class="suave peq" style="margin-bottom:10px">Va en el encabezado de todos los documentos que se generan (planillas, boletas, certificados, aportes, asiento). Usa PNG con fondo transparente o SVG.</p>' +
