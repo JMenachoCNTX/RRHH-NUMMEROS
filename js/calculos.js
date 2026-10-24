@@ -141,7 +141,8 @@
     var ans = ansMonto(totalGanado, cfg);
     var rc = rcIva(totalGanado, afp, ans, mov.facturasF110, mov.saldoRcIvaAnterior, cfg);
     var anticipos = r2(num(mov.anticipos));
-    var totalDesc = r2(afp + ans + rc.aPagar + anticipos);
+    var otrosDescuentos = r2(num(mov.otrosDescuentos));
+    var totalDesc = r2(afp + ans + rc.aPagar + anticipos + otrosDescuentos);
     var liquido = r2(totalGanado - totalDesc);
 
     var caja = r2(totalGanado * cfg.cajaSalud / 100);
@@ -153,7 +154,7 @@
       valorHora: r2(valorHora), valorHoraExtra: r2(valorHoraExtra), horasExtra: horasExtra, montoHorasExtra: montoHE,
       bonoProduccion: bonoProd, dominicales: dominicales, otrosBonos: otrosBonos,
       totalGanado: totalGanado, afp: afp, ans: ans, rcIva: rc.aPagar, rcIvaDetalle: rc,
-      anticipos: anticipos, totalDescuentos: totalDesc, liquido: liquido,
+      anticipos: anticipos, otrosDescuentos: otrosDescuentos, totalDescuentos: totalDesc, liquido: liquido,
       cajaSalud: caja, gestoraPatronal: gestoraPat,
       totalGestora: r2(afp + ans + gestoraPat),
       provIndemnizacion: r2(totalGanado * cfg.provIndemnizacion / 100),
@@ -162,7 +163,7 @@
   }
 
   var CAMPOS_TOTALES = ['basico', 'salarioGanado', 'bonoAntiguedad', 'horasExtra', 'montoHorasExtra', 'bonoProduccion',
-    'dominicales', 'otrosBonos', 'totalGanado', 'afp', 'ans', 'rcIva', 'anticipos', 'totalDescuentos', 'liquido',
+    'dominicales', 'otrosBonos', 'totalGanado', 'afp', 'ans', 'rcIva', 'anticipos', 'otrosDescuentos', 'totalDescuentos', 'liquido',
     'cajaSalud', 'gestoraPatronal', 'totalGestora', 'provIndemnizacion', 'provAguinaldo'];
 
   function totalizar(resultados) {

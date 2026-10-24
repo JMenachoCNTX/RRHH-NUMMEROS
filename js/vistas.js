@@ -27,6 +27,8 @@
     salud: '<path d="M12 21s-8-4.5-8-11a5 5 0 0 1 8-4 5 5 0 0 1 8 4c0 6.5-8 11-8 11z"/><path d="M12 9v6M9 12h6"/>',
     impuesto: '<path d="M6 3h12v18l-3-2-3 2-3-2-3 2z"/><path d="M9 8h6M9 12h6"/>',
     boleta: '<rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h4"/>',
+    ojo: '<path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>',
+    expandir: '<path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/>',
     libro: '<path d="M4 4h7a3 3 0 0 1 3 3v14a2 2 0 0 0-2-2H4z"/><path d="M20 4h-7a3 3 0 0 0-3 3v14a2 2 0 0 1 2-2h8z"/>'
   };
   function ic(n) { return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + (IC[n] || '') + '</svg>'; }
@@ -404,7 +406,7 @@
   var periodoVista = null;
   var COLS_EDIT = [
     ['dias', 'Días', 'dias'], ['horasExtra', 'HE cant.'], ['bonoProduccion', 'Bono prod.'], ['dominicales', 'Dominicales'], ['otrosBonos', 'Otros bonos'],
-    ['facturasF110', 'Facturas F-110'], ['anticipos', 'Anticipos / desc.']
+    ['facturasF110', 'Facturas F-110'], ['anticipos', 'Anticipos'], ['otrosDescuentos', 'Otros descuentos']
   ];
 
   V.planilla = function (cont, idPlanilla) {
@@ -429,7 +431,7 @@
         var nueva = {
           empresaId: emp.id, anio: periodoVista.anio, mes: periodoVista.mes, estado: 'borrador', creada: new Date().toISOString(),
           fechaPago: U.hoyIso(), glosa: 'Sueldo ' + Calc.MESES[periodoVista.mes - 1] + ' ' + periodoVista.anio,
-          filas: activos.map(function (k) { return { empleadoId: k.id, dias: '', horasExtra: 0, bonoProduccion: 0, dominicales: 0, otrosBonos: 0, facturasF110: 0, anticipos: 0 }; })
+          filas: activos.map(function (k) { return { empleadoId: k.id, dias: '', horasExtra: 0, bonoProduccion: 0, dominicales: 0, otrosBonos: 0, facturasF110: 0, anticipos: 0, otrosDescuentos: 0 }; })
         };
         D.guardarPlanilla(nueva); location.hash = '#/planilla/' + nueva.id;
       };
@@ -451,9 +453,9 @@
         '<p class="suave peq" style="margin-top:8px">Escribe en las casillas verdes; todo se calcula y se guarda solo. Haz clic en un nombre para ver el detalle del cálculo. Deja "Días" vacío para que el sistema los calcule por fecha de ingreso/retiro.</p>') + '</div>';
 
     h += '<div class="tabla-caja" style="max-height:68vh"><table class="tabla" id="tPl"><thead>' +
-      '<tr class="grupo-cab"><th class="fija"></th><th colspan="3">Haber</th><th colspan="2">Horas extra</th><th colspan="3">Bonos</th><th></th><th colspan="5">Descuentos</th><th></th><th></th></tr>' +
-      '<tr><th class="fija">Trabajador</th><th class="num">Básico</th><th class="num">Días</th><th class="num">Salario ganado</th><th class="num">Cantidad</th><th class="num">Monto</th><th class="num">Antigüedad</th><th class="num">Producción · Dominic.</th><th class="num">Otros</th>' +
-      '<th class="num destacado">Total ganado</th><th class="num">AFP</th><th class="num">ANS</th><th class="num">RC-IVA <span title="Facturas presentadas en el F-110">(Fact.)</span></th><th class="num">Anticipos</th><th class="num">Total desc.</th><th class="num destacado">Líquido pagable</th><th class="num">Patronal</th></tr></thead><tbody>';
+      '<tr class="grupo-cab"><th class="fija"></th><th colspan="3">Haber</th><th colspan="2">Horas extra</th><th colspan="2">Bonos</th><th></th><th colspan="6">Descuentos</th><th></th><th></th></tr>' +
+      '<tr><th class="fija">Trabajador</th><th class="num">Básico</th><th class="num">Días</th><th class="num">Salario ganado</th><th class="num">Cantidad</th><th class="num">Monto</th><th class="num">Antigüedad</th><th class="num">Otros bonos</th>' +
+      '<th class="num destacado">Total ganado</th><th class="num">AFP</th><th class="num">ANS</th><th class="num">RC-IVA <span title="Facturas presentadas en el F-110">(Fact.)</span></th><th class="num">Anticipos</th><th class="num">Otros desc.</th><th class="num">Total desc.</th><th class="num destacado">Líquido pagable</th><th class="num">Patronal</th></tr></thead><tbody>';
     calc.filas.forEach(function (x) {
       var f = x.fila, r = x.r, k = x.emp, i = x.idx;
       var inp = function (campoN, cls) {
@@ -465,9 +467,9 @@
         '<td class="num">' + bs(r.basico) + '</td><td class="num">' + inp('dias', 'dias') + '</td><td class="num" data-o="salarioGanado">' + bs(r.salarioGanado) + '</td>' +
         '<td class="num">' + inp('horasExtra', 'dias') + '</td><td class="num" data-o="montoHorasExtra">' + bs(r.montoHorasExtra) + '</td>' +
         '<td class="num" data-o="bonoAntiguedad" title="' + r.anios + ' año(s) · ' + r.pctAntiguedad + '%">' + bs(r.bonoAntiguedad) + '</td>' +
-        '<td class="num">' + inp('bonoProduccion') + ' ' + inp('dominicales') + '</td><td class="num">' + inp('otrosBonos') + '</td>' +
+        '<td class="num">' + inp('otrosBonos') + '</td>' +
         '<td class="num destacado" data-o="totalGanado"><b>' + bs(r.totalGanado) + '</b></td><td class="num" data-o="afp">' + bs(r.afp) + '</td><td class="num" data-o="ans">' + bs(r.ans) + '</td>' +
-        '<td class="num"><span data-o="rcIva">' + bs(r.rcIva) + '</span> ' + inp('facturasF110') + '</td><td class="num">' + inp('anticipos') + '</td>' +
+        '<td class="num"><span data-o="rcIva">' + bs(r.rcIva) + '</span> ' + inp('facturasF110') + '</td><td class="num">' + inp('anticipos') + '</td><td class="num">' + inp('otrosDescuentos') + '</td>' +
         '<td class="num" data-o="totalDescuentos">' + bs(r.totalDescuentos) + '</td><td class="num destacado" data-o="liquido"><b>' + bs(r.liquido) + '</b></td>' +
         '<td class="num suave" data-o="patronal">' + bs(r.cajaSalud + r.gestoraPatronal) + '</td></tr>';
     });
@@ -539,9 +541,8 @@
   function pintarTotales(cont, calc) {
     var t = calc.totales;
     U.$('#filaTot', cont).innerHTML = '<td class="fija">TOTAL · ' + calc.filas.length + ' persona(s)</td><td class="num">' + bs(t.basico) + '</td><td></td><td class="num">' + bs(t.salarioGanado) +
-      '</td><td class="num">' + t.horasExtra + '</td><td class="num">' + bs(t.montoHorasExtra) + '</td><td class="num">' + bs(t.bonoAntiguedad) + '</td><td class="num">' + bs(t.bonoProduccion + t.dominicales) +
-      '</td><td class="num">' + bs(t.otrosBonos) + '</td><td class="num destacado">' + bs(t.totalGanado) + '</td><td class="num">' + bs(t.afp) + '</td><td class="num">' + bs(t.ans) + '</td><td class="num">' + bs(t.rcIva) +
-      '</td><td class="num">' + bs(t.anticipos) + '</td><td class="num">' + bs(t.totalDescuentos) + '</td><td class="num destacado">' + bs(t.liquido) + '</td><td class="num">' + bs(t.cajaSalud + t.gestoraPatronal) + '</td>';
+      '</td><td class="num">' + t.horasExtra + '</td><td class="num">' + bs(t.montoHorasExtra) + '</td><td class="num">' + bs(t.bonoAntiguedad) + '</td><td class="num">' + bs(t.otrosBonos) + '</td><td class="num destacado">' + bs(t.totalGanado) + '</td><td class="num">' + bs(t.afp) + '</td><td class="num">' + bs(t.ans) + '</td><td class="num">' + bs(t.rcIva) +
+      '</td><td class="num">' + bs(t.anticipos) + '</td><td class="num">' + bs(t.otrosDescuentos) + '</td><td class="num">' + bs(t.totalDescuentos) + '</td><td class="num destacado">' + bs(t.liquido) + '</td><td class="num">' + bs(t.cajaSalud + t.gestoraPatronal) + '</td>';
   }
 
   function detalleFila(p, i) {
@@ -551,9 +552,9 @@
       l('Sueldo básico', bs(r.basico)) + l('Días pagados', r.dias) + l('Salario ganado (básico ÷ 30 × días)', bs(r.salarioGanado)) +
       l('Antigüedad: ' + r.anios + ' año(s) → ' + r.pctAntiguedad + '% de ' + cfg.antiguedadBaseSMN + ' SMN', bs(r.bonoAntiguedad)) +
       l('Horas extra: ' + r.horasExtra + ' × ' + bs(r.valorHoraExtra) + ' (recargo ' + cfg.recargoHoraExtra + '%)', bs(r.montoHorasExtra)) +
-      l('Bono producción', bs(r.bonoProduccion)) + l('Dominicales', bs(r.dominicales)) + l('Otros bonos', bs(r.otrosBonos)) + l('TOTAL GANADO', bs(r.totalGanado), true) + '</div></div>' +
+      (r.bonoProduccion ? l('Bono producción', bs(r.bonoProduccion)) : '') + (r.dominicales ? l('Dominicales', bs(r.dominicales)) : '') + l('Otros bonos', bs(r.otrosBonos)) + l('TOTAL GANADO', bs(r.totalGanado), true) + '</div></div>' +
       '<div><h4 class="kicker" style="margin-bottom:8px">Descuentos</h4><div class="detalle-calc">' +
-      l('AFP ' + cfg.afpLaboral + '%', bs(r.afp)) + l('Aporte Nacional Solidario', bs(r.ans)) + l('RC-IVA', bs(r.rcIva)) + l('Anticipos y otros', bs(r.anticipos)) +
+      l('AFP ' + cfg.afpLaboral + '%', bs(r.afp)) + l('Aporte Nacional Solidario', bs(r.ans)) + l('RC-IVA', bs(r.rcIva)) + l('Anticipos', bs(r.anticipos)) + l('Otros descuentos', bs(r.otrosDescuentos)) +
       l('TOTAL DESCUENTOS', bs(r.totalDescuentos), true) + l('LÍQUIDO PAGABLE', bs(r.liquido), true) + '</div></div></div>' +
       '<div class="tarjeta" style="padding:14px"><h4 class="kicker" style="margin-bottom:8px">Cálculo del RC-IVA</h4><div class="detalle-calc">' +
       l('Total ganado − AFP − ANS', bs(d.neto)) + l('(−) Mínimo no imponible (' + cfg.rcIvaMinNoImponibleSMN + ' SMN)', bs(d.minimo)) + l('Sujeto a impuesto', bs(d.sujeto)) +
@@ -668,7 +669,7 @@
     U.modal('Personal en la planilla', html, [{ texto: 'Cancelar', clase: 'btn btn-fantasma' }, { texto: 'Aplicar', clase: 'btn btn-primario', accion: function (m) {
       var marcados = U.$$('input[data-id]', m).filter(function (c) { return c.checked; }).map(function (c) { return c.dataset.id; });
       p.filas = p.filas.filter(function (f) { return marcados.indexOf(f.empleadoId) >= 0; });
-      marcados.forEach(function (id) { if (!p.filas.some(function (f) { return f.empleadoId === id; })) p.filas.push({ empleadoId: id, dias: '', horasExtra: 0, bonoProduccion: 0, dominicales: 0, otrosBonos: 0, facturasF110: 0, anticipos: 0 }); });
+      marcados.forEach(function (id) { if (!p.filas.some(function (f) { return f.empleadoId === id; })) p.filas.push({ empleadoId: id, dias: '', horasExtra: 0, bonoProduccion: 0, dominicales: 0, otrosBonos: 0, facturasF110: 0, anticipos: 0, otrosDescuentos: 0 }); });
       D.ordenarPlanilla(p, p.orden || 'nombre-asc', compararPor(p.orden || 'nombre-asc')); App.refrescar();
     } }]);
   }
@@ -694,21 +695,22 @@
       return '<div class="tarjeta gen"><div class="ic">' + ic(icono) + '</div><div style="min-width:0"><h3>' + titulo + '</h3><p>' + texto + '</p><div class="acciones">' + botones + '</div></div></div>';
     };
     var b = function (id, txt, icono, prim) { return '<button class="btn btn-sm' + (prim ? ' btn-primario' : '') + '" data-g="' + id + '">' + ic(icono || 'generar') + txt + '</button>'; };
+    var ver = function (id) { return '<button class="btn btn-sm" data-ver="' + id + '" title="Ver en pantalla completa">' + ic('ojo') + 'Ver</button>'; };
 
     h += '<div class="seccion"><h2>Para la empresa</h2><div class="rejilla r2">' +
-      tarjeta('planilla', 'Planilla de sueldos y salarios', 'La planilla oficial con firmas, en hoja horizontal.', b('plPdf', 'Imprimir / PDF', 'imprimir', true) + b('plXls', 'Excel', 'excel')) +
-      tarjeta('boleta', 'Boletas de pago', 'Una boleta por trabajador, dos por hoja, con el líquido en letras.', b('boletas', 'Imprimir / PDF', 'imprimir', true)) +
-      tarjeta('salud', 'Aportes y previsiones', 'Caja de salud, Gestora patronal, indemnización y aguinaldo.', b('patPdf', 'Imprimir / PDF', 'imprimir', true)) +
-      tarjeta('libro', 'Asiento contable', 'Asiento de la planilla listo para el sistema contable.', b('asPdf', 'Imprimir / PDF', 'imprimir', true) + b('asXls', 'Excel', 'excel')) +
+      tarjeta('planilla', 'Planilla de sueldos y salarios', 'La planilla oficial con firmas, en hoja horizontal.', ver('pl') + b('plPdf', 'Imprimir / PDF', 'imprimir', true) + b('plXls', 'Excel', 'excel')) +
+      tarjeta('boleta', 'Boletas de pago', 'Una boleta por trabajador, dos por hoja, con el líquido en letras.', ver('boletas') + b('boletas', 'Imprimir / PDF', 'imprimir', true)) +
+      tarjeta('salud', 'Aportes y previsiones', 'Caja de salud, Gestora patronal, indemnización y aguinaldo.', ver('pat') + b('patPdf', 'Imprimir / PDF', 'imprimir', true)) +
+      tarjeta('libro', 'Asiento contable', 'Asiento de la planilla listo para el sistema contable.', ver('as') + b('asPdf', 'Imprimir / PDF', 'imprimir', true) + b('asXls', 'Excel', 'excel')) +
       '</div></div>';
     h += '<div class="seccion"><h2>Para el banco</h2><div class="rejilla r2">' +
-      tarjeta('banco', 'Banco Ganadero', 'El mismo Excel que se carga al banco para el pago masivo (cuentas Ganadero y ACH a otros bancos).', b('ganadero', 'Descargar Excel', 'excel', true)) +
+      tarjeta('banco', 'Banco Ganadero', 'El mismo Excel que se carga al banco para el pago masivo (cuentas Ganadero y ACH a otros bancos).', ver('ganadero') + b('ganadero', 'Descargar Excel', 'excel', true)) +
       '</div></div>';
     h += '<div class="seccion"><h2>Para las entidades</h2><div class="rejilla r2">' +
-      tarjeta('gobierno', 'Ministerio de Trabajo', 'Planilla con las 46 columnas del formato del Ministerio.', b('min', 'Descargar Excel', 'excel', true)) +
-      tarjeta('empresa', 'Gestora Pública', 'Planilla de aportes con novedades de ingreso y retiro.', b('gestora', 'Descargar Excel', 'excel', true)) +
-      tarjeta('salud', 'Caja de Salud', 'Planilla de aportes del ' + calc.cfg.cajaSalud + '% patronal.', b('caja', 'Descargar Excel', 'excel', true)) +
-      tarjeta('impuesto', 'Impuestos Nacionales · RC-IVA', 'Planilla de dependientes (F-608) y detalle del cálculo de cada persona.', b('imp', 'Descargar Excel', 'excel', true)) +
+      tarjeta('gobierno', 'Ministerio de Trabajo', 'Planilla con las 46 columnas del formato del Ministerio.', ver('min') + b('min', 'Descargar Excel', 'excel', true)) +
+      tarjeta('empresa', 'Gestora Pública', 'Planilla de aportes con novedades de ingreso y retiro.', ver('gestora') + b('gestora', 'Descargar Excel', 'excel', true)) +
+      tarjeta('salud', 'Caja de Salud', 'Planilla de aportes del ' + calc.cfg.cajaSalud + '% patronal.', ver('caja') + b('caja', 'Descargar Excel', 'excel', true)) +
+      tarjeta('impuesto', 'Impuestos Nacionales · RC-IVA', 'Planilla de dependientes (F-608) y detalle del cálculo de cada persona.', ver('imp') + b('imp', 'Descargar Excel', 'excel', true)) +
       '</div></div>';
     cont.innerHTML = h;
     U.$('#selPl', cont).onchange = function (ev) { location.hash = '#/generar/' + ev.target.value; };
@@ -732,6 +734,40 @@
       imp: function () { avisoFaltan(X.impuestos(emp, p, calc), 'el código de dependiente (CUR)'); }
     };
     U.$$('[data-g]', cont).forEach(function (bt) { bt.onclick = function () { acciones[bt.dataset.g](); }; });
+
+    /* Vista previa en pantalla completa */
+    var faltanTxt = function (lista, que) { return lista && lista.length ? 'A estas personas les falta ' + que + ': <b>' + e(lista.join(', ')) + '</b>. Complétalo en Personal antes de descargar.' : ''; };
+    var xl = function (fn) { return Visor.capturarExcel(fn); };
+    var accImprimir = function (id) { return { texto: 'Imprimir / PDF', icono: 'imprimir', primario: true, fn: acciones[id] }; };
+    var accExcel = function (id, txt) { return { texto: txt || 'Descargar Excel', icono: 'excel', primario: !txt, fn: acciones[id] }; };
+    var per = ' · ' + nombrePeriodo(p);
+    var vistasPrevias = {
+      pl: function () {
+        var c = xl(function () { X.planillaSueldos(emp, p, calc); });
+        return { titulo: 'Planilla de sueldos y salarios' + per, vistas: [{ nombre: 'Documento', html: Doc.planillaSueldos(emp, p, calc) }, { nombre: 'Excel', libro: c.wb }], acciones: [accImprimir('plPdf'), accExcel('plXls', 'Excel')] };
+      },
+      boletas: function () { return { titulo: 'Boletas de pago' + per, vistas: [{ nombre: 'Boletas', html: Doc.boletas(emp, p, calc) }], acciones: [accImprimir('boletas')] }; },
+      pat: function () { return { titulo: 'Aportes y previsiones' + per, vistas: [{ nombre: 'Documento', html: Doc.planillaPatronal(emp, p, calc) }], acciones: [accImprimir('patPdf')] }; },
+      as: function () {
+        var c = xl(function () { X.asiento(emp, p, calc); });
+        return { titulo: 'Asiento contable' + per, vistas: [{ nombre: 'Documento', html: Doc.asiento(emp, p, calc) }, { nombre: 'Excel', libro: c.wb }], acciones: [accImprimir('asPdf'), accExcel('asXls', 'Excel')] };
+      },
+      ganadero: function () {
+        var c = xl(function () { return X.bancoGanadero(emp, p, calc, fecha, glosa); });
+        return { titulo: c.nombre.replace(/\.xlsx$/, ''), vistas: [{ libro: c.wb, aviso: faltanTxt(c.resultado, 'el banco o la cuenta') }], acciones: [accExcel('ganadero')] };
+      },
+      min: function () { var c = xl(function () { X.ministerio(emp, p, calc); }); return { titulo: 'Ministerio de Trabajo' + per, vistas: [{ libro: c.wb }], acciones: [accExcel('min')] }; },
+      gestora: function () {
+        var c = xl(function () { return X.gestora(emp, p, calc); });
+        return { titulo: 'Gestora Pública' + per, vistas: [{ libro: c.wb, aviso: faltanTxt(c.resultado, 'el CUA') }], acciones: [accExcel('gestora')] };
+      },
+      caja: function () { var c = xl(function () { X.cajaSalud(emp, p, calc); }); return { titulo: 'Caja de Salud' + per, vistas: [{ libro: c.wb }], acciones: [accExcel('caja')] }; },
+      imp: function () {
+        var c = xl(function () { return X.impuestos(emp, p, calc); });
+        return { titulo: 'Impuestos Nacionales · RC-IVA' + per, vistas: [{ libro: c.wb, aviso: faltanTxt(c.resultado, 'el código de dependiente (CUR)') }], acciones: [accExcel('imp')] };
+      }
+    };
+    U.$$('[data-ver]', cont).forEach(function (bt) { bt.onclick = function () { Visor.abrir(vistasPrevias[bt.dataset.ver]()); }; });
   };
 
   /* =========================================================

@@ -30,21 +30,20 @@
 
   /* ---------- Planilla de sueldos (Excel) ---------- */
   X.planillaSueldos = function (empresa, p, calc) {
-    var cab = ['Nro', 'CI', 'Nombre(s)', 'Apellido(s)', 'Nacionalidad', 'Fecha de nacimiento', 'Sexo', 'Ocupación', 'Fecha de ingreso', 'Sueldo básico',
-      'Días pagados', 'Horas/día', 'Salario ganado (A)', 'Bono antigüedad (B)', 'HE cantidad', 'HE monto (C)', 'Bono producción (D)', 'Dominicales (E)',
-      'Otros bonos (F)', 'Total ganado (G)', 'AFP (H)', 'Aporte Nal. Solidario (I)', 'RC-IVA (J)', 'Anticipos y otros (K)', 'Total descuentos (L)', 'Líquido pagable',
-      'Caja salud patronal', 'Gestora patronal', 'Total Gestora', 'Prev. indemnización', 'Prev. aguinaldo'];
+    var M = [['Salario ganado (A)', 'salarioGanado'], ['Bono antigüedad (B)', 'bonoAntiguedad'], ['HE cantidad', 'horasExtra'], ['HE monto (C)', 'montoHorasExtra'],
+      ['Otros bonos (D)', 'otrosBonos'], ['Total ganado (E)', 'totalGanado'], ['AFP (F)', 'afp'], ['Aporte Nal. Solidario (G)', 'ans'], ['RC-IVA (H)', 'rcIva'],
+      ['Anticipos (I)', 'anticipos'], ['Otros descuentos (J)', 'otrosDescuentos'], ['Total descuentos (K)', 'totalDescuentos'], ['Líquido pagable', 'liquido'],
+      ['Caja salud patronal', 'cajaSalud'], ['Gestora patronal', 'gestoraPatronal'], ['Total Gestora', 'totalGestora'], ['Prev. indemnización', 'provIndemnizacion'], ['Prev. aguinaldo', 'provAguinaldo']];
+    var cab = ['Nro', 'CI', 'Nombre(s)', 'Apellido(s)', 'Nacionalidad', 'Fecha de nacimiento', 'Sexo', 'Ocupación', 'Fecha de ingreso', 'Sueldo básico', 'Días pagados', 'Horas/día']
+      .concat(M.map(function (c) { return c[0]; }));
     var filas = [[empresa.razonSocial], ['NIT: ' + empresa.nit], ['PLANILLA DE SUELDOS Y SALARIOS - ' + U.mayus(Calc.MESES[p.mes - 1]) + ' ' + p.anio], ['(Expresado en bolivianos)'], [], cab];
     calc.filas.forEach(function (x, i) {
       var e = x.emp, r = x.r;
-      filas.push([i + 1, e.ci, e.nombres, U.apellidos(e), e.nacionalidad || 'BOLIVIANA', U.fecha(e.fechaNac), e.sexo, e.cargo, U.fecha(e.fechaIngreso), r.basico,
-        r.dias, r.horasDia, r.salarioGanado, r.bonoAntiguedad, r.horasExtra, r.montoHorasExtra, r.bonoProduccion, r.dominicales, r.otrosBonos, r.totalGanado,
-        r.afp, r.ans, r.rcIva, r.anticipos, r.totalDescuentos, r.liquido, r.cajaSalud, r.gestoraPatronal, r.totalGestora, r.provIndemnizacion, r.provAguinaldo]);
+      filas.push([i + 1, e.ci, e.nombres, U.apellidos(e), e.nacionalidad || 'BOLIVIANA', U.fecha(e.fechaNac), e.sexo, e.cargo, U.fecha(e.fechaIngreso), r.basico, r.dias, r.horasDia]
+        .concat(M.map(function (c) { return r[c[1]]; })));
     });
     var t = calc.totales;
-    filas.push(['', '', 'TOTALES', '', '', '', '', '', '', t.basico, '', '', t.salarioGanado, t.bonoAntiguedad, t.horasExtra, t.montoHorasExtra, t.bonoProduccion,
-      t.dominicales, t.otrosBonos, t.totalGanado, t.afp, t.ans, t.rcIva, t.anticipos, t.totalDescuentos, t.liquido, t.cajaSalud, t.gestoraPatronal, t.totalGestora,
-      t.provIndemnizacion, t.provAguinaldo]);
+    filas.push(['', '', 'TOTALES', '', '', '', '', '', '', t.basico, '', ''].concat(M.map(function (c) { return t[c[1]]; })));
     X.excel(nombreArchivo(empresa, p, 'Planilla_Sueldos', 'xlsx'), [{ nombre: 'Planilla', filas: filas, anchos: [5, 11, 18, 22, 12, 12, 6, 24, 12].concat(Array(22).fill(13)) }]);
   };
 
@@ -129,7 +128,7 @@
         U.fecha(e.fechaIngreso), retiro ? U.fecha(e.fechaRetiro) : '', retiro ? (e.motivoRetiro || '') : '', +(e.cajaSaludCod || empresa.cajaSaludCod || 6), +(e.afpCod || 3), String(e.cua || ''),
         +(e.sucursal || 1), +(e.clasificacion || 4), e.cargo || '', +(e.modalidad || 1), +(e.tipoContrato || 1), r.dias, r.horasDia,
         U.punto(r.salarioGanado), U.punto(r.bonoAntiguedad), r.horasExtra || 0, U.punto(r.montoHorasExtra), 0, 0, 0, 0, '', '', '', r.dominicales ? U.punto(r.dominicales) : '',
-        r.bonoProduccion ? U.punto(r.bonoProduccion) : '', '', U.punto(r.otrosBonos), U.punto(r.rcIva), U.punto(r.cajaSalud), U.punto(r.afp + r.ans), U.punto(r.anticipos)]);
+        r.bonoProduccion ? U.punto(r.bonoProduccion) : '', '', U.punto(r.otrosBonos), U.punto(r.rcIva), U.punto(r.cajaSalud), U.punto(r.afp + r.ans), U.punto(r.anticipos + r.otrosDescuentos)]);
     });
     X.excel(nombreArchivo(empresa, p, 'Ministerio_Trabajo', 'xlsx'), [{ nombre: 'Planilla', filas: filas, anchos: Array(46).fill(14) }]);
   };
@@ -217,12 +216,12 @@
   /* ---------- Historial de sueldos (todas las planillas) ---------- */
   X.historial = function (empresa) {
     var filas = [['Año', 'Mes', 'Estado', 'CI', 'Nombre', 'Cargo', 'Días', 'Salario ganado', 'Bono antigüedad', 'Horas extra', 'Otros ingresos', 'Total ganado', 'AFP', 'ANS', 'RC-IVA',
-      'Anticipos', 'Total descuentos', 'Líquido pagable', 'Caja salud', 'Gestora patronal']];
+      'Anticipos', 'Otros descuentos', 'Total descuentos', 'Líquido pagable', 'Caja salud', 'Gestora patronal']];
     D.planillas(empresa.id).slice().reverse().forEach(function (p) {
       D.calcularPlanilla(p).filas.forEach(function (x) {
         var r = x.r;
         filas.push([p.anio, Calc.MESES[p.mes - 1], p.estado, String(x.emp.ci), U.nombreCompleto(x.emp), x.emp.cargo, r.dias, r.salarioGanado, r.bonoAntiguedad, r.montoHorasExtra,
-          r2(r.bonoProduccion + r.dominicales + r.otrosBonos), r.totalGanado, r.afp, r.ans, r.rcIva, r.anticipos, r.totalDescuentos, r.liquido, r.cajaSalud, r.gestoraPatronal]);
+          r2(r.bonoProduccion + r.dominicales + r.otrosBonos), r.totalGanado, r.afp, r.ans, r.rcIva, r.anticipos, r.otrosDescuentos, r.totalDescuentos, r.liquido, r.cajaSalud, r.gestoraPatronal]);
       });
     });
     X.excel(nombreArchivo(empresa, null, 'Historial_Sueldos', 'xlsx'), [{ nombre: 'Historial', filas: filas, anchos: [6, 11, 9, 12, 30, 22].concat(Array(14).fill(12)) }]);

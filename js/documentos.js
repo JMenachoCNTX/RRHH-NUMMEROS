@@ -26,30 +26,28 @@
   /* ---------- Planilla de sueldos y salarios ---------- */
   Doc.planillaSueldos = function (empresa, p, calc) {
     var mesTxt = Calc.MESES[p.mes - 1];
+    var t = calc.totales, cfg = calc.cfg;
+    /* Columnas de montos: [título, campo, negrita]. Bono producción y dominicales no se usan (empresa de servicios). */
+    var M = [
+      ['Salario ganado (A)', 'salarioGanado'], ['Bono antigüedad (B)', 'bonoAntiguedad'], ['HE cant.', 'horasExtra', false, true], ['HE monto (C)', 'montoHorasExtra'],
+      ['Otros bonos (D)', 'otrosBonos'], ['Total ganado (E) A+B+C+D', 'totalGanado', true],
+      ['AFP ' + String(cfg.afpLaboral).replace('.', ',') + '% (F)', 'afp'], ['Aporte Nal. Solidario (G)', 'ans'], ['RC-IVA 13% (H)', 'rcIva'],
+      ['Anticipos (I)', 'anticipos'], ['Otros descuentos (J)', 'otrosDescuentos'], ['Total desc. (K) F a J', 'totalDescuentos'], ['Líquido pagable E-K', 'liquido', true]
+    ];
+    var celda = function (c, v) { var txt = c[3] ? (v || 0) : bs(v); return '<td class="n">' + (c[2] ? '<b>' + txt + '</b>' : txt) + '</td>'; };
     var filas = calc.filas.map(function (x, i) {
       var em = x.emp, r = x.r;
       return '<tr><td class="n">' + (i + 1) + '</td><td>' + e(em.ci) + (em.complemento ? '-' + e(em.complemento) : '') + '</td><td>' + e(em.nombres) + '</td><td>' + e(U.apellidos(em)) +
         '</td><td>' + e(em.nacionalidad || 'BOLIVIANA') + '</td><td>' + U.fecha(em.fechaNac) + '</td><td>' + e(em.sexo) + '</td><td>' + e(em.cargo) +
-        '</td><td>' + U.fecha(em.fechaIngreso) + '</td><td class="n">' + bs(r.basico) + '</td><td class="n">' + r.dias + '</td><td class="n">' + r.horasDia +
-        '</td><td class="n">' + bs(r.salarioGanado) + '</td><td class="n">' + bs(r.bonoAntiguedad) + '</td><td class="n">' + (r.horasExtra || 0) +
-        '</td><td class="n">' + bs(r.montoHorasExtra) + '</td><td class="n">' + bs(r.bonoProduccion) + '</td><td class="n">' + bs(r.dominicales) +
-        '</td><td class="n">' + bs(r.otrosBonos) + '</td><td class="n"><b>' + bs(r.totalGanado) + '</b></td><td class="n">' + bs(r.afp) +
-        '</td><td class="n">' + bs(r.ans) + '</td><td class="n">' + bs(r.rcIva) + '</td><td class="n">' + bs(r.anticipos) +
-        '</td><td class="n">' + bs(r.totalDescuentos) + '</td><td class="n"><b>' + bs(r.liquido) + '</b></td><td style="width:60px"></td></tr>';
+        '</td><td>' + U.fecha(em.fechaIngreso) + '</td><td class="n">' + bs(r.basico) + '</td><td class="n">' + r.dias + '</td><td class="n">' + r.horasDia + '</td>' +
+        M.map(function (c) { return celda(c, r[c[1]]); }).join('') + '<td style="width:60px"></td></tr>';
     }).join('');
-    var t = calc.totales;
-    var cfg = calc.cfg;
     var html = '<div class="hoja horizontal">' + cabecera(empresa, '<img src="assets/logos/nummeros-logotipo-horizontal-principal.svg" alt="">NUMMEROS RRHH') +
       '<div class="doc-titulo"><h2>PLANILLA DE SUELDOS Y SALARIOS</h2><p>Correspondiente al mes de ' + mesTxt + ' de ' + p.anio + ' · (Expresado en bolivianos)</p></div>' +
       '<table class="doc"><thead><tr><th>Nro</th><th>CI</th><th>Nombre(s)</th><th>Apellido(s)</th><th>Nacionalidad</th><th>Fecha de nacimiento</th><th>Sexo</th><th>Ocupación que desempeña</th><th>Fecha de ingreso</th>' +
-      '<th>Sueldo básico</th><th>Días pagados</th><th>Horas/día</th><th>Salario ganado (A)</th><th>Bono antigüedad (B)</th><th>HE cant.</th><th>HE monto (C)</th>' +
-      '<th>Bono producción (D)</th><th>Dominicales (E)</th><th>Otros bonos (F)</th><th>Total ganado (G)</th><th>AFP ' + String(cfg.afpLaboral).replace('.', ',') + '% (H)</th>' +
-      '<th>Aporte Nal. Solidario (I)</th><th>RC-IVA 13% (J)</th><th>Anticipos y otros (K)</th><th>Total desc. (L)</th><th>Líquido pagable (G-L)</th><th>Firma</th></tr></thead>' +
-      '<tbody>' + filas + '</tbody><tfoot><tr><td colspan="9">TOTALES</td><td class="n">' + bs(t.basico) + '</td><td></td><td></td><td class="n">' + bs(t.salarioGanado) +
-      '</td><td class="n">' + bs(t.bonoAntiguedad) + '</td><td class="n">' + t.horasExtra + '</td><td class="n">' + bs(t.montoHorasExtra) + '</td><td class="n">' + bs(t.bonoProduccion) +
-      '</td><td class="n">' + bs(t.dominicales) + '</td><td class="n">' + bs(t.otrosBonos) + '</td><td class="n">' + bs(t.totalGanado) + '</td><td class="n">' + bs(t.afp) +
-      '</td><td class="n">' + bs(t.ans) + '</td><td class="n">' + bs(t.rcIva) + '</td><td class="n">' + bs(t.anticipos) + '</td><td class="n">' + bs(t.totalDescuentos) +
-      '</td><td class="n">' + bs(t.liquido) + '</td><td></td></tr></tfoot></table>' +
+      '<th>Sueldo básico</th><th>Días pagados</th><th>Horas/día</th>' + M.map(function (c) { return '<th>' + c[0] + '</th>'; }).join('') + '<th>Firma</th></tr></thead>' +
+      '<tbody>' + filas + '</tbody><tfoot><tr><td colspan="9">TOTALES</td><td class="n">' + bs(t.basico) + '</td><td></td><td></td>' +
+      M.map(function (c) { return celda(c, t[c[1]]); }).join('') + '<td></td></tr></tfoot></table>' +
       '<div class="firmas"><div>' + e(empresa.representante || '') + '<br>' + e(U.mayus(empresa.cargoRepresentante || 'Gerente General')) + '</div></div>' + pie() + '</div>';
     return html;
   };
@@ -95,7 +93,8 @@
       '<div class="linea"><span>AFP (' + String(x.cfg.afpLaboral).replace('.', ',') + '%)</span><span>' + bs(r.afp) + '</span></div>' +
       '<div class="linea"><span>Aporte Nacional Solidario</span><span>' + bs(r.ans) + '</span></div>' +
       '<div class="linea"><span>RC-IVA (13%)</span><span>' + bs(r.rcIva) + '</span></div>' +
-      '<div class="linea"><span>Anticipos y otros descuentos</span><span>' + bs(r.anticipos) + '</span></div>' +
+      '<div class="linea"><span>Anticipos</span><span>' + bs(r.anticipos) + '</span></div>' +
+      (r.otrosDescuentos ? '<div class="linea"><span>Otros descuentos</span><span>' + bs(r.otrosDescuentos) + '</span></div>' : '') +
       '<div class="linea t"><span>TOTAL EGRESOS</span><span>' + bs(egresos) + '</span></div></div></div>' +
       '<div class="liquido"><span>LÍQUIDO PAGABLE (I - E)</span><span>Bs ' + bs(r.liquido) + '</span></div>' +
       '<div class="letras">Son: ' + Calc.numeroALetras(r.liquido) + '</div>' +
@@ -167,7 +166,8 @@
       ['Gestora (aporte patronal) por pagar', t.gestoraPatronal],
       ['Caja de salud por pagar', t.cajaSalud],
       ['RC-IVA dependientes por pagar', t.rcIva],
-      ['Anticipos al personal / otros descuentos', t.anticipos],
+      ['Anticipos al personal', t.anticipos],
+      ['Otros descuentos al personal', t.otrosDescuentos],
       ['Sueldos por pagar', t.liquido],
       ['Previsión para indemnizaciones', t.provIndemnizacion],
       ['Aguinaldos por pagar', t.provAguinaldo]

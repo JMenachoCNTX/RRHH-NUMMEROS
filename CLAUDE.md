@@ -31,4 +31,6 @@ Jhonny (CONTAX / NUMMEROS, Santa Cruz, Bolivia). No es programador: Claude hace 
 - Personal y Planilla se ordenan por nombre o apellido (A-Z / Z-A); el orden de la planilla también define el orden de los archivos.
 - Planilla → "Datos del cliente": se pegan (Ctrl+V) las filas de la hoja de Google del cliente (Nombre(s), Apellido(s), Total Ganado, Fecha Fin, Horas extra, Hr/Extra) o se sube el Excel; solo se actualizan las horas extra de quienes vienen en la lista, con revisión antes de aplicar. Se descartó leer capturas (OCR): los números salían mal.
 - Excel del Banco Ganadero: cuenta y CI sin guiones, espacios ni puntos (el banco los rechaza).
+- Planilla: sin bono de producción ni dominicales (empresa de servicios); descuentos separados en Anticipos y Otros descuentos.
+- Generar archivos: cada tarjeta tiene "Ver" (js/visor.js) para previsualizar en pantalla completa antes de imprimir/descargar.
 - Menú lateral compacto (solo iconos) con el botón ☰; se despliega al pasar el cursor.

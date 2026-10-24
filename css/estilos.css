@@ -302,3 +302,19 @@ table.doc tfoot td { font-weight: 700; background: #EEF7F0; }
   :root[data-tema="oscuro"] .app.menu-mini .lateral:not(:hover) .logo-mini-claro { display: none !important; }
   :root[data-tema="oscuro"] .app.menu-mini .lateral:not(:hover) .logo-mini-oscuro { display: block !important; height: 30px; width: auto; }
 }
+
+/* Visor en pantalla completa */
+body.sin-scroll { overflow: hidden; }
+.visor { position: fixed; inset: 0; z-index: 120; background: var(--fondo); display: flex; flex-direction: column; }
+.visor-cab { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; padding: 12px 20px; border-bottom: 1px solid var(--borde); background: var(--superficie); }
+.visor-tit h3 { font-size: 22px; margin-top: 2px; }
+.visor-acc { gap: 6px; }
+.visor-zoom { font: 600 13px var(--display); min-width: 44px; text-align: center; }
+.visor-pest { margin: 0; padding: 10px 20px 0; }
+.visor-cuerpo { flex: 1; overflow: auto; padding: 20px; }
+.visor-lienzo.es-doc .vista-previa { max-height: none; overflow: visible; background: #c9d6cd; }
+.visor-lienzo.es-excel .tabla-caja { max-height: none; overflow: visible; display: inline-block; min-width: 100%; }
+.visor-tabla td, .visor-tabla th { white-space: nowrap; font-size: 13px; padding: 6px 10px; border-right: 1px solid var(--borde); }
+.visor-tabla th { position: sticky; top: 0; }
+@media (max-width: 700px) { .visor-acc [data-pc] span { display: none; } }
+.tabla tbody tr:hover td.fija { background: var(--campo); }
