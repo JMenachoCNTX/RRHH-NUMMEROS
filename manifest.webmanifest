@@ -1,0 +1,14 @@
+{
+  "name": "RRHH NUMMEROS",
+  "short_name": "RRHH",
+  "description": "Sistema de Recursos Humanos y planillas de sueldos — NUMMEROS by CONTAX",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#F4FAF5",
+  "theme_color": "#235347",
+  "lang": "es",
+  "icons": [
+    { "src": "assets/iconos/icono-app-principal-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "assets/iconos/icono-app-principal-512.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}

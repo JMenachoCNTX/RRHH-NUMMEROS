@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>RRHH NUMMEROS</title>
+  <meta name="description" content="Sistema de Recursos Humanos y planillas de sueldos — NUMMEROS by CONTAX">
+  <meta name="theme-color" content="#235347">
+  <link rel="icon" href="assets/iconos/favicon.ico">
+  <link rel="icon" type="image/svg+xml" href="assets/iconos/icono-app-principal.svg">
+  <link rel="apple-touch-icon" href="assets/iconos/icono-app-principal-180.png">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="preload" href="assets/fuentes/Akshar-700.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="css/estilos.css">
+</head>
+<body>
+  <div class="app" id="app">
+    <aside class="lateral" aria-label="Menú principal">
+      <a class="marca" href="#/inicio" aria-label="Inicio">
+        <img class="logo-claro" src="assets/logos/nummeros-logotipo-horizontal-principal.svg" alt="NUMMEROS">
+        <img class="logo-oscuro" src="assets/logos/nummeros-logotipo-horizontal-claro.svg" alt="NUMMEROS">
+        <small>Recursos Humanos</small>
+      </a>
+      <nav class="menu" id="menu"></nav>
+      <div class="pie-menu"><b>NUMMEROS by CONTAX</b><br>Sistemas a la medida de tu empresa.</div>
+    </aside>
+
+    <div class="principal">
+      <header class="barra">
+        <button class="btn btn-fantasma btn-menu" id="btnMenu" aria-label="Abrir menú">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+        </button>
+        <div class="titulo" id="tituloVista">Inicio</div>
+        <div class="selector-empresa">
+          <select id="selEmpresa" aria-label="Empresa activa"></select>
+        </div>
+        <button class="btn btn-fantasma btn-sm" id="btnTema" title="Cambiar modo claro / oscuro" aria-label="Cambiar modo claro u oscuro">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
+        </button>
+      </header>
+      <main class="contenido" id="vista" tabindex="-1"></main>
+    </div>
+  </div>
+
+  <div id="impresion"></div>
+
+  <script src="vendor/xlsx.full.min.js"></script>
+  <script src="js/calculos.js"></script>
+  <script src="js/util.js"></script>
+  <script src="js/datos.js"></script>
+  <script src="js/documentos.js"></script>
+  <script src="js/exportar.js"></script>
+  <script src="js/vistas.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
