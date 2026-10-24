@@ -122,6 +122,111 @@
     return faltan;
   };
 
+  /* ---------- Planilla para auditoría (copia exacta de "Sueldos_Septiembre.xlsx") ----------
+     Hoja "Calculo Planilla SUELDOS": título en Calibri, encabezados azul #152644 con letra blanca,
+     datos en Century Gothic 10, totales con fórmulas SUMA en gris #7E9197.
+     Abajo, la segunda tabla de aportes patronales y previsiones. */
+  X.AUD_COLS = ['Nro', 'Nombre Completo', 'C.I.', 'Nacionalidad', 'Fecha de Nacimiento', 'Sexo (F/M)', 'Ocupación', 'Fecha de Ingreso', 'Dias Trabajados', 'Horas Extras', 'Sueldo Base',
+    '(1) Haber Basico', '(2) Bono de Antiguedad', '(3) Bono de Producción', '(4) Subsidio de Frontera', '(5) Trabajo Extraordinario y Nocturno', '(6) Pago Dominical y Domingo Trabajado',
+    '(7) Total Horas Extras', '(8) Otros Bonos', '(9) TOTAL GANADO Suma (1 a 8)', '(10) Aporte a la GESTORA', '(11) Aporte Nacional Solidario', '(12) Anticipo Sueldos',
+    '(13) Otros Descuentos', '(14) RC-IVA', '(15) TOTAL DESCUENTOS Suma (10 a 14)', '(16) LIQUIDO PAGABLE (15 - 9)'];
+  X.AUD_COLS2 = ['Nro', 'Nombre Completo', 'Nacionalidad', 'Ocupación', 'TOTAL GANADO', 'Seguro de Salud (10%)', 'Prima por Riesgo Profesional (1,71%)',
+    'Aporte Patronal para Fondo de Vivienda Social (2%)', 'Aporte Patronal Solidario (3,5%)', 'TOTAL APORTE', 'Aguinaldo (8,33%)', 'Indemnnización (8,33%)', 'Indemnnización (8,33%)'];
+  /* Valores de cada fila (los usan el Excel y el PDF) */
+  X.filasAuditoria = function (calc) {
+    var t1 = [], t2 = [];
+    calc.filas.forEach(function (x, i) {
+      var e = x.emp, r = x.r, tg = r.totalGanado;
+      t1.push([i + 1, U.nombreCompleto(e), comoNumero(e.ci), U.mayus(e.nacionalidad || 'BOLIVIANA'), e.fechaNac, e.sexo || '', e.cargo || '', e.fechaIngreso,
+        r.dias, r.horasExtra, r.basico, r.salarioGanado, r.bonoAntiguedad, r.bonoProduccion || 0, 0, 0, r.dominicales || 0, r.montoHorasExtra, r.otrosBonos,
+        tg, r.afp, r.ans, r.anticipos, r.otrosDescuentos, r.rcIva, r.totalDescuentos, r.liquido]);
+      var f = r2(tg * 0.10), g = r2(tg * 0.0171), h = r2(tg * 0.02), ii = r2(tg * 0.035);
+      t2.push([i + 1, U.nombreCompleto(e), comoNumero(e.ci), e.cargo || '', tg, f, g, h, ii, r2(f + g + h + ii), r2(tg * 0.0833), r2(tg * 0.0833), r2(tg * 0.00833)]);
+    });
+    return { t1: t1, t2: t2 };
+  };
+  X.nombreArchivoAuditoria = function (p) { return 'Sueldos_' + Calc.MESES[p.mes - 1] + '.xlsx'; };
+  X.auditoria = function (empresa, p, calc) {
+    var ws = {}, merges = [], A = X.filasAuditoria(calc), n = A.t1.length;
+    var cel = function (c, r, v, s, z) {
+      if (v === null || v === undefined || v === '') { if (s) ws[XLSX.utils.encode_cell({ c: c, r: r })] = { t: 's', v: '', s: s }; return; }
+      var o = { t: typeof v === 'number' ? 'n' : 's', v: v, s: s || {} };
+      if (z) o.z = z;
+      ws[XLSX.utils.encode_cell({ c: c, r: r })] = o;
+    };
+    var fuente = function (nombre, sz, bold, color) { var f = { name: nombre, sz: sz }; if (bold) f.bold = true; if (color) f.color = { rgb: color }; return f; };
+    var borde = function (lados) { var b = {}; lados.forEach(function (l) { b[l] = { style: 'thin', color: { rgb: '000000' } }; }); return b; };
+    var estCab = function (c) {
+      var s = { font: fuente('Century Gothic', 10, true, 'FFFFFF'), fill: { patternType: 'solid', fgColor: { rgb: '152644' } },
+        alignment: { horizontal: 'center', vertical: 'center', wrapText: true } };
+      if (c === 0) s.border = borde(['left']);
+      return s;
+    };
+    var estTot = function (c, centrado, arriba) {
+      var s = { font: fuente('Calibri', 12, true), fill: { patternType: 'solid', fgColor: { rgb: '7E9197' } } };
+      if (centrado) s.alignment = { horizontal: 'center' };
+      if (arriba) s.border = borde(['top']);
+      return s;
+    };
+    /* Título */
+    cel(1, 1, U.mayus(empresa.razonSocial), { font: fuente('Calibri', 18, true) });
+    cel(1, 2, 'NIT: ' + (empresa.nit || ''), { font: fuente('Calibri', 18, true) });
+    [['PLANILLA DE SUELDOS Y SALARIOS', 22], ['CORRESPONDIENTE AL MES DE ' + U.mayus(Calc.MESES[p.mes - 1]) + ' ' + p.anio, 16], ['(EXPRESADO EN BOLIVIANOS)', 16]].forEach(function (t, i) {
+      cel(0, 4 + i, t[0], { font: fuente('Calibri', t[1], true), alignment: { horizontal: 'center' } });
+      merges.push({ s: { c: 0, r: 4 + i }, e: { c: 21, r: 4 + i } });
+    });
+    /* Tabla 1 */
+    X.AUD_COLS.forEach(function (t, c) { cel(c, 8, t, estCab(c)); });
+    var ini = 9;
+    A.t1.forEach(function (f, i) {
+      var r = ini + i;
+      f.forEach(function (v, c) {
+        var s = { font: c <= 21 ? fuente('Century Gothic', 10) : fuente('Calibri', 12) }, z = null;
+        if (c === 0) s.border = borde(['left']);
+        if (c === 4 || c === 7) { v = v ? serialExcel(v) : null; z = 'mm-dd-yy'; }
+        else if (c >= 8 && c <= 21 || c === 24 || c === 26) z = '#,##0.00';
+        cel(c, r, v, s, z);
+      });
+    });
+    var fin = ini + n - 1, rt = fin + 2; // una fila vacía y luego los totales
+    for (var c = 0; c <= 26; c++) {
+      var col = XLSX.utils.encode_col(c);
+      if (c >= 9) {
+        var suma = A.t1.reduce(function (s, f) { return s + (Number(f[c]) || 0); }, 0);
+        ws[col + (rt + 1)] = { t: 'n', v: r2(suma), f: 'SUM(' + col + (ini + 1) + ':' + col + (fin + 1) + ')', z: '#,##0.00', s: estTot(c) };
+      } else cel(c, rt, '', estTot(c, c <= 7, c <= 7));
+    }
+    /* Tabla 2: aportes patronales y previsiones (5 filas más abajo, como el modelo) */
+    var cab2 = rt + 5;
+    X.AUD_COLS2.forEach(function (t, c) { cel(c, cab2, t, estCab(c)); });
+    var ini2 = cab2 + 1;
+    A.t2.forEach(function (f, i) {
+      f.forEach(function (v, c) {
+        var s = { font: fuente('Century Gothic', 10) };
+        if (c === 0) s.border = borde(['left']);
+        cel(c, ini2 + i, v, s, c >= 4 ? '#,##0.00' : null);
+      });
+    });
+    var fin2 = ini2 + n - 1, rt2 = fin2 + 1;
+    for (var c2 = 0; c2 <= 12; c2++) {
+      var col2 = XLSX.utils.encode_col(c2);
+      if (c2 >= 4) {
+        var suma2 = A.t2.reduce(function (s, f) { return s + (Number(f[c2]) || 0); }, 0);
+        ws[col2 + (rt2 + 1)] = { t: 'n', v: r2(suma2), f: 'SUM(' + col2 + (ini2 + 1) + ':' + col2 + (fin2 + 1) + ')', z: '#,##0.00', s: estTot(c2, true, true) };
+      } else cel(c2, rt2, '', estTot(c2, true, true));
+    }
+    ws['!ref'] = XLSX.utils.encode_range({ s: { c: 0, r: 1 }, e: { c: 26, r: rt2 } });
+    ws['!merges'] = merges;
+    var anchos = { 1: 30.33, 2: 12.16, 3: 19.83, 4: 13.33, 5: 10, 6: 18.83, 7: 10.5, 14: 9.83, 15: 9.66 };
+    ws['!cols'] = []; for (var k = 0; k <= 26; k++) ws['!cols'].push({ width: anchos[k] || 8.83 });
+    var altos = {}; altos[1] = 24; altos[2] = 24; altos[4] = 29; altos[5] = 20; altos[6] = 21; altos[8] = 70; altos[cab2] = 88;
+    ws['!rows'] = []; for (var rr = 0; rr <= rt2; rr++) ws['!rows'].push(altos[rr] ? { hpt: altos[rr] } : {});
+    ws['!margins'] = { left: 0.7, right: 0.7, top: 0.75, bottom: 0.75, header: 0.3, footer: 0.3 };
+    var wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Calculo Planilla SUELDOS');
+    XLSX.writeFile(wb, X.nombreArchivoAuditoria(p));
+  };
+
   /* ---------- Ministerio de Trabajo (planilla trimestral / mensual OVT) ---------- */
   X.ministerio = function (empresa, p, calc) {
     var cab = ['Nro', 'Tipo de documento de identidad', 'Número de documento de identidad', 'Lugar de expedición', 'Fecha de nacimiento', 'Apellido Paterno',

@@ -220,5 +220,153 @@
     return hoja(cuerpo);
   };
 
+  /* ---------- Planilla para auditoría (mismas columnas que el Excel de auditoría) ---------- */
+  Doc.auditoria = function (empresa, p, calc) {
+    var periodo = Calc.MESES[p.mes - 1] + ' ' + p.anio, A = X.filasAuditoria(calc);
+    var sub = 'CORRESPONDIENTE AL MES DE ' + U.mayus(periodo) + ' | (EXPRESADO EN BOLIVIANOS)';
+    var celda = function (v, c, tipoFecha, desdeNum) {
+      if (tipoFecha.indexOf(c) >= 0) return '<td class="c">' + (v ? U.fecha(v) : '') + '</td>';
+      if (c >= desdeNum && typeof v === 'number') return '<td class="n">' + bs(v) + '</td>';
+      if (c === 0) return '<td class="c">' + v + '</td>';
+      return '<td' + (c === 1 ? ' class="nom"' : c === 6 || c === 3 && desdeNum === 4 ? ' class="cargo"' : '') + '>' + e(v) + '</td>';
+    };
+    var suma = function (filas, c) { return filas.reduce(function (s, f) { return s + (Number(f[c]) || 0); }, 0); };
+    var t1 = '<table class="dn-t dn-mini dn-aud"><thead><tr>' + X.AUD_COLS.map(function (t) { return '<th>' + e(t) + '</th>'; }).join('') + '</tr></thead><tbody>' +
+      A.t1.map(function (f) { return '<tr>' + f.map(function (v, c) { return celda(v, c, [4, 7], 8); }).join('') + '</tr>'; }).join('') +
+      '</tbody><tfoot><tr><td colspan="9">TOTALES</td>' + X.AUD_COLS.slice(9).map(function (_, k) { return '<td class="n">' + bs(suma(A.t1, k + 9)) + '</td>'; }).join('') + '</tr></tfoot></table>';
+    var t2 = '<table class="dn-t dn-mini dn-aud dn-aud2"><thead><tr>' + X.AUD_COLS2.map(function (t) { return '<th>' + e(t) + '</th>'; }).join('') + '</tr></thead><tbody>' +
+      A.t2.map(function (f) { return '<tr>' + f.map(function (v, c) { return c === 2 ? '<td class="c">' + e(v) + '</td>' : celda(v, c, [], 4); }).join('') + '</tr>'; }).join('') +
+      '</tbody><tfoot><tr><td colspan="4">TOTALES</td>' + X.AUD_COLS2.slice(4).map(function (_, k) { return '<td class="n">' + bs(suma(A.t2, k + 4)) + '</td>'; }).join('') + '</tr></tfoot></table>';
+    return hoja(encabezado(empresa, 'Planilla para Auditoría', periodo) + titulo('Planilla de sueldos y salarios', sub) + t1, { horizontal: true }) +
+      hoja(encabezado(empresa, 'Planilla para Auditoría', periodo) + titulo('Aportes patronales y previsiones', sub) + t2 +
+        '<div class="dn-firmas">' + firmaRepresentante(empresa) + '</div>', { horizontal: true });
+  };
+
+  /* ---------- Resumen para gerencia (con gráficos) ----------
+     Para que el gerente vea de un vistazo cuánto se paga antes de cargar al banco. */
+  var VERDE = '#235347', VERDE_CLARO = '#8EB69B';
+  function pct(a, b) { return b ? (a / b * 100).toFixed(1).replace('.', ',') + ' %' : '—'; }
+  /* Barras horizontales: [{txt, v, sub}] — un solo color, valor escrito al lado */
+  function barrasH(items, opc) {
+    opc = opc || {};
+    var max = Math.max.apply(null, items.map(function (i) { return i.v; }).concat([1]));
+    var W = 568, etq = opc.etiqueta || 180, val = 92, h = opc.alto || 15, gap = 5, ancho = W - etq - val - 8;
+    var H = items.length * (h + gap);
+    var svg = '<svg class="dn-graf" viewBox="0 0 ' + W + ' ' + H + '" width="100%" role="img" aria-label="' + e(opc.titulo || '') + '">';
+    items.forEach(function (it, i) {
+      var y = i * (h + gap), w = Math.max(2, it.v / max * ancho);
+      svg += '<g><title>' + e(it.txt) + ': Bs ' + bs(it.v) + (it.sub ? ' (' + e(it.sub) + ')' : '') + '</title>' +
+        '<text x="0" y="' + (y + h / 2 + 3) + '" class="g-etq">' + e(it.txt) + '</text>' +
+        '<rect x="' + etq + '" y="' + y + '" width="' + w.toFixed(1) + '" height="' + h + '" rx="2" fill="' + (it.color || VERDE) + '"/>' +
+        '<text x="' + (etq + w + 5).toFixed(1) + '" y="' + (y + h / 2 + 3) + '" class="g-val">' + bs(it.v) + (it.sub ? ' <tspan class="g-sub">' + e(it.sub) + '</tspan>' : '') + '</text></g>';
+    });
+    return svg + '</svg>';
+  }
+  /* Barra apilada de una sola fila con las partes de un total */
+  function barraPartes(partes, total) {
+    var W = 568, H = 22, x = 0;
+    var svg = '<svg class="dn-graf" viewBox="0 0 ' + W + ' ' + H + '" width="100%" role="img" aria-label="Composición">';
+    partes.forEach(function (p) {
+      var w = total ? p.v / total * W : 0; if (w <= 0) return;
+      svg += '<g><title>' + e(p.txt) + ': Bs ' + bs(p.v) + ' (' + pct(p.v, total) + ')</title><rect x="' + x.toFixed(1) + '" y="0" width="' + Math.max(0, w - 2).toFixed(1) + '" height="' + H + '" rx="2" fill="' + p.color + '"/></g>';
+      x += w;
+    });
+    return svg + '</svg>';
+  }
+  Doc.resumenGerente = function (empresa, p, calc, anterior) {
+    var t = calc.totales, periodo = Calc.MESES[p.mes - 1] + ' ' + p.anio, r2 = Calc.r2;
+    var costo = function (tt) { return r2(tt.totalGanado + tt.cajaSalud + tt.gestoraPatronal + tt.provAguinaldo + tt.provIndemnizacion); };
+    var costoTotal = costo(t);
+    var heTotal = r2(t.montoHorasExtra), conHE = calc.filas.filter(function (x) { return x.r.horasExtra > 0; }).length;
+    var nPagar = calc.filas.filter(function (x) { return x.r.liquido > 0; }).length;
+    /* KPIs */
+    var kpi = function (txt, v, sub, grande) { return '<div class="dn-kpi' + (grande ? ' grande' : '') + '"><span>' + txt + '</span><b>' + v + '</b>' + (sub ? '<em>' + sub + '</em>' : '') + '</div>'; };
+    var kpis = '<div class="dn-kpis">' +
+      kpi('Total a transferir por el banco', 'Bs ' + bs(t.liquido), nPagar + ' pago(s) · fecha ' + U.fecha(p.fechaPago || U.hoyIso()), true) +
+      kpi('Total ganado (sueldos)', 'Bs ' + bs(t.totalGanado), calc.filas.length + ' persona(s)') +
+      kpi('Horas extra', 'Bs ' + bs(heTotal), conHE + ' persona(s) · ' + pct(heTotal, t.totalGanado) + ' del ganado') +
+      kpi('Costo total para la empresa', 'Bs ' + bs(costoTotal), 'sueldos + aportes + previsiones') + '</div>';
+    /* ¿A dónde va el dinero? */
+    var partes = [
+      { txt: 'Líquido a pagar al personal', v: t.liquido, color: VERDE, nota: 'se transfiere por el banco' },
+      { txt: 'Descuentos al personal', v: r2(t.totalDescuentos), color: '#557363', nota: 'Gestora, ANS, RC-IVA, anticipos y otros' },
+      { txt: 'Aportes patronales', v: r2(t.cajaSalud + t.gestoraPatronal), color: VERDE_CLARO, nota: 'Caja ' + calc.cfg.cajaSalud + '% + Gestora ' + String(calc.cfg.gestoraPatronal).replace('.', ',') + '%' },
+      { txt: 'Previsiones (aguinaldo + indemnización)', v: r2(t.provAguinaldo + t.provIndemnizacion), color: '#DAF1DE', nota: 'se reservan, no se pagan este mes' }
+    ];
+    var leyenda = '<div class="dn-leyenda">' + partes.map(function (q) {
+      return '<div><i style="background:' + q.color + '"></i><span>' + e(q.txt) + '<em>' + e(q.nota) + '</em></span><b>Bs ' + bs(q.v) + '</b><small>' + pct(q.v, costoTotal) + '</small></div>';
+    }).join('') + '</div>';
+    var composicion = '<h3 class="dn-sub">¿Cómo se reparte el costo de la planilla? <span>Bs ' + bs(costoTotal) + '</span></h3>' + barraPartes(partes, costoTotal) + leyenda;
+    /* Pagos y retenciones: a quién va cada boliviano */
+    var destinos = [
+      { txt: 'Personal (líquido pagable)', v: t.liquido },
+      { txt: 'Gestora Pública (laboral + ANS + patronal)', v: r2(t.afp + t.ans + t.gestoraPatronal) },
+      { txt: 'Caja de Salud (' + calc.cfg.cajaSalud + '%)', v: t.cajaSalud },
+      { txt: 'Impuestos Nacionales (RC-IVA)', v: t.rcIva },
+      { txt: 'Anticipos y otros descuentos', v: r2(t.anticipos + t.otrosDescuentos) }
+    ].filter(function (d) { return d.v > 0; });
+    var aQuien = '<h3 class="dn-sub">¿A quién se le paga este mes?</h3>' + barrasH(destinos, { etiqueta: 200, titulo: 'Pagos del mes por destino' });
+    /* Por banco */
+    var porBanco = {};
+    calc.filas.forEach(function (x) {
+      if (x.r.liquido <= 0) return;
+      var dp = X.destinoPago(x.emp), b = D.bancoPorAbrev(dp.banco), k = b ? b.abrev : 'SIN BANCO';
+      porBanco[k] = porBanco[k] || { txt: b ? (b.nombre || b.abrev) : 'Sin banco / cuenta', n: 0, v: 0 };
+      porBanco[k].n++; porBanco[k].v = r2(porBanco[k].v + x.r.liquido);
+    });
+    var bancos = Object.keys(porBanco).map(function (k) { var b = porBanco[k]; return { txt: b.txt, v: b.v, sub: b.n + ' pers.', ganadero: k === 'GANADERO' }; })
+      .sort(function (a, b) { return b.v - a.v; });
+    var tablaBancos = '<table class="dn-t"><thead><tr><th>Banco del trabajador</th><th class="n">Personas</th><th class="n">Monto Bs</th><th class="n">%</th></tr></thead><tbody>' +
+      bancos.map(function (b) { return '<tr><td>' + e(b.txt) + (b.ganadero ? ' <span class="dn-gris">(misma entidad)</span>' : ' <span class="dn-gris">(ACH)</span>') + '</td><td class="n">' + b.sub.replace(' pers.', '') + '</td><td class="n">' + bs(b.v) + '</td><td class="n">' + pct(b.v, t.liquido) + '</td></tr>'; }).join('') +
+      '</tbody><tfoot><tr><td>TOTAL A TRANSFERIR</td><td class="n">' + nPagar + '</td><td class="n">' + bs(t.liquido) + '</td><td class="n">100 %</td></tr></tfoot></table>';
+    /* Comparación con el mes anterior */
+    var comp;
+    if (anterior) {
+      var ta = anterior.calc.totales, pa = Calc.MESES[anterior.p.mes - 1] + ' ' + anterior.p.anio;
+      var filaC = function (txt, a, b, esNum) {
+        var d = r2(b - a), signo = d > 0 ? '▲ +' : d < 0 ? '▼ −' : '= ';
+        var f = function (v) { return esNum ? String(v) : bs(v); };
+        return '<tr><td>' + txt + '</td><td class="n">' + f(a) + '</td><td class="n">' + f(b) + '</td><td class="n">' + signo + (esNum ? Math.abs(d) : bs(Math.abs(d))) + (a && !esNum ? ' <span class="dn-gris">(' + pct(Math.abs(d), a) + ')</span>' : '') + '</td></tr>';
+      };
+      comp = '<h3 class="dn-sub">Comparación con el mes anterior</h3><table class="dn-t"><thead><tr><th>Concepto</th><th class="n">' + e(pa) + '</th><th class="n">' + e(periodo) + '</th><th class="n">Diferencia</th></tr></thead><tbody>' +
+        filaC('Personas en planilla', anterior.calc.filas.length, calc.filas.length, true) +
+        filaC('Total ganado', ta.totalGanado, t.totalGanado) + filaC('Horas extra', ta.montoHorasExtra, t.montoHorasExtra) +
+        filaC('Descuentos al personal', ta.totalDescuentos, t.totalDescuentos) + filaC('Líquido a transferir', ta.liquido, t.liquido) +
+        filaC('Costo total para la empresa', costo(ta), costoTotal) + '</tbody></table>';
+    } else comp = '<h3 class="dn-sub">Comparación con el mes anterior</h3><p class="dn-glosa">No hay planilla del mes anterior en el sistema para comparar.</p>';
+    /* Puntos a revisar antes de pagar */
+    var avisos = [];
+    if (p.estado !== 'cerrada') avisos.push('La planilla todavía está en <b>borrador</b>: los montos pueden cambiar.');
+    var sinCuenta = calc.filas.filter(function (x) { var dp = X.destinoPago(x.emp); return x.r.liquido > 0 && (!dp.cuenta || !D.bancoPorAbrev(dp.banco)); });
+    if (sinCuenta.length) avisos.push('Sin banco o cuenta: <b>' + e(sinCuenta.map(function (x) { return U.nombreCompleto(x.emp); }).join(', ')) + '</b>.');
+    var terceros = calc.filas.filter(function (x) { return X.destinoPago(x.emp).tercero; });
+    if (terceros.length) avisos.push('Pago a tercero autorizado (con carta): <b>' + e(terceros.map(function (x) { return U.nombreCompleto(x.emp) + ' → ' + X.destinoPago(x.emp).nombre; }).join(' · ')) + '</b>.');
+    var parcial = calc.filas.filter(function (x) { return x.r.dias < 30; });
+    if (parcial.length) avisos.push('Con menos de 30 días: <b>' + e(parcial.map(function (x) { return U.nombreCompleto(x.emp) + ' (' + x.r.dias + ')'; }).join(', ')) + '</b>.');
+    if (t.anticipos > 0) avisos.push('Se descuentan anticipos por <b>Bs ' + bs(t.anticipos) + '</b>.');
+    var revisar = '<h3 class="dn-sub">Para revisar antes de cargar al banco</h3>' + (avisos.length ? '<ul class="dn-lista">' + avisos.map(function (a) { return '<li>' + a + '</li>'; }).join('') + '</ul>'
+      : '<p class="dn-glosa">✓ Todo en orden: todos tienen banco y cuenta, y la planilla está cerrada.</p>');
+    /* Página 2: por persona */
+    var maxG = Math.max.apply(null, calc.filas.map(function (x) { return x.r.totalGanado; }).concat([1]));
+    var filasP = calc.filas.slice().sort(function (a, b) { return b.r.liquido - a.r.liquido; }).map(function (x) {
+      var r = x.r, base = r2(r.salarioGanado + r.bonoAntiguedad), extra = r2(r.montoHorasExtra + r.otrosBonos + r.bonoProduccion + r.dominicales);
+      var W = 150, w1 = base / maxG * W, w2 = extra / maxG * W;
+      var barra = '<svg viewBox="0 0 ' + W + ' 9" width="' + W + 'pt" height="9pt"><title>Sueldo Bs ' + bs(base) + ' · Horas extra y bonos Bs ' + bs(extra) + '</title>' +
+        '<rect x="0" y="0" width="' + Math.max(0, w1 - (w2 > 0 ? 1 : 0)).toFixed(1) + '" height="9" rx="1.5" fill="' + VERDE + '"/>' +
+        (w2 > 0 ? '<rect x="' + (w1 + 1).toFixed(1) + '" y="0" width="' + Math.max(0.5, w2 - 1).toFixed(1) + '" height="9" rx="1.5" fill="' + VERDE_CLARO + '"/>' : '') + '</svg>';
+      return '<tr><td class="nom">' + e(U.mayus(U.nombreCompleto(x.emp))) + '</td><td class="cargo">' + e(x.emp.cargo || '') + '</td><td>' + barra + '</td><td class="n">' + bs(r.totalGanado) +
+        '</td><td class="n">' + (r.horasExtra ? r.horasExtra + ' h' : '—') + '</td><td class="n">' + bs(r.totalDescuentos) + '</td><td class="n fuerte">' + bs(r.liquido) + '</td></tr>';
+    }).join('');
+    var porPersona = '<h3 class="dn-sub">¿Cuánto recibe cada persona? <span>de mayor a menor</span></h3>' +
+      '<div class="dn-leyenda dn-ley-linea"><div><i style="background:' + VERDE + '"></i><span>Sueldo y antigüedad</span></div><div><i style="background:' + VERDE_CLARO + '"></i><span>Horas extra y bonos</span></div></div>' +
+      '<table class="dn-t dn-mini dn-persona"><thead><tr><th>Nombre</th><th>Cargo</th><th>Composición del ganado</th><th>Total ganado</th><th>Horas extra</th><th>Descuentos</th><th>Líquido</th></tr></thead><tbody>' + filasP +
+      '</tbody><tfoot><tr><td colspan="3">TOTAL</td><td class="n">' + bs(t.totalGanado) + '</td><td class="n">' + (t.horasExtra || 0) + ' h</td><td class="n">' + bs(t.totalDescuentos) + '</td><td class="n">' + bs(t.liquido) + '</td></tr></tfoot></table>';
+    var sub = U.mayus(empresa.razonSocial) + ' | ' + periodo + ' | (Bs)';
+    return hoja(encabezado(empresa, 'Resumen para Gerencia', periodo) + titulo('Resumen de la planilla de sueldos', sub) + kpis + composicion + aQuien +
+        '<div class="dn-dos dn-dos-gr"><div><h3 class="dn-sub">Pago por banco</h3>' + tablaBancos + '</div><div>' + revisar + '</div></div><div class="dn-comp">' + comp + '</div>') +
+      hoja(encabezado(empresa, 'Resumen para Gerencia', periodo) + titulo('Detalle por persona', sub) + porPersona +
+        '<div class="dn-firmas">' + firma('', '', 'Elaborado — CONTAX') + firma(empresa.representante || '', '', 'Aprobado — ' + (empresa.cargoRepresentante || 'Gerente')) + '</div>');
+  };
+
   global.Doc = Doc;
 })(window);

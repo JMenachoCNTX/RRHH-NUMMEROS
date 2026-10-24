@@ -469,3 +469,48 @@ body.sin-scroll { overflow: hidden; }
 .doc-n.horizontal .dn-firmas { margin-top: 30pt; }
 .doc-n.horizontal .dn-firma { padding-top: 5pt; }
 .doc-n.horizontal .dn-titulo { margin: 8pt 0 7pt; }
+
+/* Planilla para auditoría (27 columnas en hoja horizontal) */
+.dn-aud th { font-size: 4.6pt; padding: 2.5pt 1.4pt; text-transform: none; }
+.dn-aud td, .dn-aud td.n, .dn-aud td.c, .dn-aud tfoot td, .dn-aud tfoot td.n { font-size: 5pt; padding: 1.6pt 1.4pt; }
+.dn-aud td.nom { font-size: 5pt; }
+.dn-aud td.cargo { max-width: 52pt; font-size: 4.8pt; }
+.dn-aud2 th { font-size: 6.4pt; padding: 3pt 4pt; }
+.dn-aud2 td, .dn-aud2 td.n, .dn-aud2 td.c, .dn-aud2 tfoot td, .dn-aud2 tfoot td.n { font-size: 6.6pt; padding: 2pt 4pt; }
+.dn-aud2 td.cargo { max-width: 120pt; font-size: 6.4pt; }
+
+/* Resumen para gerencia */
+.dn-kpis { display: grid; grid-template-columns: 1.35fr 1fr 1fr 1fr; gap: 6pt; margin-bottom: 4pt; }
+.dn-kpi { border: 1pt solid var(--dn-sep); border-top: 2.5pt solid var(--dn-sec); padding: 6pt 7pt; display: flex; flex-direction: column; gap: 2pt; }
+.dn-kpi span { font-size: 6.4pt; color: var(--dn-gris); text-transform: uppercase; letter-spacing: .04em; }
+.dn-kpi b { font: 700 12.5pt Akshar, "Arial Narrow", sans-serif; color: var(--dn-osc); white-space: nowrap; }
+.dn-kpi em { font-style: normal; font-size: 6.4pt; color: var(--dn-gris); }
+.dn-kpi.grande { background: var(--dn-osc); border-color: var(--dn-osc); }
+.dn-kpi.grande span, .dn-kpi.grande em { color: #DAF1DE; }
+.dn-kpi.grande b { color: #fff; font-size: 15pt; }
+.dn-sub { font: 700 9.5pt Akshar, "Arial Narrow", sans-serif; color: var(--dn-osc); margin: 11pt 0 5pt; display: flex; justify-content: space-between; align-items: baseline; border-bottom: 1pt solid var(--dn-sep); padding-bottom: 2pt; }
+.dn-sub span { font: 400 7.5pt Questrial, sans-serif; color: var(--dn-gris); }
+.dn-graf { display: block; overflow: visible; }
+.dn-graf .g-etq { font: 400 7.4px Questrial, "Century Gothic", sans-serif; fill: #163832; }
+.dn-graf .g-val { font: 600 7.6px Akshar, "Arial Narrow", sans-serif; fill: #163832; }
+.dn-graf .g-sub { font: 400 6.6px Questrial, sans-serif; fill: #557363; }
+.dn-leyenda { display: grid; grid-template-columns: 1fr 1fr; gap: 3pt 16pt; margin-top: 6pt; }
+.dn-leyenda div { display: grid; grid-template-columns: 9pt 1fr auto 34pt; align-items: center; gap: 5pt; font-size: 7.4pt; }
+.dn-leyenda i { width: 9pt; height: 9pt; border-radius: 2pt; border: .5pt solid #b8c7be; }
+.dn-leyenda span em { display: block; font-style: normal; font-size: 6pt; color: var(--dn-gris); }
+.dn-leyenda b { font: 600 8pt Akshar, sans-serif; white-space: nowrap; }
+.dn-leyenda small { font-size: 6.6pt; color: var(--dn-gris); text-align: right; }
+.dn-ley-linea { display: flex; gap: 16pt; margin: 0 0 5pt; }
+.dn-ley-linea div { display: flex; }
+.dn-dos-gr { margin-top: 2pt; }
+.dn-dos-gr .dn-t th, .dn-dos-gr .dn-t td { font-size: 7.4pt; padding: 3pt 5pt; }
+.dn-dos-gr .dn-t td.n, .dn-dos-gr .dn-t tfoot td { font-size: 7.6pt; }
+.dn-lista { margin: 0; padding-left: 12pt; font-size: 7.4pt; line-height: 1.45; }
+.dn-lista li { margin-bottom: 2pt; }
+.dn-persona td.nom { font-size: 6.6pt; }
+.dn-persona td, .dn-persona td.n { font-size: 6.8pt; padding: 2pt 3pt; }
+.dn-persona td svg { display: block; }
+.dn-persona td.cargo { max-width: 110pt; font-size: 6.4pt; }
+.dn-comp .dn-t th, .dn-comp .dn-t td { font-size: 7.6pt; padding: 3pt 7pt; }
+.dn-comp .dn-t td.n { font-size: 8pt; }
+.dn-aud2 td.nom { font-size: 6.6pt; }

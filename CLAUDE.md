@@ -40,6 +40,9 @@ Jhonny (CONTAX / NUMMEROS, Santa Cruz, Bolivia). No es programador: Claude hace 
 - Pago a tercero autorizado (ficha del trabajador → "Pago a un tercero autorizado"): solo cambia nombre/CI/banco/cuenta en el Excel del Banco Ganadero; boletas, planillas, certificados y entidades usan siempre los datos del trabajador. Los datos del tercero los carga Jhonny en su navegador: nunca ponerlos en el código (repo público).
 - Excel del Banco Ganadero: cuenta y CI sin guiones, espacios ni puntos (el banco los rechaza).
 - Planilla: sin bono de producción ni dominicales (empresa de servicios); descuentos separados en Anticipos y Otros descuentos.
+- Generar archivos → "Resumen para gerencia" (Doc.resumenGerente): KPIs, reparto del costo, a quién se paga, pago por banco, puntos a revisar, comparación con el mes anterior y detalle por persona (gráficos SVG en línea, colores #235347 / #8EB69B).
+- Generar archivos → "Planilla para auditoría": copia exacta del Excel que pide auditoría (`Sueldos_{Mes}.xlsx`, hoja "Calculo Planilla SUELDOS", encabezados #152644, totales #7E9197 con fórmulas SUMA, 2ª tabla de aportes patronales). Se respetan las rarezas del modelo: en la 2ª tabla la columna "Nacionalidad" lleva el C.I. y la última "Indemnnización (8,33%)" es el 0,833 % del ganado. X.auditoria + Doc.auditoria (PDF).
+- Pendiente (Jhonny dijo "luego"): subir documentos de la empresa (NIT, Matrícula, ROE) y del personal (CI, contrato).
 - Generar archivos: cada tarjeta tiene "Ver" (js/visor.js) para previsualizar en pantalla completa antes de imprimir/descargar.
 - Planilla → botón "Limpiar": borra días, horas extra, bonos, F-110 y descuentos (mantiene personal, fecha y glosa).
 - Config versionConfig 3 fuerza horas extra al 50 % sin redondear (como el cliente) una vez en cada navegador.

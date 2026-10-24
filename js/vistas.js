@@ -27,6 +27,7 @@
     salud: '<path d="M12 21s-8-4.5-8-11a5 5 0 0 1 8-4 5 5 0 0 1 8 4c0 6.5-8 11-8 11z"/><path d="M12 9v6M9 12h6"/>',
     impuesto: '<path d="M6 3h12v18l-3-2-3 2-3-2-3 2z"/><path d="M9 8h6M9 12h6"/>',
     boleta: '<rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h4"/>',
+    grafico: '<path d="M4 20V4M4 20h16"/><path d="M8 16v-4M12 16V8M16 16v-6"/>',
     ojo: '<path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>',
     expandir: '<path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/>',
     libro: '<path d="M4 4h7a3 3 0 0 1 3 3v14a2 2 0 0 0-2-2H4z"/><path d="M20 4h-7a3 3 0 0 0-3 3v14a2 2 0 0 1 2-2h8z"/>'
@@ -745,6 +746,8 @@
     var ver = function (id) { return '<button class="btn btn-sm" data-ver="' + id + '" title="Ver en pantalla completa">' + ic('ojo') + 'Ver</button>'; };
 
     h += '<div class="seccion"><h2>Para la empresa</h2><div class="rejilla r2">' +
+      tarjeta('grafico', 'Resumen para gerencia', 'Cuánto se paga, a quién y a qué banco, con gráficos y comparación con el mes anterior. Para aprobar antes de cargar al banco.', ver('ger') + b('gerPdf', 'Imprimir / PDF', 'imprimir', true)) +
+      tarjeta('certificado', 'Planilla para auditoría', 'El mismo Excel que pide auditoría cada mes (Sueldos_' + Calc.MESES[p.mes - 1] + '.xlsx), también en PDF.', ver('aud') + b('audXls', 'Descargar Excel', 'excel', true) + b('audPdf', 'Imprimir / PDF', 'imprimir')) +
       tarjeta('planilla', 'Planilla de sueldos y salarios', 'La planilla oficial con firmas, en hoja horizontal.', ver('pl') + b('plPdf', 'Imprimir / PDF', 'imprimir', true) + b('plXls', 'Excel', 'excel')) +
       tarjeta('boleta', 'Boletas de pago', 'Una boleta por trabajador, dos por hoja, con el líquido en letras.', ver('boletas') + b('boletas', 'Imprimir / PDF', 'imprimir', true)) +
       tarjeta('salud', 'Aportes y previsiones', 'Caja de salud, Gestora patronal, indemnización y aguinaldo.', ver('pat') + b('patPdf', 'Imprimir / PDF', 'imprimir', true)) +
@@ -762,6 +765,12 @@
     cont.innerHTML = h;
     U.$('#selPl', cont).onchange = function (ev) { location.hash = '#/generar/' + ev.target.value; };
 
+    /* Planilla del mes anterior (para comparar en el resumen de gerencia) */
+    var anterior = function () {
+      var m = p.mes - 1, a = p.anio; if (m < 1) { m = 12; a--; }
+      var pa = D.planillaDe(p.empresaId || emp.id, a, m);
+      return pa ? { p: pa, calc: D.calcularPlanilla(pa) } : null;
+    };
     var fecha = p.fechaPago || U.hoyIso(), glosa = p.glosa || ('Sueldo ' + nombrePeriodo(p));
     var avisoFaltan = function (lista, que) {
       if (lista && lista.length) U.modal('Archivo descargado, pero revisa', '<div class="alerta aviso"><span>A estas personas les falta ' + que + ': <b>' + e(lista.join(', ')) + '</b>. Complétalo en Personal y vuelve a descargar.</span></div>');
@@ -769,6 +778,9 @@
     };
     var acciones = {
       plPdf: function () { Doc.imprimir(Doc.planillaSueldos(emp, p, calc), true); },
+      gerPdf: function () { Doc.imprimir(Doc.resumenGerente(emp, p, calc, anterior())); },
+      audXls: function () { X.auditoria(emp, p, calc); U.aviso('Archivo descargado'); },
+      audPdf: function () { Doc.imprimir(Doc.auditoria(emp, p, calc), true); },
       plXls: function () { X.planillaSueldos(emp, p, calc); U.aviso('Archivo descargado'); },
       boletas: function () { Doc.imprimir(Doc.boletas(emp, p, calc)); },
       patPdf: function () { Doc.imprimir(Doc.planillaPatronal(emp, p, calc), true); },
@@ -792,6 +804,11 @@
       pl: function () {
         var c = xl(function () { X.planillaSueldos(emp, p, calc); });
         return { titulo: 'Planilla de sueldos y salarios' + per, vistas: [{ nombre: 'Documento', html: Doc.planillaSueldos(emp, p, calc) }, { nombre: 'Excel', libro: c.wb }], acciones: [accImprimir('plPdf'), accExcel('plXls', 'Excel')] };
+      },
+      ger: function () { return { titulo: 'Resumen para gerencia' + per, vistas: [{ nombre: 'Resumen', html: Doc.resumenGerente(emp, p, calc, anterior()) }], acciones: [accImprimir('gerPdf')] }; },
+      aud: function () {
+        var c = xl(function () { X.auditoria(emp, p, calc); });
+        return { titulo: 'Planilla para auditoría' + per, vistas: [{ nombre: 'Excel', libro: c.wb }, { nombre: 'PDF', html: Doc.auditoria(emp, p, calc) }], acciones: [accExcel('audXls'), { texto: 'Imprimir / PDF', icono: 'imprimir', fn: acciones.audPdf }] };
       },
       boletas: function () { return { titulo: 'Boletas de pago' + per, vistas: [{ nombre: 'Boletas', html: Doc.boletas(emp, p, calc) }], acciones: [accImprimir('boletas')] }; },
       pat: function () { return { titulo: 'Aportes y previsiones' + per, vistas: [{ nombre: 'Documento', html: Doc.planillaPatronal(emp, p, calc) }], acciones: [accImprimir('patPdf')] }; },
