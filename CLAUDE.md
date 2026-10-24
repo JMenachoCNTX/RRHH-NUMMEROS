@@ -32,6 +32,7 @@ Jhonny (CONTAX / NUMMEROS, Santa Cruz, Bolivia). No es programador: Claude hace 
 - TODOS los documentos (js/documentos.js, clases .doc-n / .dn-*) copian el formato de estados financieros CONTAX · NUMMEROS: carta, márgenes 18/22 pt, Questrial + Akshar,
   verde #163832 (barras), #6A8476 (segundo nivel), gris #557363, separadores #DAF1DE. Encabezado: NUMMEROS + CONTAX (mismo tamaño) y lema; barra con logo del cliente,
   "RAZÓN | NIT | periodo", título corto e isotipos N y CONTAX; título centrado; firmas; pie "Elaborado por CONTAX · NUMMEROS" + isotipos.
+- Firmas: la representante legal (Empresas → Representante legal + C.I. + cargo) firma TODOS los documentos, aunque haya otro gerente general en planilla. "Elaborado por" (Empresas → Elaborado por / cargo, por defecto "Contador — CONTAX") firma el asiento y el resumen para gerencia. Nombres y C.I. se cargan en el navegador, nunca en el código.
 - Logo del cliente: Empresas → Editar → Logo. MILTHAGOR S.R.L. = MTG Delivery (assets/empresas/, se asigna solo).
 
 ## Interfaz

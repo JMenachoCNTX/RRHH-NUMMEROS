@@ -28,7 +28,9 @@
   function firma(nombre, l1, l2) {
     return '<div class="dn-firma"><b>' + e(U.mayus(nombre || '')) + '</b>' + (l1 ? '<span>' + e(l1) + '</span>' : '') + (l2 ? '<span>' + e(l2) + '</span>' : '') + '</div>';
   }
-  function firmaRepresentante(emp) { return firma(emp.representante || '', emp.ciRepresentante ? 'C.I.: ' + emp.ciRepresentante : '', emp.cargoRepresentante || 'Representante Legal'); }
+  /* La representante legal firma todos los documentos; "Elaborado por" es quien prepara la planilla en CONTAX */
+  function firmaRepresentante(emp, antes) { return firma(emp.representante || '', emp.ciRepresentante ? 'C.I.: ' + emp.ciRepresentante : '', (antes || '') + (emp.cargoRepresentante || 'Representante Legal')); }
+  function firmaElaborado(emp) { return firma(emp.elaboradoPor || '', 'Elaborado por', emp.elaboradoCargo || 'Contador — CONTAX'); }
   function hoja(contenido, opc) {
     opc = opc || {};
     return '<div class="hoja doc-n' + (opc.horizontal ? ' horizontal' : '') + '">' + contenido + pie() + '</div>';
@@ -117,7 +119,7 @@
       '</tbody><tfoot><tr><td>TOTAL DESCUENTOS</td><td class="n">' + bs(r.totalDescuentos) + '</td></tr></tfoot></table></div>' +
       '<div class="dn-barra-total"><span>LÍQUIDO PAGABLE</span><b>Bs ' + bs(r.liquido) + '</b></div>' +
       '<p class="dn-letras">Son: ' + Calc.numeroALetras(r.liquido) + '</p>' +
-      '<div class="dn-firmas">' + firma(U.nombreCompleto(em), 'C.I.: ' + em.ci, 'Recibí conforme') + firma(empresa.representante || '', '', empresa.firmaBoleta || 'Jefe Dpto. Adm. y Finanzas') + '</div>' +
+      '<div class="dn-firmas">' + firma(U.nombreCompleto(em), 'C.I.: ' + em.ci, 'Recibí conforme') + firmaRepresentante(empresa) + '</div>' +
       pie() + '</div>';
   }
   Doc.boletas = function (empresa, p, calc, soloIds) {
@@ -216,7 +218,7 @@
       '<div class="dn-dos">' + d.html + h.html + '</div>' +
       control('Debe: ' + bs(sd) + ' | Haber: ' + bs(sh) + ' | Dif: ' + bs(sd - sh), Calc.r2(sd - sh) === 0) +
       '<p class="dn-glosa">Glosa: Por la planilla de sueldos y salarios del mes de ' + Calc.MESES[p.mes - 1].toLowerCase() + ' ' + p.anio + ', aportes patronales y previsiones sociales.</p>' +
-      '<div class="dn-firmas">' + firmaRepresentante(empresa) + firma('', '', 'Contador — CONTAX') + '</div>';
+      '<div class="dn-firmas">' + firmaElaborado(empresa) + firmaRepresentante(empresa) + '</div>';
     return hoja(cuerpo);
   };
 
@@ -365,7 +367,7 @@
     return hoja(encabezado(empresa, 'Resumen para Gerencia', periodo) + titulo('Resumen de la planilla de sueldos', sub) + kpis + composicion + aQuien +
         '<div class="dn-dos dn-dos-gr"><div><h3 class="dn-sub">Pago por banco</h3>' + tablaBancos + '</div><div>' + revisar + '</div></div><div class="dn-comp">' + comp + '</div>') +
       hoja(encabezado(empresa, 'Resumen para Gerencia', periodo) + titulo('Detalle por persona', sub) + porPersona +
-        '<div class="dn-firmas">' + firma('', '', 'Elaborado — CONTAX') + firma(empresa.representante || '', '', 'Aprobado — ' + (empresa.cargoRepresentante || 'Gerente')) + '</div>');
+        '<div class="dn-firmas">' + firmaElaborado(empresa) + firmaRepresentante(empresa, 'Aprobado — ') + '</div>');
   };
 
   global.Doc = Doc;

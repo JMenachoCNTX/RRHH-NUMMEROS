@@ -148,8 +148,11 @@
       '<fieldset class="ancho"><legend>Datos generales</legend><div class="form">' +
       campo('Razón social', 'razonSocial', x.razonSocial, 'text', { req: true, ph: 'Ej. MILTHAGOR S.R.L.' }) + campo('NIT', 'nit', x.nit, 'text', { req: true }) +
       campo('Ciudad', 'ciudad', x.ciudad || 'Santa Cruz') + campo('Dirección', 'direccion', x.direccion) +
-      campo('Representante legal', 'representante', x.representante) + campo('C.I. del representante', 'ciRepresentante', x.ciRepresentante, 'text', { ayuda: 'Aparece bajo su firma en los documentos' }) + campo('Cargo del representante', 'cargoRepresentante', x.cargoRepresentante || 'Gerente General') +
-      campo('Firma en boletas', 'firmaBoleta', x.firmaBoleta || 'Jefe Dpto. Adm. y Finanzas', 'text', { ayuda: 'Texto bajo la segunda firma de la boleta' }) +
+      campo('Representante legal', 'representante', x.representante, 'text', { ayuda: 'Firma todos los documentos: planillas, boletas, certificados, aportes, asiento y resumen' }) +
+      campo('C.I. del representante', 'ciRepresentante', x.ciRepresentante, 'text', { ayuda: 'Aparece bajo su firma' }) +
+      campo('Cargo bajo la firma', 'cargoRepresentante', x.cargoRepresentante || 'Representante Legal') +
+      campo('Elaborado por (nombre)', 'elaboradoPor', x.elaboradoPor, 'text', { ayuda: 'Quien prepara la planilla en CONTAX (firma "Elaborado por" en el asiento y el resumen)' }) +
+      campo('Cargo de quien elabora', 'elaboradoCargo', x.elaboradoCargo || 'Contador — CONTAX') +
       '</div></fieldset>' +
       '<fieldset class="ancho"><legend>Logo de la empresa</legend><p class="suave peq" style="margin-bottom:10px">Va en el encabezado de todos los documentos que se generan (planillas, boletas, certificados, aportes, asiento). Usa PNG con fondo transparente o SVG.</p>' +
       '<div class="rejilla r2"><div class="logo-carga"><span class="peq"><b>Para fondo claro</b></span><div class="logo-prev claro" id="prevLogo">' + (x.logo ? '<img src="' + e(x.logo) + '" alt="">' : '<span class="suave peq">Sin logo</span>') + '</div>' +
