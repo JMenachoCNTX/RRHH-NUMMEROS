@@ -10,6 +10,9 @@ Jhonny (CONTAX / NUMMEROS, Santa Cruz, Bolivia). No es programador: Claude hace 
 - Sin herramientas de compilación: HTML + CSS + JS plano. Librería Excel en `vendor/xlsx.full.min.js`.
 - Los datos viven en `localStorage` (clave `nummeros-rrhh-v1`). Nunca subir datos reales de personas al repositorio (es público).
 
+## Bancos
+- Los sueldos se pagan solo con el **Banco Ganadero** (archivo Excel). El Banco Mercantil (BMSC) se quitó a pedido de Jhonny: no volver a agregar archivos ni datos de empresa del BMSC. El BMSC sigue en la lista de bancos *de los trabajadores* (cobran ahí por ACH).
+
 ## Archivos
 - `js/calculos.js` — motor de cálculo puro (se puede probar con Node: `node -e "require('./js/calculos.js')"`).
 - `js/datos.js` — almacenamiento, empresas, personal, planillas, respaldos.

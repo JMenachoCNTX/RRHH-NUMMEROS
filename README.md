@@ -12,7 +12,7 @@ Reemplaza la planilla de Google Sheets "Sistema Pagos Sueldos": registra al pers
 | **Empresas** | Varias empresas en un mismo sistema (cada una con su personal y planillas). |
 | **Personal** | Base de datos del personal. Se puede importar desde la hoja "Datos_Personales" en Excel. |
 | **Planilla del mes** | Días, horas extra, bonos, anticipos y facturas F-110. Calcula salario ganado, antigüedad, AFP, Aporte Nacional Solidario, RC-IVA, líquido pagable y aportes patronales. |
-| **Generar archivos** | Planilla de sueldos (PDF/Excel), boletas de pago, aportes y previsiones, asiento contable, Banco Mercantil Santa Cruz (TXT), Banco Ganadero (Excel), Ministerio de Trabajo, Gestora Pública, Caja de Salud y RC-IVA dependientes (F-608). |
+| **Generar archivos** | Planilla de sueldos (PDF/Excel), boletas de pago, aportes y previsiones, asiento contable, Banco Ganadero (Excel), Ministerio de Trabajo, Gestora Pública, Caja de Salud y RC-IVA dependientes (F-608). |
 | **Aguinaldos** | Promedio de septiembre a noviembre por el tiempo trabajado en el año. |
 | **Certificados** | Certificados de trabajo listos para imprimir. |
 | **Historial** | Todas las planillas guardadas (reemplaza la hoja BDSueldos). |

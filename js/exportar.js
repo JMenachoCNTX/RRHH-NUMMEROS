@@ -4,7 +4,6 @@
   'use strict';
   var X = {};
   var r2 = function (n) { return Calc.r2(n); };
-  var MES3 = ['ENE', 'FEB', 'MAR', 'ABR', 'MAY', 'JUN', 'JUL', 'AGO', 'SEP', 'OCT', 'NOV', 'DIC'];
 
   function nombreArchivo(empresa, p, tipo, ext) {
     var emp = U.sinAcentos(empresa.razonSocial || 'empresa').replace(/[^A-Za-z0-9]+/g, '_').replace(/^_|_$/g, '');
@@ -62,25 +61,6 @@
         esGanadero ? 1 : 3, esGanadero ? 0 : 1, esGanadero ? 0 : (b ? b.ach : ''), esGanadero ? 0 : (empresa.sucursalBanco || 'SCZ'), glosa, '', e.correo || '', '', '']);
     });
     X.excel(nombreArchivo(empresa, p, 'Banco_Ganadero', 'xlsx'), [{ nombre: 'Planilla Banco', filas: filas, anchos: [8, 10, 18, 32, 12, 12, 12, 8, 8, 10, 10, 26, 8, 30, 10, 10] }]);
-    return faltan;
-  };
-
-  /* ---------- Banco Mercantil Santa Cruz (TXT separado por |) ---------- */
-  X.bancoBmsc = function (empresa, p, calc, fechaPago, glosa) {
-    var lista = calc.filas.filter(function (x) { return x.r.liquido > 0; });
-    var total = lista.reduce(function (s, x) { return s + x.r.liquido; }, 0);
-    var b = empresa.bmsc || {};
-    var ref = (b.referencia || '{MES}PAYROLL').replace('{MES}', MES3[p.mes - 1]);
-    var cab = [b.codigoEmpresa || '', b.cuentaOrigen || '', b.moneda || '0', ref, U.fecha(fechaPago), U.fecha(b.fecha2 || fechaPago), U.punto(total), b.tipoPlanilla || '2'].join('|');
-    var faltan = [];
-    var lineas = lista.map(function (x) {
-      var e = x.emp, bk = D.bancoPorAbrev(e.banco);
-      if (!e.cuenta || !bk) faltan.push(U.nombreCompleto(e));
-      var esBmsc = bk && bk.abrev === 'BMSC';
-      return [e.ci, U.nombreCompleto(e), esBmsc ? e.cuenta : '', U.fecha(fechaPago), esBmsc ? '1' : '3', U.punto(x.r.liquido),
-        esBmsc ? '' : (bk ? bk.ach : ''), esBmsc ? '' : (e.cuenta || ''), glosa].join('|');
-    });
-    U.descargar(nombreArchivo(empresa, p, 'Banco_BMSC', 'txt'), [cab].concat(lineas).join('\r\n'));
     return faltan;
   };
 

@@ -51,6 +51,11 @@
 
   var estado = estadoVacio();
 
+  /* La empresa ya no paga sueldos por el BMSC: se borran sus datos guardados para evitar cruces */
+  function limpiarBancoMercantil() {
+    estado.empresas.forEach(function (e) { delete e.bmsc; delete e.bancoPagos; });
+  }
+
   function cargar() {
     try {
       var txt = localStorage.getItem(CLAVE);
@@ -58,6 +63,7 @@
         var d = JSON.parse(txt);
         estado = Object.assign(estadoVacio(), d);
         estado.config = Object.assign(JSON.parse(JSON.stringify(Calc.CONFIG_BASE)), d.config || {});
+        limpiarBancoMercantil();
       }
     } catch (e) { console.warn('No se pudo leer los datos guardados', e); }
     return estado;
@@ -184,6 +190,7 @@
       var d = JSON.parse(txt);
       if (!d || !d.datos || !Array.isArray(d.datos.empleados)) throw new Error('El archivo no es una copia de seguridad de NUMMEROS RRHH.');
       estado = Object.assign(estadoVacio(), d.datos);
+      limpiarBancoMercantil();
       guardar();
     },
     borrarTodo: function () { estado = estadoVacio(); guardar(); },

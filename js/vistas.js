@@ -141,7 +141,6 @@
   }
 
   function formEmpresa(x) {
-    var b = x.bmsc || {};
     var html = '<form class="form" id="fEmp">' +
       '<fieldset class="ancho"><legend>Datos generales</legend><div class="form">' +
       campo('Razón social', 'razonSocial', x.razonSocial, 'text', { req: true, ph: 'Ej. MILTHAGOR S.R.L.' }) + campo('NIT', 'nit', x.nit, 'text', { req: true }) +
@@ -153,13 +152,8 @@
       campo('N° de empleador (Ministerio)', 'nroEmpleadorMinisterio', x.nroEmpleadorMinisterio) + campo('N° patronal Caja de Salud', 'nroPatronalCaja', x.nroPatronalCaja) +
       campo('Código Caja de Salud (Ministerio)', 'cajaSaludCod', x.cajaSaludCod || '6', 'text', { ayuda: 'Código que pide el formulario del Ministerio (ej. 6)' }) +
       '</div></fieldset>' +
-      '<fieldset class="ancho"><legend>Banco para pagar sueldos</legend><div class="form">' +
-      campo('Banco de la empresa', 'bancoPagos', x.bancoPagos || 'BMSC', 'select', { opciones: [['BMSC', 'Banco Mercantil Santa Cruz (archivo TXT)'], ['GANADERO', 'Banco Ganadero (archivo Excel)']] }) +
-      campo('Sucursal destino (Ganadero)', 'sucursalBanco', x.sucursalBanco || 'SCZ') +
-      campo('BMSC · Código de empresa', 'bmsc.codigoEmpresa', b.codigoEmpresa, 'text', { ph: 'Ej. 30720' }) + campo('BMSC · Cuenta de débito', 'bmsc.cuentaOrigen', b.cuentaOrigen) +
-      campo('BMSC · Referencia', 'bmsc.referencia', b.referencia || '{MES}PAYROLL', 'text', { ayuda: '{MES} se reemplaza por SEP, OCT…' }) +
-      campo('BMSC · Tipo de planilla', 'bmsc.tipoPlanilla', b.tipoPlanilla || '2') +
-      campo('BMSC · Segunda fecha del encabezado', 'bmsc.fecha2', b.fecha2, 'date', { ayuda: 'Si se deja vacía, se usa la fecha de pago' }) +
+      '<fieldset class="ancho"><legend>Pago de sueldos · Banco Ganadero</legend><div class="form">' +
+      campo('Sucursal destino (Ganadero)', 'sucursalBanco', x.sucursalBanco || 'SCZ', 'text', { ayuda: 'Se usa en las transferencias ACH a otros bancos' }) +
       '</div></fieldset></form>';
     U.modal(x.id ? 'Editar empresa' : 'Nueva empresa', html, [
       x.id ? { texto: 'Eliminar', clase: 'btn btn-fantasma', accion: function () { U.confirmar('Eliminar empresa', 'Se borrará la empresa con todo su personal y planillas. Esta acción no se puede deshacer.', 'Eliminar', function () { D.eliminarEmpresa(x.id); App.refrescar(); }, true); } } : null,
@@ -167,7 +161,7 @@
       { texto: 'Guardar', clase: 'btn btn-primario', accion: function (m) {
         var f = U.$('#fEmp', m);
         if (!f.reportValidity()) return false;
-        var d = leerForm(f); d.id = x.id; d.bmsc = Object.assign({}, x.bmsc || {}, d.bmsc || {});
+        var d = leerForm(f); d.id = x.id; delete d.bmsc; delete d.bancoPagos;
         D.guardarEmpresa(d);
         if (!x.id) D.activarEmpresa(d.id);
         App.refrescar(); U.aviso('Empresa guardada');
@@ -550,7 +544,6 @@
     }
     var p = (idPlanilla && D.planilla(idPlanilla)) || planillas[0];
     var calc = D.calcularPlanilla(p);
-    var esBmsc = (emp.bancoPagos || 'BMSC') === 'BMSC';
     var h = '<section class="portada" style="background-image:url(assets/fotos/reunion-sala.jpg);min-height:200px"><div class="txt"><span class="kicker">Generar archivos</span><h1 style="font-size:clamp(30px,3.6vw,44px)">' + nombrePeriodo(p) + '</h1>' +
       '<p>' + calc.filas.length + ' persona(s) · Líquido pagable Bs ' + bs(calc.totales.liquido) + '</p><div class="acciones"><select id="selPl" style="max-width:240px">' +
       planillas.map(function (x) { return '<option value="' + x.id + '"' + (x.id === p.id ? ' selected' : '') + '>' + nombrePeriodo(x) + (x.estado === 'cerrada' ? ' · cerrada' : ' · borrador') + '</option>'; }).join('') + '</select></div></div></section>';
@@ -568,8 +561,7 @@
       tarjeta('libro', 'Asiento contable', 'Asiento de la planilla listo para el sistema contable.', b('asPdf', 'Imprimir / PDF', 'imprimir', true) + b('asXls', 'Excel', 'excel')) +
       '</div></div>';
     h += '<div class="seccion"><h2>Para el banco</h2><div class="rejilla r2">' +
-      tarjeta('banco', 'Banco Mercantil Santa Cruz', 'Archivo TXT de pago masivo de sueldos.' + (esBmsc ? ' <b>Banco principal de la empresa.</b>' : ''), b('bmsc', 'Descargar TXT', 'generar', esBmsc)) +
-      tarjeta('banco', 'Banco Ganadero', 'Planilla Excel de pago masivo (ACH a otros bancos).' + (!esBmsc ? ' <b>Banco principal de la empresa.</b>' : ''), b('ganadero', 'Descargar Excel', 'excel', !esBmsc)) +
+      tarjeta('banco', 'Banco Ganadero', 'Planilla Excel de pago masivo de sueldos (cuentas Ganadero y ACH a otros bancos).', b('ganadero', 'Descargar Excel', 'excel', true)) +
       '</div></div>';
     h += '<div class="seccion"><h2>Para las entidades</h2><div class="rejilla r2">' +
       tarjeta('gobierno', 'Ministerio de Trabajo', 'Planilla con las 46 columnas del formato del Ministerio.', b('min', 'Descargar Excel', 'excel', true)) +
@@ -592,10 +584,6 @@
       patPdf: function () { Doc.imprimir(Doc.planillaPatronal(emp, p, calc), true); },
       asPdf: function () { Doc.imprimir(Doc.asiento(emp, p, calc)); },
       asXls: function () { X.asiento(emp, p, calc); U.aviso('Archivo descargado'); },
-      bmsc: function () {
-        if (!emp.bmsc || !emp.bmsc.codigoEmpresa || !emp.bmsc.cuentaOrigen) { U.modal('Faltan datos del BMSC', '<p>Completa el código de empresa y la cuenta de débito del BMSC en los datos de la empresa.</p>', [{ texto: 'Cancelar', clase: 'btn btn-fantasma' }, { texto: 'Completar ahora', clase: 'btn btn-primario', accion: function () { formEmpresa(emp); } }]); return; }
-        avisoFaltan(X.bancoBmsc(emp, p, calc, fecha, glosa), 'el banco o la cuenta');
-      },
       ganadero: function () { avisoFaltan(X.bancoGanadero(emp, p, calc, fecha, glosa), 'el banco o la cuenta'); },
       min: function () { X.ministerio(emp, p, calc); U.aviso('Archivo descargado'); },
       gestora: function () { avisoFaltan(X.gestora(emp, p, calc), 'el CUA'); },
