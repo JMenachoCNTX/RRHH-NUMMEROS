@@ -56,11 +56,12 @@
     estado.empresas.forEach(function (e) { delete e.bmsc; delete e.bancoPagos; });
   }
 
-  /* v2: horas extra al 50% sin redondear el valor hora, como paga Milthagor */
+  /* v3: horas extra calculadas como el cliente (recargo 50 %, valor hora sin redondear).
+     Se aplica una vez en cada navegador; la v2 quedó mal marcada en algunos navegadores. */
   function migrarConfig() {
     var c = estado.config;
-    if ((c.versionConfig || 1) < 2) {
-      c.recargoHoraExtra = 50; c.redondearValorHora = false; c.versionConfig = 2;
+    if ((c.versionConfig || 1) < 3) {
+      c.recargoHoraExtra = 50; c.redondearValorHora = false; c.versionConfig = 3;
       estado.planillas.forEach(function (p) {
         if (p.configUsada && (p.configUsada.versionConfig || 1) < 2) { p.configUsada.redondearValorHora = true; p.configUsada.versionConfig = 2; }
       });

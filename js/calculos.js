@@ -24,7 +24,7 @@
     horasDia: 8,
     recargoHoraExtra: 50,      // % de recargo de la hora extra (práctica de Milthagor: 50%; la LGT indica 100%)
     redondearValorHora: false, // false = como la planilla del cliente (valor hora sin redondear)
-    versionConfig: 2,
+    versionConfig: 3,
     antiguedadBaseSMN: 3,      // Bono de antigüedad se calcula sobre 3 SMN
     antiguedadProporcional: true, // prorratear el bono según días pagados
     cajaSalud: 10,             // % aporte patronal Caja de Salud

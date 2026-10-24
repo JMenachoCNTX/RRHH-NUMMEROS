@@ -447,7 +447,7 @@
       '<div class="acciones"><label class="campo" style="flex-direction:row;align-items:center;gap:8px">Ordenar <select id="ordPl" style="width:160px">' +
       OPC_ORDEN.map(function (o) { return '<option value="' + o[0] + '"' + ((p.orden || 'nombre-asc') === o[0] ? ' selected' : '') + '>' + o[1] + '</option>'; }).join('') + '</select></label>' +
       (cerrada ? '<button class="btn" id="reabrir">' + ic('editar') + 'Reabrir</button>' :
-        '<button class="btn" id="datosCliente">' + ic('subir') + 'Datos del cliente</button><button class="btn" id="agregar">' + ic('mas') + 'Agregar / quitar personal</button><button class="btn btn-primario" id="cerrar">' + ic('candado') + 'Cerrar planilla</button>') +
+        '<button class="btn" id="limpiarPl" title="Borra lo escrito en la planilla">' + ic('borrar') + 'Limpiar</button><button class="btn" id="datosCliente">' + ic('subir') + 'Datos del cliente</button><button class="btn" id="agregar">' + ic('mas') + 'Agregar / quitar personal</button><button class="btn btn-primario" id="cerrar">' + ic('candado') + 'Cerrar planilla</button>') +
       '<a class="btn" href="#/generar/' + p.id + '">' + ic('generar') + 'Generar archivos</a></div></div>' +
       (cerrada ? '<p class="suave peq" style="margin-top:8px">La planilla está cerrada: los montos quedan fijos aunque luego cambien los datos del personal o la configuración. Reábrela si necesitas corregir algo.</p>' :
         '<p class="suave peq" style="margin-top:8px">Escribe en las casillas verdes; todo se calcula y se guarda solo. Haz clic en un nombre para ver el detalle del cálculo. Deja "Días" vacío para que el sistema los calcule por fecha de ingreso/retiro.</p>') + '</div>';
@@ -508,6 +508,17 @@
       U.$('#fGlosa', cont).onchange = function (ev) { p.glosa = ev.target.value; D.guardarPlanilla(p); };
       U.$('#agregar', cont).onclick = function () { gestionarFilas(p); };
       U.$('#datosCliente', cont).onclick = function () { datosCliente(p); };
+      U.$('#limpiarPl', cont).onclick = function () {
+        U.modal('Limpiar planilla de ' + nombrePeriodo(p),
+          '<p>Se borrará todo lo escrito en la planilla: <b>días</b> (vuelven al cálculo automático), <b>horas extra</b>, <b>otros bonos</b>, <b>facturas F-110</b>, <b>anticipos</b> y <b>otros descuentos</b>.</p>' +
+          '<p class="suave">El personal de la planilla, la fecha de pago y la glosa se mantienen.</p>',
+          [{ texto: 'Cancelar', clase: 'btn btn-fantasma' }, { texto: 'Limpiar', clase: 'btn btn-peligro', accion: function () {
+            p.filas.forEach(function (f) {
+              f.dias = ''; f.horasExtra = 0; f.bonoProduccion = 0; f.dominicales = 0; f.otrosBonos = 0; f.facturasF110 = 0; f.anticipos = 0; f.otrosDescuentos = 0;
+            });
+            D.guardarPlanilla(p); App.refrescar(); U.aviso('Planilla limpia');
+          } }]);
+      };
       U.$('#cerrar', cont).onclick = function () {
         var c = D.calcularPlanilla(p);
         var faltan = c.filas.filter(function (x) { return !x.emp.cuenta || !x.emp.cua; }).map(function (x) { return U.nombreCompleto(x.emp); });

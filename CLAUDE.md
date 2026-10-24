@@ -33,4 +33,6 @@ Jhonny (CONTAX / NUMMEROS, Santa Cruz, Bolivia). No es programador: Claude hace 
 - Excel del Banco Ganadero: cuenta y CI sin guiones, espacios ni puntos (el banco los rechaza).
 - Planilla: sin bono de producción ni dominicales (empresa de servicios); descuentos separados en Anticipos y Otros descuentos.
 - Generar archivos: cada tarjeta tiene "Ver" (js/visor.js) para previsualizar en pantalla completa antes de imprimir/descargar.
+- Planilla → botón "Limpiar": borra días, horas extra, bonos, F-110 y descuentos (mantiene personal, fecha y glosa).
+- Config versionConfig 3 fuerza horas extra al 50 % sin redondear (como el cliente) una vez en cada navegador.
 - Menú lateral compacto (solo iconos) con el botón ☰; se despliega al pasar el cursor.
