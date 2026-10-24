@@ -329,7 +329,7 @@
       campo('Respaldo', 'terceroRespaldo', x.terceroRespaldo, 'text', { ph: 'Ej. Carta de autorización del 15/03/2025', ancho: true }) +
       '</div></fieldset>' +
       '<fieldset class="ancho"><legend>Seguridad social e impuestos</legend><div class="form">' +
-      campo('CUA / NUA (Gestora)', 'cua', x.cua) + campo('Código dependiente RC-IVA (CUR)', 'codDependiente', x.codDependiente, 'text', { ayuda: 'Código del F-110 (ej. 5896481019)' }) +
+      campo('CUA / NUA (Gestora)', 'cua', x.cua) + campo('Código dependiente RC-IVA (CUR)', 'codDependiente', x.codDependiente, 'text', { ayuda: 'Código del F-110 (ej. 1234567010)' }) +
       campo('Código Caja de Salud', 'cajaSaludCod', x.cajaSaludCod, 'text', { ph: 'Vacío = el de la empresa' }) + campo('Código AFP (Ministerio)', 'afpCod', x.afpCod || '3') +
       campo('¿Aporta a la AFP?', 'aportaAfp', x.aportaAfp === undefined ? '1' : x.aportaAfp, 'select', { opciones: [['1', 'Sí'], ['0', 'No']] }) +
       campo('¿Jubilado?', 'jubilado', x.jubilado || '0', 'select', { opciones: [['0', 'No'], ['1', 'Sí']] }) +

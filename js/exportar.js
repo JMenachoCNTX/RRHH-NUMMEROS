@@ -354,8 +354,8 @@
 
   /* ---------- Plantilla vacía para cargar personal ---------- */
   X.plantillaPersonal = function () {
-    var ej = ['5896481', '', 'SC', 'Carlos Conrado', 'Kramer', 'Borda', '', 'M', '31/10/1985', 'BOLIVIANA', '70000000', 'correo@ejemplo.com', 'Asistente', 'Lu - Vi 08:00 - 16:00',
-      '01/11/2024', '', '', 'ACTIVO', 4796.61, 'BCP', '70151068019344', '47045218', '5896481019', '', ''];
+    var ej = ['1234567', '', 'SC', 'Juan Carlos', 'Pérez', 'López', '', 'M', '15/03/1990', 'BOLIVIANA', '70000000', 'correo@ejemplo.com', 'Asistente', 'Lu - Vi 08:00 - 16:00',
+      '01/01/2025', '', '', 'ACTIVO', 3300, 'GANADERO', '1234567890', '12345678', '1234567010', '', ''];
     X.excel('Plantilla_Personal_NUMMEROS.xlsx', [{ nombre: 'Personal', filas: [X.CAMPOS_PERSONAL.map(function (c) { return c[1]; }), ej], anchos: X.CAMPOS_PERSONAL.map(function () { return 16; }) }]);
   };
 
