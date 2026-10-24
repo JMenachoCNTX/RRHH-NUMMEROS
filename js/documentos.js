@@ -40,8 +40,16 @@
   var Doc = {};
 
   /* Envía el HTML a la impresora (el usuario puede elegir "Guardar como PDF") */
-  Doc.imprimir = function (html, horizontal) {
+  /* titulo: nombre con el que se guarda el PDF (el navegador usa el título de la página) */
+  Doc.imprimir = function (html, horizontal, titulo) {
     var cont = document.getElementById('impresion');
+    if (titulo) {
+      var antes = document.title, vuelto = false;
+      var volver = function () { if (!vuelto) { vuelto = true; document.title = antes; } };
+      document.title = titulo;
+      window.addEventListener('afterprint', volver, { once: true });
+      setTimeout(volver, 60000);
+    }
     cont.innerHTML = '<style>@page{size:letter ' + (horizontal ? 'landscape' : 'portrait') + ';margin:18pt 22pt}</style>' + html;
     var imgs = Array.prototype.slice.call(cont.querySelectorAll('img'));
     Promise.all(imgs.map(function (i) { return i.complete ? 1 : new Promise(function (r) { i.onload = i.onerror = r; }); }))

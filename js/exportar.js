@@ -44,7 +44,7 @@
     });
     var t = calc.totales;
     filas.push(['', '', 'TOTALES', '', '', '', '', '', '', t.basico, '', ''].concat(M.map(function (c) { return t[c[1]]; })));
-    X.excel(nombreArchivo(empresa, p, 'Planilla_Sueldos', 'xlsx'), [{ nombre: 'Planilla', filas: filas, anchos: [5, 11, 18, 22, 12, 12, 6, 24, 12].concat(Array(22).fill(13)) }]);
+    X.excel(X.nombreDoc(X.NOMBRES.sueldos, empresa, p) + '.xlsx', [{ nombre: 'Planilla', filas: filas, anchos: [5, 11, 18, 22, 12, 12, 6, 24, 12].concat(Array(22).fill(13)) }]);
   };
 
   /* ---------- Banco Ganadero (pago masivo) ----------
@@ -58,6 +58,12 @@
       return /^(SRL|SA|LTDA)$/i.test(w) ? w.toUpperCase() : w.charAt(0).toUpperCase() + w.slice(1).toLowerCase();
     }).join(' ').trim();
   }
+  /* Nombre de los archivos "Para la empresa": "Resumen para Gerencia - Octubre 2026 Milthagor SRL" */
+  X.nombreDoc = function (tipo, empresa, p) {
+    return tipo + ' - ' + (p ? Calc.MESES[p.mes - 1] + ' ' + p.anio + ' ' : '') + nombreEmpresaCorto(empresa.razonSocial);
+  };
+  X.NOMBRES = { gerencia: 'Resumen para Gerencia', sueldos: 'Planilla de Sueldos y Salarios', boletas: 'Boletas de Pago', aportes: 'Aportes y Previsiones',
+    auditoria: 'Planilla para Auditoria', asiento: 'Asiento Contable', ganadero: 'Planilla Banco Ganadero' };
   X.nombreArchivoGanadero = function (empresa, p) {
     return 'Planilla Sueldos - ' + Calc.MESES[p.mes - 1] + ' ' + nombreEmpresaCorto(empresa.razonSocial) + '.xlsx';
   };
@@ -145,7 +151,7 @@
     });
     return { t1: t1, t2: t2 };
   };
-  X.nombreArchivoAuditoria = function (p) { return 'Sueldos_' + Calc.MESES[p.mes - 1] + '.xlsx'; };
+  X.nombreArchivoAuditoria = function (p, empresa) { return X.nombreDoc(X.NOMBRES.auditoria, empresa, p) + '.xlsx'; };
   X.auditoria = function (empresa, p, calc) {
     var ws = {}, merges = [], A = X.filasAuditoria(calc), n = A.t1.length;
     var cel = function (c, r, v, s, z) {
@@ -224,7 +230,7 @@
     ws['!margins'] = { left: 0.7, right: 0.7, top: 0.75, bottom: 0.75, header: 0.3, footer: 0.3 };
     var wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Calculo Planilla SUELDOS');
-    XLSX.writeFile(wb, X.nombreArchivoAuditoria(p));
+    XLSX.writeFile(wb, X.nombreArchivoAuditoria(p, empresa));
   };
 
   /* ---------- Ministerio de Trabajo (planilla trimestral / mensual OVT) ---------- */
@@ -306,7 +312,7 @@
     a.debe.forEach(function (l) { filas.push([l[0], l[1], '']); });
     a.haber.forEach(function (l) { filas.push([l[0], '', l[1]]); });
     filas.push(['SUMAS IGUALES', r2(a.debe.reduce(function (s, l) { return s + l[1]; }, 0)), r2(a.haber.reduce(function (s, l) { return s + l[1]; }, 0))]);
-    X.excel(nombreArchivo(empresa, p, 'Asiento_Contable', 'xlsx'), [{ nombre: 'Asiento', filas: filas, anchos: [46, 14, 14] }]);
+    X.excel(X.nombreDoc(X.NOMBRES.asiento, empresa, p) + '.xlsx', [{ nombre: 'Asiento', filas: filas, anchos: [46, 14, 14] }]);
   };
 
   /* ---------- Base de datos del personal ---------- */

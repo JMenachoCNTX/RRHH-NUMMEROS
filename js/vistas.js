@@ -28,6 +28,9 @@
     impuesto: '<path d="M6 3h12v18l-3-2-3 2-3-2-3 2z"/><path d="M9 8h6M9 12h6"/>',
     boleta: '<rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h4"/>',
     grafico: '<path d="M4 20V4M4 20h16"/><path d="M8 16v-4M12 16V8M16 16v-6"/>',
+    mensaje: '<path d="M4 5h16v11H8l-4 4z"/><path d="M8 9h8M8 12h5"/>',
+    copiar: '<rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V5a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h3"/>',
+    correo: '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/>',
     ojo: '<path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>',
     expandir: '<path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/>',
     libro: '<path d="M4 4h7a3 3 0 0 1 3 3v14a2 2 0 0 0-2-2H4z"/><path d="M20 4h-7a3 3 0 0 0-3 3v14a2 2 0 0 1 2-2h8z"/>'
@@ -151,6 +154,7 @@
       campo('Representante legal', 'representante', x.representante, 'text', { ayuda: 'Firma todos los documentos: planillas, boletas, certificados, aportes, asiento y resumen' }) +
       campo('C.I. del representante', 'ciRepresentante', x.ciRepresentante, 'text', { ayuda: 'Aparece bajo su firma' }) +
       campo('Cargo bajo la firma', 'cargoRepresentante', x.cargoRepresentante || 'Representante Legal') +
+      campo('Correo del representante', 'correoRepresentante', x.correoRepresentante, 'email', { ayuda: 'Para enviarle el mensaje del mes por correo' }) +
       campo('Elaborado por (nombre)', 'elaboradoPor', x.elaboradoPor, 'text', { ayuda: 'Quien prepara la planilla en CONTAX (firma "Elaborado por" en el asiento y el resumen)' }) +
       campo('Cargo de quien elabora', 'elaboradoCargo', x.elaboradoCargo || 'Contador — CONTAX') +
       '</div></fieldset>' +
@@ -616,7 +620,7 @@
       l('Previsión indemnización ' + cfg.provIndemnizacion + '%', bs(r.provIndemnizacion)) + l('Previsión aguinaldo ' + cfg.provAguinaldo + '%', bs(r.provAguinaldo)) +
       l('COSTO TOTAL', bs(r.totalGanado + r.cajaSalud + r.gestoraPatronal + r.provIndemnizacion + r.provAguinaldo), true) + '</div></div>';
     U.modal(U.nombreCompleto(x.emp) + ' · ' + nombrePeriodo(p), html, [
-      { texto: 'Boleta de pago', clase: 'btn', accion: function () { Doc.imprimir(Doc.boletas(D.empresa(p.empresaId), p, c, [x.fila.empleadoId])); } },
+      { texto: 'Boleta de pago', clase: 'btn', accion: function () { Doc.imprimir(Doc.boletas(D.empresa(p.empresaId), p, c, [x.fila.empleadoId]), false, 'Boleta de Pago - ' + Calc.MESES[p.mes - 1] + ' ' + p.anio + ' - ' + U.nombreCompleto(x.emp)); } },
       { texto: 'Cerrar', clase: 'btn btn-primario' }], { ancho: true });
   }
 
@@ -748,9 +752,22 @@
     var b = function (id, txt, icono, prim) { return '<button class="btn btn-sm' + (prim ? ' btn-primario' : '') + '" data-g="' + id + '">' + ic(icono || 'generar') + txt + '</button>'; };
     var ver = function (id) { return '<button class="btn btn-sm" data-ver="' + id + '" title="Ver en pantalla completa">' + ic('ojo') + 'Ver</button>'; };
 
+    /* Mensaje de cada mes para la representante legal */
+    var hora = new Date().getHours(), saludo = hora < 12 ? 'Buenos días' : hora < 19 ? 'Buenas tardes' : 'Buenas noches';
+    var nombreRep = String(emp.representante || '').trim().split(/\s+/)[0] || '';
+    nombreRep = nombreRep ? nombreRep.charAt(0).toUpperCase() + nombreRep.slice(1).toLowerCase() : '';
+    var mensaje = saludo + (nombreRep ? ' ' + nombreRep : '') + ', ¿cómo está?\n\n' +
+      'Le enviamos la planilla de sueldos del mes de ' + Calc.MESES[p.mes - 1].toLowerCase() + ' ' + p.anio + ' para que la pueda cargar al banco. También le enviamos los siguientes detalles:\n\n' +
+      [X.NOMBRES.gerencia, X.NOMBRES.ganadero, X.NOMBRES.sueldos, X.NOMBRES.boletas, X.NOMBRES.aportes, X.NOMBRES.auditoria, X.NOMBRES.asiento].map(function (n) { return '* ' + n; }).join('\n');
+    h += '<div class="seccion"><h2>Mensaje para el cliente</h2><div class="tarjeta gen"><div class="ic">' + ic('mensaje') + '</div><div style="min-width:0;flex:1">' +
+      '<h3>Mensaje del mes</h3><p>Se arma solo con el saludo, el nombre de la representante legal y el mes. Puedes cambiar el texto antes de enviarlo.</p>' +
+      '<textarea id="txtMsj" rows="13" style="font-size:14px;line-height:1.5">' + e(mensaje) + '</textarea>' +
+      '<div class="acciones" style="margin-top:10px"><button class="btn btn-sm btn-primario" id="msjCopiar">' + ic('copiar') + 'Copiar</button>' +
+      '<button class="btn btn-sm" id="msjWa">' + ic('mensaje') + 'Abrir en WhatsApp</button><button class="btn btn-sm" id="msjMail">' + ic('correo') + 'Abrir en correo</button></div></div></div></div>';
+
     h += '<div class="seccion"><h2>Para la empresa</h2><div class="rejilla r2">' +
       tarjeta('grafico', 'Resumen para gerencia', 'Cuánto se paga, a quién y a qué banco, con gráficos y comparación con el mes anterior. Para aprobar antes de cargar al banco.', ver('ger') + b('gerPdf', 'Imprimir / PDF', 'imprimir', true)) +
-      tarjeta('certificado', 'Planilla para auditoría', 'El mismo Excel que pide auditoría cada mes (Sueldos_' + Calc.MESES[p.mes - 1] + '.xlsx), también en PDF.', ver('aud') + b('audXls', 'Descargar Excel', 'excel', true) + b('audPdf', 'Imprimir / PDF', 'imprimir')) +
+      tarjeta('certificado', 'Planilla para auditoría', 'El mismo formato de Excel que pide auditoría cada mes, también en PDF.', ver('aud') + b('audXls', 'Descargar Excel', 'excel', true) + b('audPdf', 'Imprimir / PDF', 'imprimir')) +
       tarjeta('planilla', 'Planilla de sueldos y salarios', 'La planilla oficial con firmas, en hoja horizontal.', ver('pl') + b('plPdf', 'Imprimir / PDF', 'imprimir', true) + b('plXls', 'Excel', 'excel')) +
       tarjeta('boleta', 'Boletas de pago', 'Una boleta por trabajador, dos por hoja, con el líquido en letras.', ver('boletas') + b('boletas', 'Imprimir / PDF', 'imprimir', true)) +
       tarjeta('salud', 'Aportes y previsiones', 'Caja de salud, Gestora patronal, indemnización y aguinaldo.', ver('pat') + b('patPdf', 'Imprimir / PDF', 'imprimir', true)) +
@@ -767,6 +784,17 @@
       '</div></div>';
     cont.innerHTML = h;
     U.$('#selPl', cont).onchange = function (ev) { location.hash = '#/generar/' + ev.target.value; };
+    var txtMsj = function () { return U.$('#txtMsj', cont).value; };
+    U.$('#msjCopiar', cont).onclick = function () {
+      var t = txtMsj();
+      (navigator.clipboard ? navigator.clipboard.writeText(t) : Promise.reject()).then(function () { U.aviso('Mensaje copiado'); }, function () {
+        var a = U.$('#txtMsj', cont); a.select(); document.execCommand('copy'); U.aviso('Mensaje copiado');
+      });
+    };
+    U.$('#msjWa', cont).onclick = function () { window.open('https://wa.me/?text=' + encodeURIComponent(txtMsj()), '_blank'); };
+    U.$('#msjMail', cont).onclick = function () {
+      location.href = 'mailto:' + encodeURIComponent(emp.correoRepresentante || '') + '?subject=' + encodeURIComponent('Planilla de sueldos ' + Calc.MESES[p.mes - 1] + ' ' + p.anio + ' - ' + emp.razonSocial) + '&body=' + encodeURIComponent(txtMsj());
+    };
 
     /* Planilla del mes anterior (para comparar en el resumen de gerencia) */
     var anterior = function () {
@@ -780,14 +808,14 @@
       else U.aviso('Archivo descargado');
     };
     var acciones = {
-      plPdf: function () { Doc.imprimir(Doc.planillaSueldos(emp, p, calc), true); },
-      gerPdf: function () { Doc.imprimir(Doc.resumenGerente(emp, p, calc, anterior())); },
+      plPdf: function () { Doc.imprimir(Doc.planillaSueldos(emp, p, calc), true, X.nombreDoc(X.NOMBRES.sueldos, emp, p)); },
+      gerPdf: function () { Doc.imprimir(Doc.resumenGerente(emp, p, calc, anterior()), false, X.nombreDoc(X.NOMBRES.gerencia, emp, p)); },
       audXls: function () { X.auditoria(emp, p, calc); U.aviso('Archivo descargado'); },
-      audPdf: function () { Doc.imprimir(Doc.auditoria(emp, p, calc), true); },
+      audPdf: function () { Doc.imprimir(Doc.auditoria(emp, p, calc), true, X.nombreDoc(X.NOMBRES.auditoria, emp, p)); },
       plXls: function () { X.planillaSueldos(emp, p, calc); U.aviso('Archivo descargado'); },
-      boletas: function () { Doc.imprimir(Doc.boletas(emp, p, calc)); },
-      patPdf: function () { Doc.imprimir(Doc.planillaPatronal(emp, p, calc), true); },
-      asPdf: function () { Doc.imprimir(Doc.asiento(emp, p, calc)); },
+      boletas: function () { Doc.imprimir(Doc.boletas(emp, p, calc), false, X.nombreDoc(X.NOMBRES.boletas, emp, p)); },
+      patPdf: function () { Doc.imprimir(Doc.planillaPatronal(emp, p, calc), true, X.nombreDoc(X.NOMBRES.aportes, emp, p)); },
+      asPdf: function () { Doc.imprimir(Doc.asiento(emp, p, calc), false, X.nombreDoc(X.NOMBRES.asiento, emp, p)); },
       asXls: function () { X.asiento(emp, p, calc); U.aviso('Archivo descargado'); },
       ganadero: function () { avisoFaltan(X.bancoGanadero(emp, p, calc, fecha, glosa), 'el banco o la cuenta'); },
       min: function () { X.ministerio(emp, p, calc); U.aviso('Archivo descargado'); },
@@ -882,7 +910,7 @@
       };
     });
     var lista2 = function () { return filas.map(function (f) { return { emp: f.emp, meses: f.base, a: f.a }; }).filter(function (f) { return f.a.aguinaldo > 0; }); };
-    U.$('#agPdf', cont).onclick = function () { Doc.imprimir(Doc.aguinaldos(emp, anioAg, lista2()), true); };
+    U.$('#agPdf', cont).onclick = function () { Doc.imprimir(Doc.aguinaldos(emp, anioAg, lista2()), true, X.nombreDoc('Planilla de Aguinaldos ' + anioAg, emp, null)); };
     U.$('#agXls', cont).onclick = function () { X.aguinaldos(emp, anioAg, lista2()); U.aviso('Archivo descargado'); };
   };
 
@@ -912,7 +940,7 @@
     U.$('#fCert', cont).oninput = prev; U.$('#fCert', cont).onchange = prev;
     U.$('#certPdf', cont).onclick = function () {
       var x = prev(); if (!x.k) { U.aviso('Elige un trabajador', 'error'); return; }
-      Doc.imprimir(Doc.certificado(emp, x.k, { fecha: x.d.fecha, conSueldo: x.d.conSueldo === '1', textoConducta: x.d.conducta }));
+      Doc.imprimir(Doc.certificado(emp, x.k, { fecha: x.d.fecha, conSueldo: x.d.conSueldo === '1', textoConducta: x.d.conducta }), false, 'Certificado de Trabajo - ' + U.nombreCompleto(x.k));
     };
   };
 
