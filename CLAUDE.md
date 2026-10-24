@@ -24,4 +24,9 @@ Jhonny (CONTAX / NUMMEROS, Santa Cruz, Bolivia). No es programador: Claude hace 
 - AFP 12,71 %; ANS por tramos sobre el excedente (13.000 → 1,15 %, 25.000 → 5 %, 35.000 → 10 %).
 - RC-IVA: (ganado − AFP − ANS − 2 SMN) × 13 % − 13 % de 2 SMN − 13 % facturas F-110.
 - Patronal: Caja 10 %, Gestora 7,21 %, previsiones 8,33 % + 8,33 %.
+- Bono de antigüedad sobre 3 SMN y RC-IVA con crédito del 13 % de 2 SMN: confirmados por Jhonny (24/10/2026).
 - Todas las tasas son editables en Configuración.
+
+## Interfaz
+- Personal y Planilla se ordenan por nombre o apellido (A-Z / Z-A); el orden de la planilla también define el orden de los archivos.
+- Menú lateral compacto (solo iconos) con el botón ☰; se despliega al pasar el cursor.

@@ -19,7 +19,7 @@
   function pintarMenu(actual) {
     U.$('#menu').innerHTML = RUTAS.map(function (r) {
       if (r.grupo) return '<div class="grupo">' + r.grupo + '</div>';
-      return '<a href="#/' + r.id + '"' + (r.id === actual ? ' class="activo" aria-current="page"' : '') + '>' + V.ic(r.icono) + r.titulo + '</a>';
+      return '<a href="#/' + r.id + '"' + (r.id === actual ? ' class="activo" aria-current="page"' : '') + ' title="' + r.titulo + '">' + V.ic(r.icono) + '<span class="txt">' + r.titulo + '</span></a>';
     }).join('');
   }
 
@@ -71,7 +71,13 @@
         (!document.documentElement.getAttribute('data-tema') && matchMedia('(prefers-color-scheme: dark)').matches);
       D.tema(oscuroAhora ? 'claro' : 'oscuro'); aplicarTema();
     });
-    U.$('#btnMenu').addEventListener('click', function () { U.$('#app').classList.toggle('menu-abierto'); });
+    /* En computadora: el botón alterna el menú compacto (solo iconos). En celular: abre el menú. */
+    var aplicarMenuMini = function () { U.$('#app').classList.toggle('menu-mini', !!D.get().menuMini); };
+    aplicarMenuMini();
+    U.$('#btnMenu').addEventListener('click', function () {
+      if (matchMedia('(max-width: 900px)').matches) { U.$('#app').classList.toggle('menu-abierto'); return; }
+      D.get().menuMini = !D.get().menuMini; D.guardar(); aplicarMenuMini();
+    });
     U.$('#app').addEventListener('click', function (ev) { if (ev.target === U.$('#app')) U.$('#app').classList.remove('menu-abierto'); });
     navegar();
   });

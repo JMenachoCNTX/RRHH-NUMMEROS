@@ -173,7 +173,35 @@
   /* =========================================================
      PERSONAL
      ========================================================= */
-  var filtroPers = { texto: '', estado: 'ACTIVO' };
+  /* ---------- Orden alfabético (personal y planilla) ---------- */
+  var OPC_ORDEN = [['nombre-asc', 'Nombre (A-Z)'], ['nombre-desc', 'Nombre (Z-A)'], ['apellido-asc', 'Apellido (A-Z)'], ['apellido-desc', 'Apellido (Z-A)']];
+  function claveOrden(k, campo) {
+    switch (campo) {
+      case 'apellido': return U.sinAcentos([U.apellidos(k), k.nombres].join(' ')).toLowerCase();
+      case 'ci': return String(k.ci || '');
+      case 'cargo': return U.sinAcentos(k.cargo || '').toLowerCase();
+      case 'ingreso': return k.fechaIngreso || '';
+      case 'sueldo': return Calc.num(k.sueldoBasico);
+      case 'banco': return U.sinAcentos(k.banco || '').toLowerCase();
+      case 'estado': return k.estado || 'ACTIVO';
+      default: return U.sinAcentos(U.nombreCompleto(k)).toLowerCase();
+    }
+  }
+  function compararPor(orden) {
+    var p = String(orden || 'nombre-asc').split('-'), campo = p[0], sentido = p[1] === 'desc' ? -1 : 1;
+    return function (a, b) {
+      var x = claveOrden(a, campo), y = claveOrden(b, campo);
+      var r = typeof x === 'number' ? x - y : String(x).localeCompare(String(y), 'es', { numeric: true });
+      if (!r) r = claveOrden(a, 'nombre').localeCompare(claveOrden(b, 'nombre'), 'es');
+      return r * sentido;
+    };
+  }
+  function nombreSegunOrden(k, orden) {
+    return /^apellido/.test(orden || '') && U.apellidos(k) ? U.apellidos(k) + ', ' + k.nombres : U.nombreCompleto(k);
+  }
+  V.compararPor = compararPor;
+
+  var filtroPers = { texto: '', estado: 'ACTIVO', orden: 'nombre-asc' };
   V.personal = function (cont) {
     var emp = D.empresaActiva(); if (!emp) { cont.innerHTML = sinEmpresa(); return; }
     var todos = D.empleados();
@@ -193,7 +221,16 @@
       h += '<div class="acciones" style="margin-bottom:14px"><div class="buscador">' + ic('buscar') + '<input id="busca" placeholder="Buscar por nombre, CI o cargo" value="' + e(filtroPers.texto) + '"></div>' +
         '<div class="pestanas" style="margin:0" role="tablist">' + [['ACTIVO', 'Activos'], ['RETIRADO', 'Retirados'], ['', 'Todos']].map(function (t) {
           return '<button role="tab" data-est="' + t[0] + '" aria-selected="' + (filtroPers.estado === t[0]) + '">' + t[1] + ' (' + todos.filter(function (k) { return !t[0] || (k.estado || 'ACTIVO') === t[0]; }).length + ')</button>';
-        }).join('') + '</div></div><div class="tabla-caja" style="max-height:66vh"><table class="tabla"><thead><tr><th class="fija">Nombre</th><th>CI</th><th>Cargo</th><th>Ingreso</th><th class="num">Sueldo básico</th><th>Banco</th><th>Cuenta</th><th>CUA</th><th>Estado</th></tr></thead><tbody id="tbPers"></tbody></table></div>';
+        }).join('') + '</div><label class="campo" style="flex-direction:row;align-items:center;gap:8px;margin-left:auto">Ordenar <select id="ordPers" style="width:170px">' +
+        OPC_ORDEN.map(function (o) { return '<option value="' + o[0] + '"' + (filtroPers.orden === o[0] ? ' selected' : '') + '>' + o[1] + '</option>'; }).join('') +
+        (OPC_ORDEN.some(function (o) { return o[0] === filtroPers.orden; }) ? '' : '<option selected value="' + filtroPers.orden + '">Por columna</option>') + '</select></label></div>' +
+        '<div class="tabla-caja" style="max-height:66vh"><table class="tabla"><thead><tr>' +
+        [['nombre', 'Nombre', 'fija'], ['ci', 'CI'], ['cargo', 'Cargo'], ['ingreso', 'Ingreso'], ['sueldo', 'Sueldo básico', 'num'], ['banco', 'Banco'], [null, 'Cuenta'], [null, 'CUA'], ['estado', 'Estado']].map(function (c) {
+          if (!c[0]) return '<th>' + c[1] + '</th>';
+          var act = filtroPers.orden.split('-')[0] === c[0] || (c[0] === 'nombre' && /^apellido/.test(filtroPers.orden));
+          var flecha = act ? (/desc$/.test(filtroPers.orden) ? ' ↓' : ' ↑') : '';
+          return '<th class="ordenable' + (c[2] ? ' ' + c[2] : '') + (act ? ' activo' : '') + '" data-ord="' + c[0] + '" title="Ordenar">' + c[1] + flecha + '</th>';
+        }).join('') + '</tr></thead><tbody id="tbPers"></tbody></table></div>';
       cont.innerHTML = h;
       var pintar = function () {
         var t = U.sinAcentos(filtroPers.texto.toLowerCase());
@@ -201,18 +238,29 @@
           if (filtroPers.estado && (k.estado || 'ACTIVO') !== filtroPers.estado) return false;
           if (!t) return true;
           return U.sinAcentos((U.nombreCompleto(k) + ' ' + k.ci + ' ' + (k.cargo || '')).toLowerCase()).indexOf(t) >= 0;
-        });
+        }).sort(compararPor(filtroPers.orden));
+        var verTodos = filtroPers.estado === '';
         U.$('#tbPers', cont).innerHTML = lista.map(function (k) {
           var falta = !k.cuenta || !k.cua || !k.fechaNac;
-          return '<tr data-id="' + k.id + '" style="cursor:pointer"><td class="nombre fija">' + e(U.nombreCompleto(k)) + (falta ? ' <span class="etiqueta borrador" title="Faltan datos (cuenta, CUA o fecha de nacimiento)">Completar</span>' : '') +
+          var retirado = (k.estado || 'ACTIVO') === 'RETIRADO';
+          return '<tr data-id="' + k.id + '" style="cursor:pointer"' + (verTodos && retirado ? ' class="fila-retirada"' : '') + '><td class="nombre fija">' + e(nombreSegunOrden(k, filtroPers.orden)) + (falta ? ' <span class="etiqueta borrador" title="Faltan datos (cuenta, CUA o fecha de nacimiento)">Completar</span>' : '') +
             '</td><td>' + e(k.ci) + '</td><td>' + e(k.cargo) + '</td><td>' + U.fecha(k.fechaIngreso) + '</td><td class="num">' + bs(k.sueldoBasico) + '</td><td>' + e(k.banco) +
-            '</td><td>' + e(k.cuenta) + '</td><td>' + e(k.cua) + '</td><td><span class="etiqueta ' + ((k.estado || 'ACTIVO') === 'RETIRADO' ? 'retirado' : '') + '">' + e(k.estado || 'ACTIVO') + '</span></td></tr>';
+            '</td><td>' + e(k.cuenta) + '</td><td>' + e(k.cua) + '</td><td><span class="etiqueta ' + (retirado ? (verTodos ? 'retirado-rojo' : 'retirado') : '') + '">' + e(k.estado || 'ACTIVO') + '</span></td></tr>';
         }).join('') || '<tr><td colspan="9" class="suave">No hay resultados.</td></tr>';
         U.$$('#tbPers tr[data-id]', cont).forEach(function (tr) { tr.onclick = function () { formEmpleado(D.empleado(tr.dataset.id)); }; });
       };
       pintar();
       U.$('#busca', cont).oninput = function (ev) { filtroPers.texto = ev.target.value; pintar(); };
       U.$$('[data-est]', cont).forEach(function (b) { b.onclick = function () { filtroPers.estado = b.dataset.est; V.personal(cont); }; });
+      U.$('#ordPers', cont).onchange = function (ev) { filtroPers.orden = ev.target.value; V.personal(cont); };
+      U.$$('th[data-ord]', cont).forEach(function (th) {
+        th.onclick = function () {
+          var campo = th.dataset.ord, actual = filtroPers.orden.split('-');
+          if (campo === 'nombre' && /^apellido/.test(filtroPers.orden)) campo = 'apellido';
+          filtroPers.orden = campo + '-' + (actual[0] === campo && actual[1] === 'asc' ? 'desc' : 'asc');
+          V.personal(cont);
+        };
+      });
       U.$('#btnImportar', cont).onclick = importarPersonal;
       U.$('#btnExpPers', cont).onclick = function () { X.personal(emp, todos); };
     }
@@ -394,7 +442,9 @@
       '<div class="acciones"><span class="etiqueta ' + p.estado + '">' + (cerrada ? 'Cerrada' : 'Borrador') + '</span>' +
       '<label class="campo" style="flex-direction:row;align-items:center;gap:8px">Fecha de pago <input type="date" id="fPago" value="' + e(p.fechaPago || '') + '" style="width:160px"' + (cerrada ? ' disabled' : '') + '></label>' +
       '<label class="campo" style="flex-direction:row;align-items:center;gap:8px">Glosa <input id="fGlosa" value="' + e(p.glosa || '') + '" style="width:220px"' + (cerrada ? ' disabled' : '') + '></label></div>' +
-      '<div class="acciones">' + (cerrada ? '<button class="btn" id="reabrir">' + ic('editar') + 'Reabrir</button>' :
+      '<div class="acciones"><label class="campo" style="flex-direction:row;align-items:center;gap:8px">Ordenar <select id="ordPl" style="width:160px">' +
+      OPC_ORDEN.map(function (o) { return '<option value="' + o[0] + '"' + ((p.orden || 'nombre-asc') === o[0] ? ' selected' : '') + '>' + o[1] + '</option>'; }).join('') + '</select></label>' +
+      (cerrada ? '<button class="btn" id="reabrir">' + ic('editar') + 'Reabrir</button>' :
         '<button class="btn" id="agregar">' + ic('mas') + 'Agregar / quitar personal</button><button class="btn btn-primario" id="cerrar">' + ic('candado') + 'Cerrar planilla</button>') +
       '<a class="btn" href="#/generar/' + p.id + '">' + ic('generar') + 'Generar archivos</a></div></div>' +
       (cerrada ? '<p class="suave peq" style="margin-top:8px">La planilla está cerrada: los montos quedan fijos aunque luego cambien los datos del personal o la configuración. Reábrela si necesitas corregir algo.</p>' :
@@ -404,14 +454,14 @@
       '<tr class="grupo-cab"><th class="fija"></th><th colspan="3">Haber</th><th colspan="2">Horas extra</th><th colspan="3">Bonos</th><th></th><th colspan="5">Descuentos</th><th></th><th></th></tr>' +
       '<tr><th class="fija">Trabajador</th><th class="num">Básico</th><th class="num">Días</th><th class="num">Salario ganado</th><th class="num">Cantidad</th><th class="num">Monto</th><th class="num">Antigüedad</th><th class="num">Producción · Dominic.</th><th class="num">Otros</th>' +
       '<th class="num destacado">Total ganado</th><th class="num">AFP</th><th class="num">ANS</th><th class="num">RC-IVA <span title="Facturas presentadas en el F-110">(Fact.)</span></th><th class="num">Anticipos</th><th class="num">Total desc.</th><th class="num destacado">Líquido pagable</th><th class="num">Patronal</th></tr></thead><tbody>';
-    calc.filas.forEach(function (x, i) {
-      var f = x.fila, r = x.r, k = x.emp;
+    calc.filas.forEach(function (x) {
+      var f = x.fila, r = x.r, k = x.emp, i = x.idx;
       var inp = function (campoN, cls) {
         var v = f[campoN];
         if (campoN === 'dias' && (v === '' || v === undefined || v === null)) return '<input class="dias" data-i="' + i + '" data-c="dias" placeholder="' + r.dias + '" aria-label="Días"' + (cerrada ? ' disabled' : '') + '>';
         return '<input class="' + (cls || '') + '" data-i="' + i + '" data-c="' + campoN + '" value="' + (Calc.num(v) ? v : '') + '" placeholder="0" inputmode="decimal" aria-label="' + campoN + '"' + (cerrada ? ' disabled' : '') + '>';
       };
-      h += '<tr data-i="' + i + '"><td class="nombre fija"><a href="#" data-det="' + i + '">' + e(U.nombreCompleto(k)) + '</a><div class="suave peq" style="font-weight:400">' + e(k.cargo || '') + '</div></td>' +
+      h += '<tr data-i="' + i + '"><td class="nombre fija"><a href="#" data-det="' + i + '">' + e(nombreSegunOrden(k, p.orden)) + '</a><div class="suave peq" style="font-weight:400">' + e(k.cargo || '') + '</div></td>' +
         '<td class="num">' + bs(r.basico) + '</td><td class="num">' + inp('dias', 'dias') + '</td><td class="num" data-o="salarioGanado">' + bs(r.salarioGanado) + '</td>' +
         '<td class="num">' + inp('horasExtra', 'dias') + '</td><td class="num" data-o="montoHorasExtra">' + bs(r.montoHorasExtra) + '</td>' +
         '<td class="num" data-o="bonoAntiguedad" title="' + r.anios + ' año(s) · ' + r.pctAntiguedad + '%">' + bs(r.bonoAntiguedad) + '</td>' +
@@ -427,6 +477,7 @@
     pintarTotales(cont, calc);
 
     U.$$('[data-det]', cont).forEach(function (a) { a.onclick = function (ev) { ev.preventDefault(); detalleFila(p, +a.dataset.det); }; });
+    U.$('#ordPl', cont).onchange = function (ev) { D.ordenarPlanilla(p, ev.target.value, compararPor(ev.target.value)); App.refrescar(); };
     if (!cerrada) {
       U.$$('#tPl input', cont).forEach(function (inp) {
         inp.addEventListener('input', function () {
@@ -434,7 +485,7 @@
           p.filas[i][c] = c === 'dias' && inp.value.trim() === '' ? '' : inp.value.trim();
           D.guardarPlanilla(p);
           var nc = D.calcularPlanilla(p);
-          var x = nc.filas[i], tr = U.$('tr[data-i="' + i + '"]', cont);
+          var x = nc.filas.find(function (k) { return k.idx === i; }), tr = U.$('tr[data-i="' + i + '"]', cont);
           U.$$('[data-o]', tr).forEach(function (td) {
             var k = td.dataset.o, v = k === 'patronal' ? x.r.cajaSalud + x.r.gestoraPatronal : x.r[k];
             td.innerHTML = (k === 'totalGanado' || k === 'liquido') ? '<b>' + bs(v) + '</b>' : bs(v);
@@ -445,7 +496,8 @@
         inp.addEventListener('keydown', function (ev) {
           if (ev.key === 'Enter' || ev.key === 'ArrowDown' || ev.key === 'ArrowUp') {
             ev.preventDefault();
-            var sig = U.$('input[data-c="' + inp.dataset.c + '"][data-i="' + (+inp.dataset.i + (ev.key === 'ArrowUp' ? -1 : 1)) + '"]', cont);
+            var col = U.$$('#tPl input[data-c="' + inp.dataset.c + '"]', cont), pos = col.indexOf(inp);
+            var sig = col[pos + (ev.key === 'ArrowUp' ? -1 : 1)];
             if (sig) { sig.focus(); sig.select(); }
           }
         });
@@ -492,7 +544,7 @@
   }
 
   function detalleFila(p, i) {
-    var c = D.calcularPlanilla(p), x = c.filas[i], r = x.r, d = r.rcIvaDetalle, cfg = c.cfg;
+    var c = D.calcularPlanilla(p), x = c.filas.find(function (k) { return k.idx === i; }), r = x.r, d = r.rcIvaDetalle, cfg = c.cfg;
     var l = function (a, b, tot) { return '<span class="' + (tot ? 'tot' : '') + '">' + a + '</span><span class="num ' + (tot ? 'tot' : '') + '">' + b + '</span>'; };
     var html = '<div class="rejilla r2"><div><h4 class="kicker" style="margin-bottom:8px">Ingresos</h4><div class="detalle-calc">' +
       l('Sueldo básico', bs(r.basico)) + l('Días pagados', r.dias) + l('Salario ganado (básico ÷ 30 × días)', bs(r.salarioGanado)) +
@@ -527,8 +579,7 @@
       var marcados = U.$$('input[data-id]', m).filter(function (c) { return c.checked; }).map(function (c) { return c.dataset.id; });
       p.filas = p.filas.filter(function (f) { return marcados.indexOf(f.empleadoId) >= 0; });
       marcados.forEach(function (id) { if (!p.filas.some(function (f) { return f.empleadoId === id; })) p.filas.push({ empleadoId: id, dias: '', horasExtra: 0, bonoProduccion: 0, dominicales: 0, otrosBonos: 0, facturasF110: 0, anticipos: 0 }); });
-      p.filas.sort(function (a, b) { return U.nombreCompleto(D.empleado(a.empleadoId) || {}).localeCompare(U.nombreCompleto(D.empleado(b.empleadoId) || {}), 'es'); });
-      D.guardarPlanilla(p); App.refrescar();
+      D.ordenarPlanilla(p, p.orden || 'nombre-asc', compararPor(p.orden || 'nombre-asc')); App.refrescar();
     } }]);
   }
 

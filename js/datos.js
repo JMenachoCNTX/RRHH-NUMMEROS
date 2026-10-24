@@ -156,6 +156,14 @@
     planillaDe: function (empresaId, anio, mes) {
       return estado.planillas.find(function (p) { return p.empresaId === empresaId && p.anio === anio && p.mes === mes; }) || null;
     },
+    /* Ordena las filas de la planilla (también define el orden de bancos, boletas y entidades) */
+    ordenarPlanilla: function (p, orden, comparar) {
+      var cerrada = p.estado === 'cerrada';
+      var empDe = function (f) { return (cerrada ? f.empleado : D.empleado(f.empleadoId)) || f.empleado || D.empleado(f.empleadoId) || {}; };
+      p.orden = orden;
+      p.filas.sort(function (a, b) { return comparar(empDe(a), empDe(b)); });
+      D.guardarPlanilla(p);
+    },
     guardarPlanilla: function (p) {
       if (!p.id) { p.id = U.id(); estado.planillas.push(p); }
       else {
@@ -172,11 +180,11 @@
     /* Calcula todas las filas de una planilla (con la configuración guardada en la planilla si está cerrada) */
     calcularPlanilla: function (p) {
       var cfg = p.estado === 'cerrada' && p.configUsada ? p.configUsada : estado.config;
-      var filas = p.filas.map(function (f) {
+      var filas = p.filas.map(function (f, idx) {
         var emp = f.estado === 'cerrada' || p.estado === 'cerrada' ? (f.empleado || D.empleado(f.empleadoId)) : (D.empleado(f.empleadoId) || f.empleado);
         if (!emp) return null;
         var r = Calc.calcularFila(emp, f, { anio: p.anio, mes: p.mes }, cfg);
-        return { fila: f, emp: emp, r: r };
+        return { fila: f, emp: emp, r: r, idx: idx };
       }).filter(Boolean);
       return { filas: filas, totales: Calc.totalizar(filas.map(function (x) { return x.r; })), cfg: cfg };
     },
