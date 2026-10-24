@@ -74,7 +74,9 @@
       if (txt) {
         var d = JSON.parse(txt);
         estado = Object.assign(estadoVacio(), d);
+        var versionGuardada = (d.config && d.config.versionConfig) || 1; // la versión real de lo guardado, antes de completar con valores nuevos
         estado.config = Object.assign(JSON.parse(JSON.stringify(Calc.CONFIG_BASE)), d.config || {});
+        estado.config.versionConfig = versionGuardada;
         limpiarBancoMercantil();
         migrarConfig();
       }
@@ -211,6 +213,9 @@
       var d = JSON.parse(txt);
       if (!d || !d.datos || !Array.isArray(d.datos.empleados)) throw new Error('El archivo no es una copia de seguridad de NUMMEROS RRHH.');
       estado = Object.assign(estadoVacio(), d.datos);
+      var vg = (d.datos.config && d.datos.config.versionConfig) || 1;
+      estado.config = Object.assign(JSON.parse(JSON.stringify(Calc.CONFIG_BASE)), d.datos.config || {});
+      estado.config.versionConfig = vg;
       limpiarBancoMercantil();
       migrarConfig();
       guardar();

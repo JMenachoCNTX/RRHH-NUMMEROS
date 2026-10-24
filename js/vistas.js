@@ -620,7 +620,7 @@
       var verif = '';
       if (emp && c.montoHE) {
         var r = Calc.calcularFila(emp, { dias: 30, horasExtra: c.horasExtra }, { anio: p.anio, mes: p.mes }, cfg);
-        verif = Math.abs(r.montoHorasExtra - c.montoHE) <= 0.05 ? '<span class="etiqueta">✓ ' + bs(c.montoHE) + '</span>' : '<span class="etiqueta retirado-rojo" title="Monto del cliente distinto al del sistema">Cliente ' + bs(c.montoHE) + ' · sistema ' + bs(r.montoHorasExtra) + '</span>';
+        verif = Math.abs(r.montoHorasExtra - c.montoHE) <= 0.05 ? '<span class="etiqueta">✓ Coincide: ' + bs(c.montoHE) + '</span>' : '<span class="etiqueta retirado-rojo">✗ No coincide</span><div class="peq" style="margin-top:4px">Cliente: ' + bs(c.montoHE) + '<br>Sistema: ' + bs(r.montoHorasExtra) + '</div>';
       }
       var actual = emp ? Calc.num((p.filas[idxDe(emp)] || {}).horasExtra) : 0;
       return '<tr data-j="' + j + '"' + (emp ? '' : ' class="fila-retirada"') + '><td class="nombre">' + e(c.nombres + ' ' + c.apellidos) + '</td>' +
@@ -630,8 +630,8 @@
     var sinPareja = pares.filter(function (x) { return !x.emp; }).length;
     var html = '<p>Se leyeron <b>' + pares.length + '</b> filas. Revisa que cada una corresponda a la persona correcta (puedes cambiarla en la lista).' +
       (sinPareja ? ' <b style="color:var(--error)">' + sinPareja + ' no se encontraron</b> en la planilla: elige a la persona o déjala en "No aplicar".' : '') + '</p>' +
-      '<div class="tabla-caja" style="max-height:52vh"><table class="tabla"><thead><tr><th>En la lista del cliente</th><th>Persona en la planilla</th><th class="num">Horas extra</th><th>Monto HE</th><th>Avisos</th></tr></thead><tbody>' + filasHtml + '</tbody></table></div>' +
-      '<p class="suave peq">"Monto HE" compara el monto del cliente con el que calcula el sistema: ✓ significa que coinciden.</p>';
+      '<div class="tabla-caja" style="max-height:52vh"><table class="tabla"><thead><tr><th>En la lista del cliente</th><th>Persona en la planilla</th><th class="num">Horas extra</th><th>¿El monto coincide?</th><th>Avisos</th></tr></thead><tbody>' + filasHtml + '</tbody></table></div>' +
+      '<p class="suave peq"><b>¿El monto coincide?</b> El cliente ya calcula cuánto pagar de horas extra; el sistema hace su propio cálculo y los compara. ✓ = son iguales, todo bien. ✗ = son distintos: revisa el sueldo de esa persona o el recargo de horas extra en Configuración antes de aplicar.</p>';
     U.modal('Revisar datos del cliente', html, [
       { texto: 'Cancelar', clase: 'btn btn-fantasma' },
       { texto: 'Aplicar a la planilla', clase: 'btn btn-primario', accion: function (mm) {
