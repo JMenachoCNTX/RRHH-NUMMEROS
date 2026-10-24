@@ -56,6 +56,18 @@
     estado.empresas.forEach(function (e) { delete e.bmsc; delete e.bancoPagos; });
   }
 
+  /* v2: horas extra al 50% sin redondear el valor hora, como paga Milthagor */
+  function migrarConfig() {
+    var c = estado.config;
+    if ((c.versionConfig || 1) < 2) {
+      c.recargoHoraExtra = 50; c.redondearValorHora = false; c.versionConfig = 2;
+      estado.planillas.forEach(function (p) {
+        if (p.configUsada && (p.configUsada.versionConfig || 1) < 2) { p.configUsada.redondearValorHora = true; p.configUsada.versionConfig = 2; }
+      });
+      guardar();
+    }
+  }
+
   function cargar() {
     try {
       var txt = localStorage.getItem(CLAVE);
@@ -64,6 +76,7 @@
         estado = Object.assign(estadoVacio(), d);
         estado.config = Object.assign(JSON.parse(JSON.stringify(Calc.CONFIG_BASE)), d.config || {});
         limpiarBancoMercantil();
+        migrarConfig();
       }
     } catch (e) { console.warn('No se pudo leer los datos guardados', e); }
     return estado;
@@ -191,6 +204,7 @@
       if (!d || !d.datos || !Array.isArray(d.datos.empleados)) throw new Error('El archivo no es una copia de seguridad de NUMMEROS RRHH.');
       estado = Object.assign(estadoVacio(), d.datos);
       limpiarBancoMercantil();
+      migrarConfig();
       guardar();
     },
     borrarTodo: function () { estado = estadoVacio(); guardar(); },

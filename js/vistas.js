@@ -711,12 +711,13 @@
       campo('ANS tramo 3: desde Bs', 'ans2d', c.ansTramos[2].desde, 'number') + campo('ANS tramo 3: %', 'ans2t', c.ansTramos[2].tasa, 'number', { paso: '0.01' }) + '</div></fieldset>' +
       '<fieldset class="ancho"><legend>RC-IVA</legend><div class="form">' + n('Tasa RC-IVA (%)', 'rcIva') + n('Mínimo no imponible (en SMN)', 'rcIvaMinNoImponibleSMN', 'Ley: 2 salarios mínimos', '1') +
       n('Crédito 13% sobre (en SMN)', 'rcIvaCreditoSMN', 'Ley: 13% de 2 salarios mínimos. Tu Excel usaba 1.', '1') + '</div></fieldset>' +
-      '<fieldset class="ancho"><legend>Ingresos</legend><div class="form">' + n('Recargo hora extra (%)', 'recargoHoraExtra', 'Ley General del Trabajo: 100% (se paga doble). Tu Excel usaba 50%.', '1') +
+      '<fieldset class="ancho"><legend>Ingresos</legend><div class="form">' + n('Recargo hora extra (%)', 'recargoHoraExtra', 'Se usa 50%, como paga la empresa. La Ley General del Trabajo indica 100%.', '1') +
+      campo('Redondear valor hora a centavos', 'redondearValorHora', c.redondearValorHora ? '1' : '0', 'select', { opciones: [['0', 'No (como la planilla del cliente)'], ['1', 'Sí']] }) +
       n('Bono antigüedad: base en SMN', 'antiguedadBaseSMN', 'D.S. 21137: 3 salarios mínimos. Tu Excel usaba 1.', '1') +
       campo('Bono antigüedad proporcional a días', 'antiguedadProporcional', c.antiguedadProporcional ? '1' : '0', 'select', { opciones: [['1', 'Sí'], ['0', 'No']] }) + '</div></fieldset>' +
       '<fieldset class="ancho"><legend>Aportes de la empresa</legend><div class="form">' + n('Caja de salud (%)', 'cajaSalud') + n('Gestora patronal (%)', 'gestoraPatronal') +
       n('Previsión indemnización (%)', 'provIndemnizacion') + n('Previsión aguinaldo (%)', 'provAguinaldo') + '</div></fieldset>' +
-      '</form><div class="acciones"><button class="btn btn-primario" id="gCfg">Guardar configuración</button><button class="btn btn-fantasma" id="rCfg">Volver a los valores de ley</button></div></div>' +
+      '</form><div class="acciones"><button class="btn btn-primario" id="gCfg">Guardar configuración</button><button class="btn btn-fantasma" id="rCfg">Volver a los valores por defecto</button></div></div>' +
       '<div class="rejilla"><div class="tarjeta"><h3>Copia de seguridad</h3><p class="suave" style="margin:4px 0 14px">Tus datos se guardan solo en este navegador. Descarga una copia cada mes y guárdala en tu Google Drive; sirve también para pasar los datos a otra computadora.</p>' +
       '<div class="acciones"><button class="btn btn-primario" id="bkExp">' + ic('generar') + 'Descargar copia</button><button class="btn" id="bkImp">' + ic('subir') + 'Restaurar copia</button></div>' +
       (D.get().actualizado ? '<p class="suave peq" style="margin-top:10px">Último cambio guardado: ' + new Date(D.get().actualizado).toLocaleString('es-BO') + '</p>' : '') + '</div>' +
@@ -729,6 +730,7 @@
       ['smn', 'horasDia', 'afpLaboral', 'rcIva', 'rcIvaMinNoImponibleSMN', 'rcIvaCreditoSMN', 'recargoHoraExtra', 'antiguedadBaseSMN', 'cajaSalud', 'gestoraPatronal', 'provIndemnizacion', 'provAguinaldo']
         .forEach(function (k) { nc[k] = Calc.num(d[k]); });
       nc.antiguedadProporcional = d.antiguedadProporcional === '1';
+      nc.redondearValorHora = d.redondearValorHora === '1';
       nc.ansTramos = [0, 1, 2].map(function (i) { return { desde: Calc.num(d['ans' + i + 'd']), tasa: Calc.num(d['ans' + i + 't']) }; });
       D.guardarConfig(nc); U.aviso('Configuración guardada');
     };

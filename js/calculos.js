@@ -22,7 +22,9 @@
     rcIvaMinNoImponibleSMN: 2, // Mínimo no imponible = 2 SMN
     rcIvaCreditoSMN: 2,        // Se descuenta el 13% de 2 SMN (pago a cuenta)
     horasDia: 8,
-    recargoHoraExtra: 100,     // % de recargo de la hora extra (100% = se paga doble)
+    recargoHoraExtra: 50,      // % de recargo de la hora extra (práctica de Milthagor: 50%; la LGT indica 100%)
+    redondearValorHora: false, // false = como la planilla del cliente (valor hora sin redondear)
+    versionConfig: 2,
     antiguedadBaseSMN: 3,      // Bono de antigüedad se calcula sobre 3 SMN
     antiguedadProporcional: true, // prorratear el bono según días pagados
     cajaSalud: 10,             // % aporte patronal Caja de Salud
@@ -125,7 +127,8 @@
     bonoAntig = r2(bonoAntig);
 
     var valorHora = basico / 30 / cfg.horasDia;
-    var valorHoraExtra = r2(valorHora * (1 + cfg.recargoHoraExtra / 100)); // redondeado a centavos, como en planilla
+    var valorHoraExtraExacto = valorHora * (1 + cfg.recargoHoraExtra / 100);
+    var valorHoraExtra = cfg.redondearValorHora ? r2(valorHoraExtraExacto) : valorHoraExtraExacto;
     var horasExtra = num(mov.horasExtra);
     var montoHE = r2(horasExtra * valorHoraExtra);
 
@@ -147,7 +150,7 @@
     return {
       basico: r2(basico), dias: dias, horasDia: cfg.horasDia, salarioGanado: salarioGanado,
       anios: anios, pctAntiguedad: pct, bonoAntiguedad: bonoAntig,
-      valorHora: r2(valorHora), valorHoraExtra: valorHoraExtra, horasExtra: horasExtra, montoHorasExtra: montoHE,
+      valorHora: r2(valorHora), valorHoraExtra: r2(valorHoraExtra), horasExtra: horasExtra, montoHorasExtra: montoHE,
       bonoProduccion: bonoProd, dominicales: dominicales, otrosBonos: otrosBonos,
       totalGanado: totalGanado, afp: afp, ans: ans, rcIva: rc.aPagar, rcIvaDetalle: rc,
       anticipos: anticipos, totalDescuentos: totalDesc, liquido: liquido,
