@@ -5,17 +5,18 @@
   var bs = function (n) { return U.bs(n); };
   var e = U.esc;
 
-  /* Encabezado: logo de la empresa (protagonista) + sus datos */
+  /* Encabezado: logo y datos del cliente (protagonista) + NUMMEROS y CONTAX discretos a la derecha */
   function cabecera(emp) {
     var logo = emp.logo ? '<img class="logo-emp-doc" src="' + e(emp.logo) + '" alt="' + e(emp.razonSocial) + '">' : '';
     return '<div class="doc-cab">' + logo + '<div class="emp"><b>' + e(emp.razonSocial) + '</b>NIT: ' + e(emp.nit) +
-      (emp.direccion ? '<br>' + e(emp.direccion) : '') + '<br>' + e(U.mayus(emp.ciudad || 'Santa Cruz')) + ' - BOLIVIA</div></div>';
+      (emp.direccion ? '<br>' + e(emp.direccion) : '') + '<br>' + e(U.mayus(emp.ciudad || 'Santa Cruz')) + ' - BOLIVIA</div>' +
+      '<div class="marcas-doc">' +
+      '<div><span>Sistema</span><img src="assets/logos/nummeros-logotipo-horizontal-principal.svg" alt="NUMMEROS" class="m-num"></div>' +
+      '<div><span>Servicio contable</span><img src="assets/logos/contax-horizontal-color.svg" alt="CONTAX" class="m-ctx"></div>' +
+      '</div></div>';
   }
-  /* Pie: NUMMEROS (sistema) y CONTAX (servicio contable) */
-  function pie() {
-    return '<div class="pie-doc"><span>Sistema</span><img src="assets/logos/nummeros-logotipo-horizontal-principal.svg" alt="NUMMEROS" style="height:9px">' +
-      '<span class="sep">·</span><span>Servicio contable</span><img src="assets/logos/contax-horizontal-color.svg" alt="CONTAX" style="height:11px"></div>';
-  }
+  /* Pie (vacío) */
+  function pie() { return ''; } /* las marcas NUMMEROS y CONTAX ya van arriba */
 
   var Doc = {};
 

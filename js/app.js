@@ -23,18 +23,6 @@
     }).join('');
   }
 
-  /* Logo de la empresa activa arriba del menú (si no tiene logo, su nombre) */
-  function pintarMarca() {
-    var emp = D.empresaActiva(), cont = U.$('#marcaEmpresa');
-    if (!emp) { cont.innerHTML = '<span class="nombre-emp">RRHH</span><small>Recursos Humanos</small>'; return; }
-    var claro = emp.logo, oscuro = emp.logoOscuro || '';
-    cont.innerHTML = claro
-      ? '<img class="logo-emp' + (oscuro ? ' logo-claro' : ' logo-fijo') + '" src="' + U.esc(claro) + '" alt="' + U.esc(emp.razonSocial) + '">' +
-        (oscuro ? '<img class="logo-emp logo-oscuro" src="' + U.esc(oscuro) + '" alt="' + U.esc(emp.razonSocial) + '">' : '') +
-        '<small>' + U.esc(emp.razonSocial) + '</small>'
-      : '<span class="nombre-emp">' + U.esc(emp.razonSocial) + '</span><small>Recursos Humanos</small>';
-  }
-
   function pintarEmpresas() {
     var sel = U.$('#selEmpresa'), lista = D.empresas(), act = D.empresaActiva();
     if (!lista.length) { sel.innerHTML = '<option>Sin empresas</option>'; sel.disabled = true; return; }
@@ -55,7 +43,6 @@
     var r = RUTAS.find(function (x) { return x.id === id; }) || RUTAS[0];
     pintarMenu(r.id);
     pintarEmpresas();
-    pintarMarca();
     U.$('#tituloVista').textContent = r.titulo;
     document.title = r.titulo + ' · RRHH NUMMEROS';
     var cont = U.$('#vista');

@@ -27,10 +27,10 @@ Jhonny (CONTAX / NUMMEROS, Santa Cruz, Bolivia). No es programador: Claude hace 
 - Bono de antigüedad sobre 3 SMN y RC-IVA con crédito del 13 % de 2 SMN: confirmados por Jhonny (24/10/2026).
 - Todas las tasas son editables en Configuración.
 
-## Marcas (3 niveles)
-- Logo de la empresa cliente arriba del menú (grande) y en el encabezado de todos los documentos; se sube en Empresas → Editar → Logo (claro y oscuro opcional).
-- NUMMEROS = el sistema y CONTAX = servicio contable: abajo del menú y al pie de cada documento.
-- MILTHAGOR S.R.L. opera como MTG Delivery: logo vectorizado en assets/empresas/ (Alfa Slab One + Montserrat), se asigna solo.
+## Marcas
+- El sistema (menú) lleva la marca NUMMEROS; abajo del menú, CONTAX como servicio contable. El logo del cliente NO va en la interfaz.
+- Documentos que se generan: logo y datos del cliente a la izquierda (protagonista); NUMMEROS ("Sistema") y CONTAX ("Servicio contable") arriba a la derecha, más pequeños.
+- Logo del cliente: Empresas → Editar → Logo. MILTHAGOR S.R.L. = MTG Delivery (assets/empresas/, se asigna solo).
 
 ## Interfaz
 - Personal y Planilla se ordenan por nombre o apellido (A-Z / Z-A); el orden de la planilla también define el orden de los archivos.

@@ -104,7 +104,7 @@
       h += '<div class="rejilla r3">' + lista.map(function (x) {
         var n = D.empleados(x.id).filter(function (k) { return k.estado !== 'RETIRADO'; }).length;
         var activa = (D.empresaActiva() || {}).id === x.id;
-        return '<div class="tarjeta">' + (x.logo ? '<img class="logo-tarjeta" src="' + e(x.logo) + '" alt="">' : '') + '<div class="tarjeta-cab" style="margin-bottom:8px"><div><h3>' + e(x.razonSocial) + '</h3><p class="suave peq">NIT ' + e(x.nit) + ' · ' + e(x.ciudad || '') + '</p></div>' +
+        return '<div class="tarjeta"><div class="tarjeta-cab" style="margin-bottom:8px"><div><h3>' + e(x.razonSocial) + '</h3><p class="suave peq">NIT ' + e(x.nit) + ' · ' + e(x.ciudad || '') + '</p></div>' +
           (activa ? '<span class="etiqueta cerrada">En uso</span>' : '') + '</div><p class="peq">' + n + ' trabajador(es) activo(s)</p>' +
           '<div class="acciones" style="margin-top:14px">' + (activa ? '' : '<button class="btn btn-sm btn-primario" data-usar="' + x.id + '">Usar esta empresa</button>') +
           '<button class="btn btn-sm" data-editar="' + x.id + '">' + ic('editar') + 'Editar</button></div></div>';
@@ -150,7 +150,7 @@
       campo('Representante legal', 'representante', x.representante) + campo('Cargo del representante', 'cargoRepresentante', x.cargoRepresentante || 'Gerente General') +
       campo('Firma en boletas', 'firmaBoleta', x.firmaBoleta || 'Jefe Dpto. Adm. y Finanzas', 'text', { ayuda: 'Texto bajo la segunda firma de la boleta' }) +
       '</div></fieldset>' +
-      '<fieldset class="ancho"><legend>Logo de la empresa</legend><p class="suave peq" style="margin-bottom:10px">Se muestra arriba del menú y en todos los documentos (planillas, boletas, certificados). Usa PNG con fondo transparente o SVG.</p>' +
+      '<fieldset class="ancho"><legend>Logo de la empresa</legend><p class="suave peq" style="margin-bottom:10px">Va en el encabezado de todos los documentos que se generan (planillas, boletas, certificados, aportes, asiento). Usa PNG con fondo transparente o SVG.</p>' +
       '<div class="rejilla r2"><div class="logo-carga"><span class="peq"><b>Para fondo claro</b></span><div class="logo-prev claro" id="prevLogo">' + (x.logo ? '<img src="' + e(x.logo) + '" alt="">' : '<span class="suave peq">Sin logo</span>') + '</div>' +
       '<div class="acciones"><button type="button" class="btn btn-sm" data-sube="logo">' + ic('subir') + 'Subir logo</button><button type="button" class="btn btn-sm btn-fantasma" data-quita="logo">Quitar</button></div></div>' +
       '<div class="logo-carga"><span class="peq"><b>Para modo oscuro</b> (opcional)</span><div class="logo-prev oscuro" id="prevLogoOscuro">' + (x.logoOscuro ? '<img src="' + e(x.logoOscuro) + '" alt="">' : '<span class="peq" style="color:#8EB69B">Opcional: versión blanca</span>') + '</div>' +

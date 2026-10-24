@@ -354,3 +354,14 @@ body.sin-scroll { overflow: hidden; }
 .logo-prev img { max-height: 90px; max-width: 100%; object-fit: contain; }
 .logo-prev.claro { background: #fff; }
 .logo-prev.oscuro { background: #051F20; }
+
+/* Documentos: marcas NUMMEROS y CONTAX arriba a la derecha, más pequeñas que el logo del cliente */
+.doc-cab .emp { flex: 1; }
+.marcas-doc { display: flex; flex-direction: column; align-items: flex-end; gap: 5px; }
+.marcas-doc div { display: flex; align-items: center; gap: 6px; }
+.marcas-doc span { font-size: 7px; letter-spacing: .08em; text-transform: uppercase; color: #7a8c83; }
+.marcas-doc img { width: auto; display: block; opacity: .9; }
+.marcas-doc .m-num { height: 11px; }
+.marcas-doc .m-ctx { height: 14px; }
+.boleta .marcas-doc .m-num { height: 9px; }
+.boleta .marcas-doc .m-ctx { height: 12px; }
