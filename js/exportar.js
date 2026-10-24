@@ -66,10 +66,15 @@
     var d = Calc.aFecha(iso) || new Date();
     return Math.round((Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()) - Date.UTC(1899, 11, 30)) / 86400000);
   }
+  /* El banco rechaza guiones, espacios y puntos en cuenta y CI: se quitan */
+  function limpiarCodigo(v) {
+    return String(v === undefined || v === null ? '' : v).replace(/[\s\-–—._\/]/g, '').trim();
+  }
   function comoNumero(v) {
-    var s = String(v === undefined || v === null ? '' : v).trim();
+    var s = limpiarCodigo(v);
     return /^\d{1,15}$/.test(s) ? Number(s) : s;
   }
+  X.limpiarCodigo = limpiarCodigo;
   X.bancoGanadero = function (empresa, p, calc, fechaPago, glosa) {
     var cab = ['NRO. DE ORDEN', 'CODIGO DE CLIENTE', 'NRO.DECUENTA', 'NOMBRE DE CLIENTE', 'DOC DE IDENTIDAD', 'IMPORTE', 'FECHA DE PAGO', 'FORMA DE PAGO',
       'MONEDA DESTINO', 'ENTIDAD DESTINO', 'SUCURSAL DESTINO', 'GLOSA', 'CODIGO UNICO', 'EMAIL NOTIFICACION', 'NRO_DOC_TERCERO', 'NOMBRE_TERCERO'];

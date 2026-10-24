@@ -445,7 +445,7 @@
       '<div class="acciones"><label class="campo" style="flex-direction:row;align-items:center;gap:8px">Ordenar <select id="ordPl" style="width:160px">' +
       OPC_ORDEN.map(function (o) { return '<option value="' + o[0] + '"' + ((p.orden || 'nombre-asc') === o[0] ? ' selected' : '') + '>' + o[1] + '</option>'; }).join('') + '</select></label>' +
       (cerrada ? '<button class="btn" id="reabrir">' + ic('editar') + 'Reabrir</button>' :
-        '<button class="btn" id="agregar">' + ic('mas') + 'Agregar / quitar personal</button><button class="btn btn-primario" id="cerrar">' + ic('candado') + 'Cerrar planilla</button>') +
+        '<button class="btn" id="datosCliente">' + ic('subir') + 'Datos del cliente</button><button class="btn" id="agregar">' + ic('mas') + 'Agregar / quitar personal</button><button class="btn btn-primario" id="cerrar">' + ic('candado') + 'Cerrar planilla</button>') +
       '<a class="btn" href="#/generar/' + p.id + '">' + ic('generar') + 'Generar archivos</a></div></div>' +
       (cerrada ? '<p class="suave peq" style="margin-top:8px">La planilla está cerrada: los montos quedan fijos aunque luego cambien los datos del personal o la configuración. Reábrela si necesitas corregir algo.</p>' :
         '<p class="suave peq" style="margin-top:8px">Escribe en las casillas verdes; todo se calcula y se guarda solo. Haz clic en un nombre para ver el detalle del cálculo. Deja "Días" vacío para que el sistema los calcule por fecha de ingreso/retiro.</p>') + '</div>';
@@ -505,6 +505,7 @@
       U.$('#fPago', cont).onchange = function (ev) { p.fechaPago = ev.target.value; D.guardarPlanilla(p); };
       U.$('#fGlosa', cont).onchange = function (ev) { p.glosa = ev.target.value; D.guardarPlanilla(p); };
       U.$('#agregar', cont).onclick = function () { gestionarFilas(p); };
+      U.$('#datosCliente', cont).onclick = function () { datosCliente(p); };
       U.$('#cerrar', cont).onclick = function () {
         var c = D.calcularPlanilla(p);
         var faltan = c.filas.filter(function (x) { return !x.emp.cuenta || !x.emp.cua; }).map(function (x) { return U.nombreCompleto(x.emp); });
@@ -565,6 +566,95 @@
     U.modal(U.nombreCompleto(x.emp) + ' · ' + nombrePeriodo(p), html, [
       { texto: 'Boleta de pago', clase: 'btn', accion: function () { Doc.imprimir(Doc.boletas(D.empresa(p.empresaId), p, c, [x.fila.empleadoId])); } },
       { texto: 'Cerrar', clase: 'btn btn-primario' }], { ancho: true });
+  }
+
+  /* ---------- Datos del cliente: horas extra (y avisos) desde su hoja de cálculo ---------- */
+  function datosCliente(p) {
+    var html = '<p>Abre la hoja que les manda el cliente (Google Sheets o Excel), <b>selecciona las filas con sus encabezados</b> (desde "Nombre(s)" hasta la última persona), copia con <b>Ctrl + C</b> y pega aquí con <b>Ctrl + V</b>.</p>' +
+      '<textarea id="pegado" style="min-height:160px;font-family:monospace;font-size:13px" placeholder="Pega aquí las filas copiadas…"></textarea>' +
+      '<p class="suave peq">También puedes subir el archivo: <button type="button" class="btn btn-sm" id="archCli">' + ic('subir') + 'Elegir Excel</button> <span id="nomArch"></span></p>' +
+      '<div class="alerta"><span>Solo se actualizan las <b>horas extra</b> de las personas que vienen en la lista. Las demás personas de la planilla no cambian.</span></div>';
+    var entrada = null;
+    var m = U.modal('Datos del cliente · ' + nombrePeriodo(p), html, [
+      { texto: 'Cancelar', clase: 'btn btn-fantasma' },
+      { texto: 'Revisar', clase: 'btn btn-primario', accion: function (mm) {
+        var datos = Imp.leer(entrada || U.$('#pegado', mm).value);
+        if (!datos.filas.length) { U.aviso('No se encontraron filas con nombres', 'error'); return false; }
+        revisarDatosCliente(p, datos);
+      } }
+    ], { ancho: true });
+    U.$('#archCli', m.el).onclick = function () {
+      var inp = document.createElement('input'); inp.type = 'file'; inp.accept = '.xlsx,.xls,.csv';
+      inp.onchange = function () {
+        var f = inp.files[0]; if (!f) return;
+        var r = new FileReader();
+        r.onload = function (ev) {
+          try {
+            var wb = XLSX.read(new Uint8Array(ev.target.result), { type: 'array', cellDates: true });
+            entrada = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { header: 1, raw: true, defval: '' });
+            U.$('#nomArch', m.el).textContent = '✓ ' + f.name; U.$('#pegado', m.el).value = '';
+          } catch (err) { U.aviso('No se pudo leer el archivo', 'error'); }
+        };
+        r.readAsArrayBuffer(f);
+      };
+      inp.click();
+    };
+    U.$('#pegado', m.el).oninput = function () { entrada = null; U.$('#nomArch', m.el).textContent = ''; };
+  }
+
+  function revisarDatosCliente(p, datos) {
+    var calc = D.calcularPlanilla(p);
+    var emps = calc.filas.map(function (x) { return x.emp; });
+    var pares = Imp.emparejar(datos.filas, emps);
+    var cfg = calc.cfg;
+    var opciones = function (sel) {
+      return '<option value="">— No aplicar —</option>' + calc.filas.slice().sort(function (a, b) { return U.nombreCompleto(a.emp).localeCompare(U.nombreCompleto(b.emp), 'es'); })
+        .map(function (x) { return '<option value="' + x.idx + '"' + (sel && x.emp.id === sel.id ? ' selected' : '') + '>' + e(U.nombreCompleto(x.emp)) + '</option>'; }).join('');
+    };
+    var idxDe = function (emp) { var x = emp && calc.filas.find(function (k) { return k.emp.id === emp.id; }); return x ? x.idx : null; };
+    var filasHtml = pares.map(function (par, j) {
+      var c = par.cliente, emp = par.emp, avisos = [];
+      if (emp && c.totalGanado && Math.abs(c.totalGanado - Calc.num(emp.sueldoBasico)) > 0.05) avisos.push('Sueldo: cliente ' + bs(c.totalGanado) + ' · sistema ' + bs(emp.sueldoBasico) + ' <label style="white-space:nowrap"><input type="checkbox" data-sueldo="' + j + '"> actualizar</label>');
+      if (c.fechaFin) avisos.push('<b>Tiene fecha fin: ' + U.fecha(c.fechaFin) + '</b> (¿retiro?)');
+      var verif = '';
+      if (emp && c.montoHE) {
+        var r = Calc.calcularFila(emp, { dias: 30, horasExtra: c.horasExtra }, { anio: p.anio, mes: p.mes }, cfg);
+        verif = Math.abs(r.montoHorasExtra - c.montoHE) <= 0.05 ? '<span class="etiqueta">✓ ' + bs(c.montoHE) + '</span>' : '<span class="etiqueta retirado-rojo" title="Monto del cliente distinto al del sistema">Cliente ' + bs(c.montoHE) + ' · sistema ' + bs(r.montoHorasExtra) + '</span>';
+      }
+      var actual = emp ? Calc.num((p.filas[idxDe(emp)] || {}).horasExtra) : 0;
+      return '<tr data-j="' + j + '"' + (emp ? '' : ' class="fila-retirada"') + '><td class="nombre">' + e(c.nombres + ' ' + c.apellidos) + '</td>' +
+        '<td><select data-emp="' + j + '" style="min-width:200px">' + opciones(emp) + '</select></td>' +
+        '<td class="num">' + (emp ? actual : '—') + ' → <b>' + c.horasExtra + '</b></td><td>' + verif + '</td><td class="peq">' + (avisos.join('<br>') || '<span class="suave">—</span>') + '</td></tr>';
+    }).join('');
+    var sinPareja = pares.filter(function (x) { return !x.emp; }).length;
+    var html = '<p>Se leyeron <b>' + pares.length + '</b> filas. Revisa que cada una corresponda a la persona correcta (puedes cambiarla en la lista).' +
+      (sinPareja ? ' <b style="color:var(--error)">' + sinPareja + ' no se encontraron</b> en la planilla: elige a la persona o déjala en "No aplicar".' : '') + '</p>' +
+      '<div class="tabla-caja" style="max-height:52vh"><table class="tabla"><thead><tr><th>En la lista del cliente</th><th>Persona en la planilla</th><th class="num">Horas extra</th><th>Monto HE</th><th>Avisos</th></tr></thead><tbody>' + filasHtml + '</tbody></table></div>' +
+      '<p class="suave peq">"Monto HE" compara el monto del cliente con el que calcula el sistema: ✓ significa que coinciden.</p>';
+    U.modal('Revisar datos del cliente', html, [
+      { texto: 'Cancelar', clase: 'btn btn-fantasma' },
+      { texto: 'Aplicar a la planilla', clase: 'btn btn-primario', accion: function (mm) {
+        var n = 0, ns = 0, vistos = {};
+        for (var j = 0; j < pares.length; j++) {
+          var v = U.$('select[data-emp="' + j + '"]', mm).value;
+          if (v === '') continue;
+          if (vistos[v]) { U.aviso('Una persona está elegida dos veces: ' + U.nombreCompleto(calc.filas.find(function (k) { return k.idx === +v; }).emp), 'error'); return false; }
+          vistos[v] = 1;
+        }
+        pares.forEach(function (par, j) {
+          var v = U.$('select[data-emp="' + j + '"]', mm).value;
+          if (v === '') return;
+          var fila = p.filas[+v]; fila.horasExtra = par.cliente.horasExtra; n++;
+          var chk = U.$('input[data-sueldo="' + j + '"]', mm);
+          if (chk && chk.checked) {
+            var emp = D.empleado(fila.empleadoId);
+            if (emp) { emp.sueldoBasico = par.cliente.totalGanado; D.guardarEmpleado(emp); ns++; }
+          }
+        });
+        D.guardarPlanilla(p); App.refrescar();
+        U.aviso('Horas extra cargadas para ' + n + ' persona(s)' + (ns ? ' · ' + ns + ' sueldo(s) actualizado(s)' : '') + '. Las demás no cambiaron.');
+      } }
+    ], { ancho: true });
   }
 
   function gestionarFilas(p) {
