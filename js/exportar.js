@@ -48,19 +48,62 @@
     X.excel(nombreArchivo(empresa, p, 'Planilla_Sueldos', 'xlsx'), [{ nombre: 'Planilla', filas: filas, anchos: [5, 11, 18, 22, 12, 12, 6, 24, 12].concat(Array(22).fill(13)) }]);
   };
 
-  /* ---------- Banco Ganadero ---------- */
+  /* ---------- Banco Ganadero (pago masivo) ----------
+     Copia exacta del Excel que la representante legal carga al banco:
+     una hoja "Hoja1", encabezado verde #00672B con letra blanca Calibri 11 en negrita,
+     datos en Century Gothic 9, nombre como "Apellidos Nombres", cuenta y CI como número,
+     fecha de pago como fecha real de Excel. */
+  function nombreEmpresaCorto(razon) {
+    var s = String(razon || 'Empresa').replace(/S\.\s*R\.\s*L\.?/i, 'SRL').replace(/S\.\s*A\.?$/i, 'SA').replace(/LTDA\.?/i, 'LTDA');
+    return s.split(/\s+/).map(function (w) {
+      return /^(SRL|SA|LTDA)$/i.test(w) ? w.toUpperCase() : w.charAt(0).toUpperCase() + w.slice(1).toLowerCase();
+    }).join(' ').trim();
+  }
+  X.nombreArchivoGanadero = function (empresa, p) {
+    return 'Planilla Sueldos - ' + Calc.MESES[p.mes - 1] + ' ' + nombreEmpresaCorto(empresa.razonSocial) + '.xlsx';
+  };
+  function serialExcel(iso) {
+    var d = Calc.aFecha(iso) || new Date();
+    return Math.round((Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()) - Date.UTC(1899, 11, 30)) / 86400000);
+  }
+  function comoNumero(v) {
+    var s = String(v === undefined || v === null ? '' : v).trim();
+    return /^\d{1,15}$/.test(s) ? Number(s) : s;
+  }
   X.bancoGanadero = function (empresa, p, calc, fechaPago, glosa) {
     var cab = ['NRO. DE ORDEN', 'CODIGO DE CLIENTE', 'NRO.DECUENTA', 'NOMBRE DE CLIENTE', 'DOC DE IDENTIDAD', 'IMPORTE', 'FECHA DE PAGO', 'FORMA DE PAGO',
       'MONEDA DESTINO', 'ENTIDAD DESTINO', 'SUCURSAL DESTINO', 'GLOSA', 'CODIGO UNICO', 'EMAIL NOTIFICACION', 'NRO_DOC_TERCERO', 'NOMBRE_TERCERO'];
-    var filas = [cab], faltan = [];
-    calc.filas.filter(function (x) { return x.r.liquido > 0; }).forEach(function (x, i) {
+    var estCab = { font: { name: 'Calibri', sz: 11, bold: true, color: { rgb: 'FFFFFF' } }, fill: { patternType: 'solid', fgColor: { rgb: '00672B' } } };
+    var estDato = function () { return { font: { name: 'Century Gothic', sz: 9 } }; }; // un objeto nuevo por celda
+    var ws = {}, faltan = [], fila = 0;
+    var poner = function (c, r, celda) { ws[XLSX.utils.encode_cell({ c: c, r: r })] = celda; };
+    cab.forEach(function (t, c) { poner(c, 0, { t: 's', v: t, s: JSON.parse(JSON.stringify(estCab)) }); });
+    var fecha = serialExcel(fechaPago);
+    calc.filas.filter(function (x) { return x.r.liquido > 0; }).forEach(function (x) {
       var e = x.emp, b = D.bancoPorAbrev(e.banco);
       if (!e.cuenta || !b) faltan.push(U.nombreCompleto(e));
       var esGanadero = b && b.abrev === 'GANADERO';
-      filas.push([i + 1, '', String(e.cuenta || ''), U.nombreCompleto(e), String(e.ci), r2(x.r.liquido), U.fecha(fechaPago),
-        esGanadero ? 1 : 3, esGanadero ? 0 : 1, esGanadero ? 0 : (b ? b.ach : ''), esGanadero ? 0 : (empresa.sucursalBanco || 'SCZ'), glosa, '', e.correo || '', '', '']);
+      fila++;
+      var nombre = [U.apellidos(e), e.nombres].filter(Boolean).join(' ').replace(/\s+/g, ' ').trim();
+      var vals = [
+        fila, null, comoNumero(e.cuenta), nombre, comoNumero(e.ci), r2(x.r.liquido), fecha,
+        esGanadero ? 1 : 3, esGanadero ? 0 : 1, esGanadero ? 0 : (b ? Number(b.ach) : ''), esGanadero ? 0 : (empresa.sucursalBanco || 'SCZ'),
+        glosa, null, e.correo || null, null, null
+      ];
+      vals.forEach(function (v, c) {
+        if (v === null || v === '') return;
+        var celda = { t: typeof v === 'number' ? 'n' : 's', v: v, s: estDato() };
+        if (c === 2 && typeof v === 'number') celda.z = '0';
+        if (c === 5) celda.z = '#,##0.00';
+        if (c === 6) celda.z = 'm/d/yy';
+        poner(c, fila, celda);
+      });
     });
-    X.excel(nombreArchivo(empresa, p, 'Banco_Ganadero', 'xlsx'), [{ nombre: 'Planilla Banco', filas: filas, anchos: [8, 10, 18, 32, 12, 12, 12, 8, 8, 10, 10, 26, 8, 30, 10, 10] }]);
+    ws['!ref'] = XLSX.utils.encode_range({ s: { c: 0, r: 0 }, e: { c: 15, r: Math.max(fila, 1) } });
+    ws['!cols'] = [9, 19.6, 16, 39, 12, 10, 11, 9, 9, 9, 9, 48.4, 15.8, 40.6, 19.8, 18].map(function (w) { return { wch: w }; });
+    var wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Hoja1');
+    XLSX.writeFile(wb, X.nombreArchivoGanadero(empresa, p));
     return faltan;
   };
 

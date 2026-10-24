@@ -7,7 +7,7 @@ Jhonny (CONTAX / NUMMEROS, Santa Cruz, Bolivia). No es programador: Claude hace 
 - Todo el texto de la interfaz en español de Bolivia. Montos con formato `4.815,03`; fechas `dd/mm/aaaa`.
 - Marca NUMMEROS: colores #051F20 #0B2B26 #163832 #235347 (principal) #8EB69B #DAF1DE; títulos Akshar, texto Century Gothic/Questrial. El logo va en #235347 sobre fondo claro; fondos verde oscuro solo en modo oscuro.
 - Fotos de la campaña NUMMEROS × CONTAX en `assets/fotos/` (los clásicos con el Contador Virtual; fondos siempre unidos).
-- Sin herramientas de compilación: HTML + CSS + JS plano. Librería Excel en `vendor/xlsx.full.min.js`.
+- Sin herramientas de compilación: HTML + CSS + JS plano. Librería Excel en `vendor/xlsx-js-style.min.js`.
 - Los datos viven en `localStorage` (clave `nummeros-rrhh-v1`). Nunca subir datos reales de personas al repositorio (es público).
 
 ## Bancos

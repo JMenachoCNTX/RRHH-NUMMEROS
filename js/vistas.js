@@ -561,7 +561,7 @@
       tarjeta('libro', 'Asiento contable', 'Asiento de la planilla listo para el sistema contable.', b('asPdf', 'Imprimir / PDF', 'imprimir', true) + b('asXls', 'Excel', 'excel')) +
       '</div></div>';
     h += '<div class="seccion"><h2>Para el banco</h2><div class="rejilla r2">' +
-      tarjeta('banco', 'Banco Ganadero', 'Planilla Excel de pago masivo de sueldos (cuentas Ganadero y ACH a otros bancos).', b('ganadero', 'Descargar Excel', 'excel', true)) +
+      tarjeta('banco', 'Banco Ganadero', 'El mismo Excel que se carga al banco para el pago masivo (cuentas Ganadero y ACH a otros bancos).', b('ganadero', 'Descargar Excel', 'excel', true)) +
       '</div></div>';
     h += '<div class="seccion"><h2>Para las entidades</h2><div class="rejilla r2">' +
       tarjeta('gobierno', 'Ministerio de Trabajo', 'Planilla con las 46 columnas del formato del Ministerio.', b('min', 'Descargar Excel', 'excel', true)) +
