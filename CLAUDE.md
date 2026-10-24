@@ -20,7 +20,7 @@ Jhonny (CONTAX / NUMMEROS, Santa Cruz, Bolivia). No es programador: Claude hace 
 - `js/documentos.js` — documentos para imprimir/PDF. `js/exportar.js` — archivos Excel/TXT.
 
 ## Reglas de cálculo (verificadas contra la planilla de septiembre 2026)
-- Salario ganado = básico ÷ 30 × días. Hora extra = básico ÷ 30 ÷ 8 × 1,5 (recargo 50 %, decisión de Jhonny: así paga Milthagor), **sin redondear** el valor hora; se redondea solo el monto final.
+- Salario ganado = básico ÷ 30 × días. Hora extra = básico ÷ 30 ÷ 8 × 1,5 (recargo 50 % = ×1,5, acuerdo escrito con el cliente: sábados 4 h activadores y soporte, domingos 8 h soporte; horario L-S 10:00-18:00, soporte L-D), **sin redondear** el valor hora; se redondea solo el monto final.
 - AFP 12,71 %; ANS por tramos sobre el excedente (13.000 → 1,15 %, 25.000 → 5 %, 35.000 → 10 %).
 - RC-IVA: (ganado − AFP − ANS − 2 SMN) × 13 % − 13 % de 2 SMN − 13 % facturas F-110.
 - Patronal: Caja 10 %, Gestora 7,21 %, previsiones 8,33 % + 8,33 %.

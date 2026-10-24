@@ -899,7 +899,7 @@
       campo('ANS tramo 3: desde Bs', 'ans2d', c.ansTramos[2].desde, 'number') + campo('ANS tramo 3: %', 'ans2t', c.ansTramos[2].tasa, 'number', { paso: '0.01' }) + '</div></fieldset>' +
       '<fieldset class="ancho"><legend>RC-IVA</legend><div class="form">' + n('Tasa RC-IVA (%)', 'rcIva') + n('Mínimo no imponible (en SMN)', 'rcIvaMinNoImponibleSMN', 'Ley: 2 salarios mínimos', '1') +
       n('Crédito 13% sobre (en SMN)', 'rcIvaCreditoSMN', 'Ley: 13% de 2 salarios mínimos. Tu Excel usaba 1.', '1') + '</div></fieldset>' +
-      '<fieldset class="ancho"><legend>Ingresos</legend><div class="form">' + n('Recargo hora extra (%)', 'recargoHoraExtra', 'Se usa 50%, como paga la empresa. La Ley General del Trabajo indica 100%.', '1') +
+      '<fieldset class="ancho"><legend>Ingresos</legend><div class="form">' + n('Recargo hora extra (%)', 'recargoHoraExtra', '50% = ×1,5, acordado con el cliente para el trabajo de fin de semana (sábados 4 h activadores y soporte; domingos 8 h soporte). La Ley General del Trabajo indica 100%.', '1') +
       campo('Redondear valor hora a centavos', 'redondearValorHora', c.redondearValorHora ? '1' : '0', 'select', { opciones: [['0', 'No (como la planilla del cliente)'], ['1', 'Sí']] }) +
       n('Bono antigüedad: base en SMN', 'antiguedadBaseSMN', 'D.S. 21137: 3 salarios mínimos. Tu Excel usaba 1.', '1') +
       campo('Bono antigüedad proporcional a días', 'antiguedadProporcional', c.antiguedadProporcional ? '1' : '0', 'select', { opciones: [['1', 'Sí'], ['0', 'No']] }) + '</div></fieldset>' +
