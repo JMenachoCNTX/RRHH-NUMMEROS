@@ -28,7 +28,7 @@
     { abrev: 'TIGO MONEY', nombre: 'Tigo Money', ach: '5300' }
   ];
   /* Alias que aparecen en las planillas viejas */
-  var ALIAS_BANCO = { 'ECONÓMICO': 'ECONOMICO', 'UNIÓN': 'UNION', 'BANCO SOL': 'SOL', 'BANCOSOL': 'SOL', 'MERCANTIL': 'BMSC' };
+  var ALIAS_BANCO = { 'ECONÓMICO': 'ECONOMICO', 'UNIÓN': 'UNION', 'BANCO SOL': 'SOL', 'BANCOSOL': 'SOL', 'MERCANTIL': 'BMSC', 'BANCO UNION': 'UNION', 'BANCO GANADERO': 'GANADERO', 'BANCO ECONOMICO': 'ECONOMICO' };
 
   function bancoPorAbrev(ab) {
     var a = U.mayus(U.sinAcentos(String(ab || '').trim()));

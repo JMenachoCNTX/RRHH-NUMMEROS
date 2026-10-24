@@ -230,7 +230,7 @@
     if (x.banco && !D.bancoPorAbrev(x.banco)) bancos.push([x.banco, x.banco]);
     var html = '<form class="form" id="fEmpl">' +
       '<fieldset class="ancho"><legend>Datos personales</legend><div class="form">' +
-      campo('Nombre(s)', 'nombres', x.nombres, 'text', { req: true }) + campo('Apellido paterno', 'apPaterno', x.apPaterno, 'text', { req: true }) + campo('Apellido materno', 'apMaterno', x.apMaterno) +
+      campo('Nombre(s)', 'nombres', x.nombres, 'text', { req: true }) + campo('Apellido paterno', 'apPaterno', x.apPaterno) + campo('Apellido materno', 'apMaterno', x.apMaterno) +
       campo('Apellido de casada', 'apCasada', x.apCasada) +
       campo('Tipo de documento', 'tipoDoc', x.tipoDoc || 'CI', 'select', { opciones: [['CI', 'Cédula de identidad'], ['CE', 'Cédula de extranjero'], ['PASAPORTE', 'Pasaporte']] }) +
       campo('N° de documento', 'ci', x.ci, 'text', { req: true }) + campo('Complemento', 'complemento', x.complemento) +
@@ -268,6 +268,7 @@
         var f = U.$('#fEmpl', m);
         if (!f.reportValidity()) return false;
         var d = Object.assign({}, x, leerForm(f));
+        if (!d.apPaterno && !d.apMaterno) { U.aviso('Escribe al menos un apellido', 'error'); return false; }
         var emp = D.empresaActiva();
         d.empresaId = x.empresaId || emp.id;
         var dup = D.empleadoPorCi(d.ci, d.empresaId);
@@ -614,6 +615,7 @@
     var lista = D.empleados().filter(function (k) {
       var fin = new Date(anioAg, 11, 31), ini = new Date(anioAg, 0, 1);
       var ing = Calc.aFecha(k.fechaIngreso), ret = Calc.aFecha(k.fechaRetiro);
+      if (k.estado === 'RETIRADO' && !ret) return false;
       return ing && ing <= fin && (!ret || ret >= ini);
     });
     var filas = lista.map(function (k) {
