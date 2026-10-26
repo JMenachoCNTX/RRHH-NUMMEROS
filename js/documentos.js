@@ -168,9 +168,8 @@
   };
 
   /* ---------- Certificado de trabajo ---------- */
-  /* Certificado de trabajo en HOJA MEMBRETADA de la empresa (modelo que usaba MTG):
-     logo arriba, marca de agua del logo al centro, texto, firma de la representante legal
-     y pie con dirección, correo y celular de la empresa. */
+  /* Certificado de trabajo: marco NUMMEROS · CONTAX (para que se vea que lo generó el sistema) con el texto del
+     modelo de MTG, marca de agua del logo de la empresa al centro, firma centrada abajo y pie con dirección, correo y celular. */
   function promedioGanado(em, n) {
     var pls = D.planillas().filter(function (p) { return p.empresaId === em.empresaId && p.filas.some(function (f) { return f.empleadoId === em.id; }); })
       .sort(function (a, b) { return (b.anio * 12 + b.mes) - (a.anio * 12 + a.mes); }).slice(0, n);
@@ -202,24 +201,23 @@
         (pr.meses === 1 ? 'su último mes' : 'sus últimos ' + pr.meses + ' meses') + '.</p>';
     }
     var fecha = opc.fecha || U.hoyIso();
-    var logo = empresa.logo ? '<img class="cm-logo" src="' + e(empresa.logo) + '" alt="' + e(empresa.razonSocial) + '">' : '<div class="cm-razon">' + e(razon) + '</div>';
+    var ciudad = !empresa.ciudad || /^santa cruz$/i.test(String(empresa.ciudad).trim()) ? 'Santa Cruz de la Sierra' : empresa.ciudad;
     var marca = empresa.logo ? '<img class="cm-agua" src="' + e(empresa.logo) + '" alt="">' : '';
     var pieDatos = [empresa.direccion ? '<b>Dir.:</b> ' + e(empresa.direccion) : '', empresa.correoEmpresa ? '<b>Correo:</b> ' + e(empresa.correoEmpresa) : '',
       empresa.telefono ? '<b>Cel.:</b> ' + e(empresa.telefono) : ''].filter(Boolean).join('&nbsp;&nbsp; ');
     return '<div class="hoja doc-n cert-m">' + marca +
-      '<div class="cm-cab">' + logo + '</div>' +
+      encabezado(empresa, 'Certificado de Trabajo', U.fecha(fecha)) +
       '<h2 class="cm-titulo">Certificado de Trabajo</h2>' +
       '<div class="cm-texto">' +
       '<p class="cm-sangria">Por la presente, certificamos que ' + tratoNom + ' <b>' + e(U.mayus(U.nombreCompleto(em))) + '</b>, con C.I. Nº ' + ci + ', ' + periodo +
       ', desempeñándose en el cargo de <b>' + e(em.cargo || '') + '</b>.</p>' +
       '<p>' + e(conducta) + '</p>' + sueldo +
       '<p>Se expide el presente certificado a solicitud ' + (mujer ? 'de la interesada' : 'del interesado') + ', para los fines que estime convenientes.</p>' +
-      '<p>' + e(empresa.ciudad && !/sierra/i.test(empresa.ciudad) && /santa cruz/i.test(empresa.ciudad) ? 'Santa Cruz de la Sierra' : (empresa.ciudad || 'Santa Cruz de la Sierra')) + ', ' + fechaCert(fecha) + '.</p></div>' +
-      '<div class="cm-firma"><span class="cm-linea"></span><b>' + e(empresa.representante || '') + '</b>' + (empresa.ciRepresentante ? '<span>C.I. ' + e(empresa.ciRepresentante) + '</span>' : '') +
+      '<p class="cm-lugar">' + e(ciudad) + ', ' + fechaCert(fecha) + '.</p></div>' +
+      '<div class="cm-firma"><span class="cm-linea"></span><b>' + e(U.mayus(empresa.representante || '')) + '</b>' + (empresa.ciRepresentante ? '<span>C.I. ' + e(empresa.ciRepresentante) + '</span>' : '') +
       '<span>' + e(empresa.cargoRepresentante || 'Representante Legal') + ' ' + e(razon) + '</span></div>' +
-      '<div class="cm-pie">' + (empresa.logo ? '<img src="' + e(empresa.logo) + '" alt="">' : '') + '<span>' + pieDatos + '</span></div>' +
-      '<div class="cm-hecho">Elaborado por CONTAX · NUMMEROS</div>' +
-      '</div>';
+      (pieDatos ? '<div class="cm-pie">' + (empresa.logo ? '<img src="' + e(empresa.logo) + '" alt="">' : '') + '<span>' + pieDatos + '</span></div>' : '') +
+      pie() + '</div>';
   };
 
   /* ---------- Planilla de aguinaldos ---------- */
