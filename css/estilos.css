@@ -523,3 +523,6 @@ body.sin-scroll { overflow: hidden; }
 .check-mes input { width: 18px; height: 18px; accent-color: var(--acento); }
 .check-mes:has(input:checked) { border-color: var(--acento); background: color-mix(in srgb, var(--acento) 8%, var(--superficie)); }
 .check-mes b { font-family: var(--display); }
+.campo-filtro { display: flex; flex-direction: column; gap: 5px; grid-column: 1 / -1; }
+.campo-filtro > span { font: 600 14px var(--display); }
+.filtro-trab button { padding: 5px 12px; font-size: 14px; }

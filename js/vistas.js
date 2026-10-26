@@ -935,14 +935,24 @@
     var todos = D.empleados().slice().sort(function (a, b) { return U.nombreCompleto(a).localeCompare(U.nombreCompleto(b), 'es'); });
     var sel = (idEmp && D.empleado(idEmp)) || null;
     var esBol = pestana === 'boletas';
-    var opcTrab = [['', '— Elegir —']].concat(todos.map(function (k) { return [k.id, U.nombreCompleto(k) + ((k.estado || 'ACTIVO') === 'RETIRADO' ? ' (retirado)' : '')]; }));
+    var retirado = function (k) { return (k.estado || 'ACTIVO') === 'RETIRADO'; };
+    /* Filtro Activos / Retirados / Todos (si llega un retirado elegido, se abre en Retirados) */
+    var filtro = sel ? (retirado(sel) ? 'ret' : 'act') : 'act';
+    var deFiltro = function () { return todos.filter(function (k) { return filtro === 'todos' || (filtro === 'ret') === retirado(k); }); };
+    var opcionesTrab = function () {
+      return [['', '— Elegir —']].concat(deFiltro().map(function (k) { return [k.id, U.nombreCompleto(k) + (retirado(k) ? ' (retirado)' : '')]; }));
+    };
+    var opcTrab = opcionesTrab();
+    var cuenta = function (f) { return todos.filter(function (k) { return f === 'todos' || (f === 'ret') === retirado(k); }).length; };
+    var filtroHtml = '<div class="campo-filtro ancho"><span>Mostrar</span><div class="pestanas filtro-trab" style="margin:0">' +
+      [['act', 'Activos'], ['ret', 'Retirados'], ['todos', 'Todos']].map(function (f) { return '<button type="button" data-filtro="' + f[0] + '" aria-selected="' + (filtro === f[0]) + '">' + f[1] + ' (' + cuenta(f[0]) + ')</button>'; }).join('') + '</div></div>';
     var h = '<section class="portada" style="background-image:url(assets/fotos/contrato-euclides-oscuro.jpg);min-height:200px"><div class="txt"><span class="kicker">Documentos del personal</span>' +
       '<h1 style="font-size:clamp(30px,3.6vw,44px)">Certificados y boletas</h1><p>Elige a la persona, revisa el documento y descárgalo en PDF.</p></div></section>' +
       '<div class="pestanas seccion" style="margin-top:18px"><button data-pest="cert" aria-selected="' + !esBol + '">' + ic('certificado') + ' Certificado de trabajo</button>' +
       '<button data-pest="boletas" aria-selected="' + esBol + '">' + ic('boleta') + ' Boletas de pago</button></div>';
     if (!esBol) {
       h += '<div class="rejilla r2" style="align-items:start"><div class="tarjeta"><form class="form" id="fCert">' +
-        campo('Trabajador', 'emp', sel ? sel.id : '', 'select', { ancho: true, opciones: opcTrab }) +
+        filtroHtml + campo('Trabajador', 'emp', sel ? sel.id : '', 'select', { ancho: true, opciones: opcTrab }) +
         campo('Fecha del certificado', 'fecha', U.hoyIso(), 'date') +
         campo('¿Mostrar el sueldo?', 'conSueldo', '0', 'select', { opciones: [['0', 'No'], ['1', 'Sí']] }) +
         campo('Texto sobre su desempeño', 'conducta', 'Durante su permanencia demostró responsabilidad, honestidad y dedicación en las funciones encomendadas.', 'textarea', { ancho: true }) +
@@ -950,11 +960,21 @@
         '<div class="vista-previa" id="certPrev"></div></div>';
     } else {
       h += '<div class="rejilla r2" style="align-items:start"><div class="tarjeta"><form class="form" id="fBol">' +
-        campo('Trabajador', 'emp', sel ? sel.id : '', 'select', { ancho: true, opciones: opcTrab }) + '</form>' +
+        filtroHtml + campo('Trabajador', 'emp', sel ? sel.id : '', 'select', { ancho: true, opciones: opcTrab }) + '</form>' +
         '<div id="bolMeses" style="margin-top:14px"></div></div>' +
         '<div class="vista-previa" id="bolPrev"></div></div>';
     }
     cont.innerHTML = h;
+    U.$$('[data-filtro]', cont).forEach(function (b) {
+      b.onclick = function () {
+        filtro = b.dataset.filtro;
+        U.$$('[data-filtro]', cont).forEach(function (z) { z.setAttribute('aria-selected', String(z === b)); });
+        var s2 = U.$('select[name=emp]', cont), antes = s2.value;
+        s2.innerHTML = opcionesTrab().map(function (o) { return '<option value="' + e(o[0]) + '">' + e(o[1]) + '</option>'; }).join('');
+        s2.value = deFiltro().some(function (k) { return k.id === antes; }) ? antes : '';
+        s2.dispatchEvent(new Event('change', { bubbles: true }));
+      };
+    });
     U.$$('[data-pest]', cont).forEach(function (b) {
       b.onclick = function () {
         var f = U.$('#fCert', cont) || U.$('#fBol', cont), id = f ? leerForm(f).emp : '';
