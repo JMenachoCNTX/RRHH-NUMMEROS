@@ -40,6 +40,11 @@
   var Doc = {};
 
   /* Envía el HTML a la impresora (el usuario puede elegir "Guardar como PDF") */
+  /* Si la vista previa está en pantalla completa, el navegador imprimiría solo esa ventana: primero se sale */
+  function salirPantallaCompleta() {
+    if (!document.fullscreenElement || !document.exitFullscreen) return Promise.resolve();
+    return document.exitFullscreen().catch(function () {}).then(function () { return new Promise(function (r) { setTimeout(r, 350); }); });
+  }
   /* titulo: nombre con el que se guarda el PDF (el navegador usa el título de la página) */
   Doc.imprimir = function (html, horizontal, titulo) {
     var cont = document.getElementById('impresion');
@@ -53,6 +58,7 @@
     cont.innerHTML = '<style>@page{size:letter ' + (horizontal ? 'landscape' : 'portrait') + ';margin:18pt 22pt}</style>' + html;
     var imgs = Array.prototype.slice.call(cont.querySelectorAll('img'));
     Promise.all(imgs.map(function (i) { return i.complete ? 1 : new Promise(function (r) { i.onload = i.onerror = r; }); }))
+      .then(salirPantallaCompleta)
       .then(function () { setTimeout(function () { window.print(); }, 50); });
   };
 

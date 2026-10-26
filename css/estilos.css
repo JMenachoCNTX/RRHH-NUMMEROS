@@ -224,7 +224,8 @@ table.tabla { border-collapse: separate; border-spacing: 0; width: 100%; font-si
 #impresion { display: none; }
 @media print {
   body { background: #fff; color: #000; }
-  .app, .modal-fondo, .toast { display: none !important; }
+  .app, .modal-fondo, .toast, .visor { display: none !important; }
+  html, body, body.sin-scroll { overflow: visible !important; height: auto !important; }
   #impresion { display: block; }
 }
 .hoja, .hoja * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
