@@ -534,3 +534,20 @@ body.sin-scroll { overflow: hidden; }
 .doc-n.horizontal .dn-con-firma ~ .dn-firmas { margin-top: 26pt; }
 .doc-n.horizontal .dn-con-firma ~ .dn-control { margin-top: 5pt; }
 .dn-con-firma td.cargo { max-width: 78pt; }
+
+/* Certificado de trabajo en hoja membretada de la empresa (marca de agua al centro) */
+.hoja.cert-m { position: relative; font: 10.5pt/2 "Times New Roman", Times, serif; color: #111; padding: 6pt 30pt 0; overflow: hidden; }
+.cert-m .cm-agua { position: absolute; left: 50%; top: 50%; width: 62%; transform: translate(-50%, -50%); opacity: .07; pointer-events: none; z-index: 0; }
+.cert-m > *:not(.cm-agua) { position: relative; z-index: 1; }
+.cert-m .cm-cab { padding-top: 10pt; }
+.cert-m .cm-logo { height: 70pt; width: auto; }
+.cert-m .cm-razon { font: 700 16pt Akshar, sans-serif; color: #163832; }
+.cert-m .cm-titulo { text-align: center; font: 700 16pt "Times New Roman", Times, serif; margin: 22pt 0 18pt; color: #111; }
+.cert-m .cm-texto p { margin: 0 0 4pt; text-align: justify; }
+.cert-m .cm-sangria { text-indent: 28pt; }
+.cert-m .cm-firma { margin-top: 70pt; display: flex; flex-direction: column; line-height: 1.5; width: 230pt; }
+.cert-m .cm-linea { border-top: 1pt solid #111; margin-bottom: 4pt; }
+.cert-m .cm-firma b { font-weight: 400; }
+.cert-m .cm-pie { margin-top: auto; border-top: 1.5pt solid #111; padding: 8pt 0 0; display: flex; align-items: center; justify-content: center; gap: 12pt; font-size: 7.5pt; line-height: 1.3; }
+.cert-m .cm-pie img { height: 24pt; width: auto; }
+.cert-m .cm-hecho { text-align: right; font: 5pt Questrial, sans-serif; color: #8a9a90; padding: 4pt 0 0; letter-spacing: .04em; }

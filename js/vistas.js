@@ -150,7 +150,8 @@
     var html = '<form class="form" id="fEmp">' +
       '<fieldset class="ancho"><legend>Datos generales</legend><div class="form">' +
       campo('Razón social', 'razonSocial', x.razonSocial, 'text', { req: true, ph: 'Ej. MILTHAGOR S.R.L.' }) + campo('NIT', 'nit', x.nit, 'text', { req: true }) +
-      campo('Ciudad', 'ciudad', x.ciudad || 'Santa Cruz') + campo('Dirección', 'direccion', x.direccion) +
+      campo('Ciudad', 'ciudad', x.ciudad || 'Santa Cruz de la Sierra') + campo('Dirección', 'direccion', x.direccion, 'text', { ayuda: 'Va al pie de la hoja membretada (certificados)' }) +
+      campo('Correo de la empresa', 'correoEmpresa', x.correoEmpresa, 'email') + campo('Celular / teléfono', 'telefono', x.telefono) +
       campo('Representante legal', 'representante', x.representante, 'text', { ayuda: 'Firma todos los documentos: planillas, boletas, certificados, aportes, asiento y resumen' }) +
       campo('C.I. del representante', 'ciRepresentante', x.ciRepresentante, 'text', { ayuda: 'Aparece bajo su firma' }) +
       campo('Cargo bajo la firma', 'cargoRepresentante', x.cargoRepresentante || 'Representante Legal') +
@@ -954,8 +955,8 @@
       h += '<div class="rejilla r2" style="align-items:start"><div class="tarjeta"><form class="form" id="fCert">' +
         filtroHtml + campo('Trabajador', 'emp', sel ? sel.id : '', 'select', { ancho: true, opciones: opcTrab }) +
         campo('Fecha del certificado', 'fecha', U.hoyIso(), 'date') +
-        campo('¿Mostrar el sueldo?', 'conSueldo', '0', 'select', { opciones: [['0', 'No'], ['1', 'Sí']] }) +
-        campo('Texto sobre su desempeño', 'conducta', 'Durante su permanencia demostró responsabilidad, honestidad y dedicación en las funciones encomendadas.', 'textarea', { ancho: true }) +
+        campo('¿Mostrar el sueldo?', 'conSueldo', '0', 'select', { opciones: [['0', 'No'], ['1', 'Sí, haber básico'], ['2', 'Sí, promedio de lo ganado (últimos 3 meses)']] }) +
+        campo('Texto sobre su desempeño', 'conducta', 'Durante el tiempo de su relación laboral, {trato} ha demostrado responsabilidad, compromiso y capacidad en el ejercicio de sus funciones.', 'textarea', { ancho: true, ayuda: '{trato} se cambia solo por "el Sr. Apellido" o "la Sra. Apellido"' }) +
         '</form><div class="acciones" style="margin-top:14px"><button class="btn" id="certVer">' + ic('ojo') + 'Ver en grande</button><button class="btn btn-primario" id="certPdf">' + ic('imprimir') + 'Imprimir / PDF</button></div></div>' +
         '<div class="vista-previa" id="certPrev"></div></div>';
     } else {
@@ -985,7 +986,7 @@
     if (!esBol) {
       var prev = function () {
         var d = leerForm(U.$('#fCert', cont)), k = D.empleado(d.emp);
-        U.$('#certPrev', cont).innerHTML = k ? Doc.certificado(emp, k, { fecha: d.fecha, conSueldo: d.conSueldo === '1', textoConducta: d.conducta }) : '<p class="suave" style="padding:20px;text-align:center">Elige un trabajador para ver el certificado.</p>';
+        U.$('#certPrev', cont).innerHTML = k ? Doc.certificado(emp, k, { fecha: d.fecha, conSueldo: d.conSueldo, textoConducta: d.conducta }) : '<p class="suave" style="padding:20px;text-align:center">Elige un trabajador para ver el certificado.</p>';
         ajustarPrevia(U.$('#certPrev', cont));
         return { d: d, k: k };
       };
@@ -993,12 +994,12 @@
       U.$('#fCert', cont).oninput = prev; U.$('#fCert', cont).onchange = prev;
       var imprimirCert = function () {
         var x = prev(); if (!x.k) { U.aviso('Elige un trabajador', 'error'); return; }
-        Doc.imprimir(Doc.certificado(emp, x.k, { fecha: x.d.fecha, conSueldo: x.d.conSueldo === '1', textoConducta: x.d.conducta }), false, 'Certificado de Trabajo - ' + U.nombreCompleto(x.k));
+        Doc.imprimir(Doc.certificado(emp, x.k, { fecha: x.d.fecha, conSueldo: x.d.conSueldo, textoConducta: x.d.conducta }), false, 'Certificado de Trabajo - ' + U.nombreCompleto(x.k));
       };
       U.$('#certPdf', cont).onclick = imprimirCert;
       U.$('#certVer', cont).onclick = function () {
         var x = prev(); if (!x.k) { U.aviso('Elige un trabajador', 'error'); return; }
-        Visor.abrir({ titulo: 'Certificado de trabajo · ' + U.nombreCompleto(x.k), vistas: [{ nombre: 'Certificado', html: Doc.certificado(emp, x.k, { fecha: x.d.fecha, conSueldo: x.d.conSueldo === '1', textoConducta: x.d.conducta }) }],
+        Visor.abrir({ titulo: 'Certificado de trabajo · ' + U.nombreCompleto(x.k), vistas: [{ nombre: 'Certificado', html: Doc.certificado(emp, x.k, { fecha: x.d.fecha, conSueldo: x.d.conSueldo, textoConducta: x.d.conducta }) }],
           acciones: [{ texto: 'Imprimir / PDF', icono: 'imprimir', primario: true, fn: imprimirCert }] });
       };
       return;

@@ -168,29 +168,58 @@
   };
 
   /* ---------- Certificado de trabajo ---------- */
+  /* Certificado de trabajo en HOJA MEMBRETADA de la empresa (modelo que usaba MTG):
+     logo arriba, marca de agua del logo al centro, texto, firma de la representante legal
+     y pie con dirección, correo y celular de la empresa. */
+  function promedioGanado(em, n) {
+    var pls = D.planillas().filter(function (p) { return p.empresaId === em.empresaId && p.filas.some(function (f) { return f.empleadoId === em.id; }); })
+      .sort(function (a, b) { return (b.anio * 12 + b.mes) - (a.anio * 12 + a.mes); }).slice(0, n);
+    var vals = pls.map(function (p) { var c = D.calcularPlanilla(p), x = c.filas.find(function (k) { return k.fila.empleadoId === em.id; }); return x ? x.r.totalGanado : 0; }).filter(Boolean);
+    return vals.length ? { monto: Calc.r2(vals.reduce(function (s, v) { return s + v; }, 0) / vals.length), meses: vals.length } : null;
+  }
+  function fechaCert(iso) {
+    var d = Calc.aFecha(iso); if (!d) return '';
+    return String(d.getDate()).padStart(2, '0') + ' de ' + Calc.MESES[d.getMonth()].toLowerCase() + ' de ' + d.getFullYear();
+  }
   Doc.certificado = function (empresa, em, opc) {
     opc = opc || {};
-    var trato = em.sexo === 'F' ? 'la Sra./Srta.' : 'el Sr.';
-    var retirado = em.estado === 'RETIRADO';
+    var mujer = em.sexo === 'F', retirado = em.estado === 'RETIRADO';
+    var razon = U.mayus(empresa.razonSocial);
+    var tratoNom = mujer ? 'la señora' : 'el señor';
+    var tratoCorto = (mujer ? 'la Sra. ' : 'el Sr. ') + (em.apPaterno ? em.apPaterno.charAt(0).toUpperCase() + em.apPaterno.slice(1).toLowerCase() : '');
+    var ci = e(em.ci) + (em.complemento ? '-' + e(em.complemento) : '') + (em.expedido ? ' ' + e(em.expedido) : '');
     var periodo = !retirado
-      ? 'trabaja en nuestra empresa desde el ' + U.fechaLarga(em.fechaIngreso) + ' hasta la fecha'
-      : 'trabajó en nuestra empresa desde el ' + U.fechaLarga(em.fechaIngreso) + (em.fechaRetiro ? ' hasta el ' + U.fechaLarga(em.fechaRetiro) : '');
-    var sueldo = opc.conSueldo ? ', percibiendo un haber básico mensual de Bs ' + bs(em.sueldoBasico) + ' (' + Calc.numeroALetras(em.sueldoBasico).toLowerCase() + ')' : '';
-    var conducta = opc.textoConducta || 'Durante su permanencia demostró responsabilidad, honestidad y dedicación en las funciones encomendadas.';
+      ? 'presta servicios en nuestra empresa <b>' + e(razon) + '</b> desde la fecha ' + fechaCert(em.fechaIngreso)
+      : 'prestó servicios en nuestra empresa <b>' + e(razon) + '</b> desde la fecha ' + fechaCert(em.fechaIngreso) + (em.fechaRetiro ? ' hasta el ' + fechaCert(em.fechaRetiro) : '');
+    var conducta = (opc.textoConducta || 'Durante el tiempo de su relación laboral, {trato} ha demostrado responsabilidad, compromiso y capacidad en el ejercicio de sus funciones.').replace('{trato}', tratoCorto);
+    var sueldo = '';
+    var verbo = retirado ? 'percibía' : 'percibe';
+    if (opc.conSueldo === '1' || opc.conSueldo === true) {
+      sueldo = '<p>Asimismo, se deja constancia que ' + verbo + ' un <b>haber básico mensual de Bs ' + bs(em.sueldoBasico) + ' (' + Calc.numeroALetras(em.sueldoBasico).toLowerCase() + ')</b>.</p>';
+    } else if (opc.conSueldo === '2') {
+      var pr = promedioGanado(em, 3);
+      if (pr) sueldo = '<p>Asimismo, se deja constancia que ' + verbo + ' un <b>ingreso mensual promedio de Bs ' + bs(pr.monto) + ' (' + Calc.numeroALetras(pr.monto).toLowerCase() + ')</b>, correspondiente al total ganado de ' +
+        (pr.meses === 1 ? 'su último mes' : 'sus últimos ' + pr.meses + ' meses') + '.</p>';
+    }
     var fecha = opc.fecha || U.hoyIso();
-    var cuerpo = encabezado(empresa, 'Certificado de Trabajo', U.fecha(fecha)) +
-      titulo('Certificado de trabajo', U.mayus(empresa.razonSocial) + ' | ' + U.fecha(fecha)) +
-      '<div class="dn-carta">' +
-      '<p>Quien suscribe, <b>' + e(empresa.representante || '________________') + '</b>, en calidad de ' + e(empresa.cargoRepresentante || 'Representante Legal') + ' de <b>' + e(empresa.razonSocial) +
-      '</b>, con NIT ' + e(empresa.nit) + ':</p>' +
-      '<p class="dn-certifica">CERTIFICA</p>' +
-      '<p>Que ' + trato + ' <b>' + e(U.nombreCompleto(em)) + '</b>, con cédula de identidad N° ' + e(em.ci) + (em.complemento ? '-' + e(em.complemento) : '') + (em.expedido ? ' ' + e(em.expedido) : '') +
-      ', ' + periodo + ', desempeñando el cargo de <b>' + e(em.cargo || '') + '</b>' + sueldo + '.</p>' +
-      '<p>' + e(conducta) + '</p>' +
-      '<p>Es cuanto se certifica en honor a la verdad, para los fines que ' + (em.sexo === 'F' ? 'a la interesada' : 'al interesado') + ' convenga.</p>' +
-      '<p class="dn-lugar">' + e(empresa.ciudad || 'Santa Cruz') + ', ' + U.fechaLarga(fecha) + '</p></div>' +
-      '<div class="dn-firmas dn-firmas-carta">' + firmaRepresentante(empresa) + '</div>';
-    return hoja(cuerpo);
+    var logo = empresa.logo ? '<img class="cm-logo" src="' + e(empresa.logo) + '" alt="' + e(empresa.razonSocial) + '">' : '<div class="cm-razon">' + e(razon) + '</div>';
+    var marca = empresa.logo ? '<img class="cm-agua" src="' + e(empresa.logo) + '" alt="">' : '';
+    var pieDatos = [empresa.direccion ? '<b>Dir.:</b> ' + e(empresa.direccion) : '', empresa.correoEmpresa ? '<b>Correo:</b> ' + e(empresa.correoEmpresa) : '',
+      empresa.telefono ? '<b>Cel.:</b> ' + e(empresa.telefono) : ''].filter(Boolean).join('&nbsp;&nbsp; ');
+    return '<div class="hoja doc-n cert-m">' + marca +
+      '<div class="cm-cab">' + logo + '</div>' +
+      '<h2 class="cm-titulo">Certificado de Trabajo</h2>' +
+      '<div class="cm-texto">' +
+      '<p class="cm-sangria">Por la presente, certificamos que ' + tratoNom + ' <b>' + e(U.mayus(U.nombreCompleto(em))) + '</b>, con C.I. Nº ' + ci + ', ' + periodo +
+      ', desempeñándose en el cargo de <b>' + e(em.cargo || '') + '</b>.</p>' +
+      '<p>' + e(conducta) + '</p>' + sueldo +
+      '<p>Se expide el presente certificado a solicitud ' + (mujer ? 'de la interesada' : 'del interesado') + ', para los fines que estime convenientes.</p>' +
+      '<p>' + e(empresa.ciudad && !/sierra/i.test(empresa.ciudad) && /santa cruz/i.test(empresa.ciudad) ? 'Santa Cruz de la Sierra' : (empresa.ciudad || 'Santa Cruz de la Sierra')) + ', ' + fechaCert(fecha) + '.</p></div>' +
+      '<div class="cm-firma"><span class="cm-linea"></span><b>' + e(empresa.representante || '') + '</b>' + (empresa.ciRepresentante ? '<span>C.I. ' + e(empresa.ciRepresentante) + '</span>' : '') +
+      '<span>' + e(empresa.cargoRepresentante || 'Representante Legal') + ' ' + e(razon) + '</span></div>' +
+      '<div class="cm-pie">' + (empresa.logo ? '<img src="' + e(empresa.logo) + '" alt="">' : '') + '<span>' + pieDatos + '</span></div>' +
+      '<div class="cm-hecho">Elaborado por CONTAX · NUMMEROS</div>' +
+      '</div>';
   };
 
   /* ---------- Planilla de aguinaldos ---------- */

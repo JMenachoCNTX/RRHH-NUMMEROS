@@ -33,6 +33,7 @@ Jhonny (CONTAX / NUMMEROS, Santa Cruz, Bolivia). No es programador: Claude hace 
   verde #163832 (barras), #6A8476 (segundo nivel), gris #557363, separadores #DAF1DE. Encabezado: NUMMEROS + CONTAX (mismo tamaño) y lema; barra con logo del cliente,
   "RAZÓN | NIT | periodo", título corto e isotipos N y CONTAX; título centrado; firmas; pie "Elaborado por CONTAX · NUMMEROS" + isotipos.
 - Firmas: la representante legal (Empresas → Representante legal + C.I. + cargo) firma TODOS los documentos, aunque haya otro gerente general en planilla. "Elaborado por" (Empresas → Elaborado por / cargo, por defecto "Contador — CONTAX") firma el asiento y el resumen para gerencia. Nombres y C.I. se cargan en el navegador, nunca en el código.
+- EXCEPCIÓN: el certificado de trabajo va en HOJA MEMBRETADA de la empresa (modelo de MTG): logo arriba a la izquierda, marca de agua del logo al centro (opacidad 7 %), letra Times, firma de la representante y pie con Dir./Correo/Cel. (Empresas → Dirección, Correo de la empresa, Celular). Solo una nota mínima "Elaborado por CONTAX · NUMMEROS". Sueldo: No / haber básico / promedio de total ganado últimos 3 meses.
 - Logo del cliente: Empresas → Editar → Logo. MILTHAGOR S.R.L. = MTG Delivery (assets/empresas/, se asigna solo).
 
 ## Interfaz
