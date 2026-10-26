@@ -770,7 +770,7 @@
       tarjeta('grafico', 'Resumen para gerencia', 'Cuánto se paga, a quién y a qué banco, con gráficos y comparación con el mes anterior. Para aprobar antes de cargar al banco.', ver('ger') + b('gerPdf', 'Imprimir / PDF', 'imprimir', true)) +
       tarjeta('certificado', 'Planilla para auditoría', 'El mismo formato de Excel que pide auditoría cada mes, también en PDF.', ver('aud') + b('audXls', 'Descargar Excel', 'excel', true) + b('audPdf', 'Imprimir / PDF', 'imprimir')) +
       tarjeta('planilla', 'Planilla de sueldos y salarios', 'La planilla oficial con firmas, en hoja horizontal.', ver('pl') + b('plPdf', 'Imprimir / PDF', 'imprimir', true) + b('plXls', 'Excel', 'excel')) +
-      tarjeta('boleta', 'Boletas de pago', 'Una boleta por trabajador, dos por hoja, con el líquido en letras.', ver('boletas') + b('boletas', 'Imprimir / PDF', 'imprimir', true)) +
+      tarjeta('boleta', 'Boletas de pago', 'Dos formas: dos personas por hoja, o en duplicado (la misma boleta 2 veces por hoja: arriba para el trabajador y abajo para la empresa, para recortar).', ver('boletas') + b('boletas', 'Imprimir / PDF', 'imprimir', true) + b('boletasDup', 'Duplicado (trabajador + empresa)', 'imprimir')) +
       tarjeta('salud', 'Aportes y previsiones', 'Caja de salud, Gestora patronal, indemnización y aguinaldo.', ver('pat') + b('patPdf', 'Imprimir / PDF', 'imprimir', true)) +
       tarjeta('libro', 'Asiento contable', 'Asiento de la planilla listo para el sistema contable.', ver('as') + b('asPdf', 'Imprimir / PDF', 'imprimir', true) + b('asXls', 'Excel', 'excel')) +
       '</div></div>';
@@ -815,6 +815,7 @@
       audPdf: function () { Doc.imprimir(Doc.auditoria(emp, p, calc), true, X.nombreDoc(X.NOMBRES.auditoria, emp, p)); },
       plXls: function () { X.planillaSueldos(emp, p, calc); U.aviso('Archivo descargado'); },
       boletas: function () { Doc.imprimir(Doc.boletas(emp, p, calc), false, X.nombreDoc(X.NOMBRES.boletas, emp, p)); },
+      boletasDup: function () { Doc.imprimir(Doc.boletas(emp, p, calc, null, true), false, X.nombreDoc(X.NOMBRES.boletas + ' (duplicado)', emp, p)); },
       patPdf: function () { Doc.imprimir(Doc.planillaPatronal(emp, p, calc), true, X.nombreDoc(X.NOMBRES.aportes, emp, p)); },
       asPdf: function () { Doc.imprimir(Doc.asiento(emp, p, calc), false, X.nombreDoc(X.NOMBRES.asiento, emp, p)); },
       asXls: function () { X.asiento(emp, p, calc); U.aviso('Archivo descargado'); },
@@ -842,7 +843,10 @@
         var c = xl(function () { X.auditoria(emp, p, calc); });
         return { titulo: 'Planilla para auditoría' + per, vistas: [{ nombre: 'Excel', libro: c.wb }, { nombre: 'PDF', html: Doc.auditoria(emp, p, calc) }], acciones: [accExcel('audXls'), { texto: 'Imprimir / PDF', icono: 'imprimir', fn: acciones.audPdf }] };
       },
-      boletas: function () { return { titulo: 'Boletas de pago' + per, vistas: [{ nombre: 'Boletas', html: Doc.boletas(emp, p, calc) }], acciones: [accImprimir('boletas')] }; },
+      boletas: function () {
+        return { titulo: 'Boletas de pago' + per, vistas: [{ nombre: 'Dos por hoja', html: Doc.boletas(emp, p, calc) }, { nombre: 'Duplicado (trabajador + empresa)', html: Doc.boletas(emp, p, calc, null, true) }],
+          acciones: [{ texto: 'Imprimir / PDF', icono: 'imprimir', primario: true, fn: acciones.boletas }, { texto: 'Duplicado', icono: 'imprimir', fn: acciones.boletasDup }] };
+      },
       pat: function () { return { titulo: 'Aportes y previsiones' + per, vistas: [{ nombre: 'Documento', html: Doc.planillaPatronal(emp, p, calc) }], acciones: [accImprimir('patPdf')] }; },
       as: function () {
         var c = xl(function () { X.asiento(emp, p, calc); });
@@ -975,7 +979,7 @@
     }
 
     /* ----- Boletas de pago por persona ----- */
-    var marcados = null; // ids de planillas elegidas
+    var marcados = null, dup = false; // ids de planillas elegidas · en duplicado
     var mesesDe = function (id) {
       return D.planillas().filter(function (p) { return p.filas.some(function (f) { return f.empleadoId === id; }); })
         .sort(function (a, b) { return (b.anio * 12 + b.mes) - (a.anio * 12 + a.mes); });
@@ -995,18 +999,20 @@
           return '<label class="check-mes"><input type="checkbox" value="' + p.id + '"' + (marcados.indexOf(p.id) >= 0 ? ' checked' : '') + '><span>' + nombrePeriodo(p) +
             (p.estado !== 'cerrada' ? ' <span class="etiqueta borrador">Borrador</span>' : '') + '</span><b>Bs ' + bs(x ? x.r.liquido : 0) + '</b></label>';
         }).join('') + '</div>' +
+        '<label class="check-mes" style="margin-top:12px"><input type="checkbox" id="bolDup"' + (dup ? ' checked' : '') + '><span>En duplicado <span class="suave peq">(cada boleta 2 veces por hoja: trabajador y empresa)</span></span><span></span></label>' +
         '<div class="acciones" style="margin-top:14px"><button class="btn btn-primario" id="bolPdf">' + ic('imprimir') + 'Imprimir / PDF</button></div>';
       U.$$('[data-ult]', caja).forEach(function (b) { b.onclick = function () { marcados = meses.slice(0, +b.dataset.ult).map(function (p) { return p.id; }); pintar(); }; });
       U.$$('input[type=checkbox]', caja).forEach(function (c) {
         c.onchange = function () { marcados = U.$$('input[type=checkbox]:checked', caja).map(function (z) { return z.value; }); pintar(); };
       });
+      U.$('#bolDup', caja).onchange = function (ev) { dup = ev.target.checked; pintar(); };
       var lista = elegidas(id);
-      pv.innerHTML = lista.length ? Doc.boletasPersona(emp, id, lista) : '<p class="suave" style="padding:20px;text-align:center">Marca al menos un mes.</p>';
+      pv.innerHTML = lista.length ? Doc.boletasPersona(emp, id, lista, dup) : '<p class="suave" style="padding:20px;text-align:center">Marca al menos un mes.</p>';
       ajustarPrevia(pv);
       U.$('#bolPdf', caja).onclick = function () {
         var l = elegidas(id); if (!l.length) { U.aviso('Marca al menos un mes', 'error'); return; }
         var rango = l.length === 1 ? nombrePeriodo(l[0]) : nombrePeriodo(l[l.length - 1]) + ' a ' + nombrePeriodo(l[0]);
-        Doc.imprimir(Doc.boletasPersona(emp, id, l), false, 'Boletas de Pago - ' + U.nombreCompleto(k) + ' - ' + rango);
+        Doc.imprimir(Doc.boletasPersona(emp, id, l, dup), false, 'Boletas de Pago' + (dup ? ' (duplicado)' : '') + ' - ' + U.nombreCompleto(k) + ' - ' + rango);
       };
     };
     U.$('#fBol', cont).onchange = function () { marcados = null; pintar(); };

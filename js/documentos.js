@@ -115,11 +115,11 @@
 
   /* ---------- Boletas de pago (2 por hoja carta) ---------- */
   function filaBoleta(txt, v, extra) { return '<tr><td>' + txt + (extra ? ' <span class="dn-gris">' + extra + '</span>' : '') + '</td><td class="n">' + bs(v) + '</td></tr>'; }
-  function boleta(empresa, p, x, cfg) {
+  function boleta(empresa, p, x, cfg, ejemplar) {
     var em = x.emp, r = x.r, periodo = Calc.MESES[p.mes - 1] + ' ' + p.anio;
     var dato = function (k, v) { return '<div><span>' + k + '</span><b>' + e(v) + '</b></div>'; };
     return '<div class="dn-boleta">' + encabezado(empresa, 'Boleta de Pago', periodo) +
-      titulo('Boleta de pago', U.mayus(empresa.razonSocial) + ' | ' + periodo + ' | (Bs)') +
+      titulo('Boleta de pago', U.mayus(empresa.razonSocial) + ' | ' + periodo + ' | (Bs)' + (ejemplar ? ' | EJEMPLAR ' + ejemplar : '')) +
       '<div class="dn-datos-trab">' + dato('Nombre', U.mayus(U.nombreCompleto(em))) + dato('Sueldo básico', bs(r.basico)) +
       dato('C.I.', em.ci + (em.complemento ? '-' + em.complemento : '')) + dato('Días trabajados', String(r.dias)) +
       dato('Cargo', em.cargo || '') + dato('Fecha de ingreso', U.fecha(em.fechaIngreso)) + '</div>' +
@@ -146,17 +146,24 @@
     }
     return html;
   }
-  Doc.boletas = function (empresa, p, calc, soloIds) {
+  /* duplicado: una hoja por persona con la misma boleta 2 veces (arriba para el trabajador, abajo para la empresa) */
+  Doc.boletas = function (empresa, p, calc, soloIds, duplicado) {
     var lista = calc.filas.filter(function (x) { return !soloIds || soloIds.indexOf(x.fila.empleadoId) >= 0; });
+    if (duplicado) return lista.map(function (x) {
+      return '<div class="hoja doc-n dn-hoja-boletas">' + boleta(empresa, p, x, calc.cfg, 'TRABAJADOR') + '<div class="dn-corte"></div>' + boleta(empresa, p, x, calc.cfg, 'EMPRESA') + '</div>';
+    }).join('');
     return hojasBoletas(empresa, lista.map(function (x) { return { p: p, x: x, cfg: calc.cfg }; }));
   };
   /* Boletas de UNA persona en varios meses (para créditos: últimas 3 o 6), del más reciente al más antiguo */
-  Doc.boletasPersona = function (empresa, empleadoId, planillas) {
+  Doc.boletasPersona = function (empresa, empleadoId, planillas, duplicado) {
     var items = [];
     planillas.forEach(function (p) {
       var c = D.calcularPlanilla(p), x = c.filas.find(function (k) { return k.fila.empleadoId === empleadoId; });
       if (x) items.push({ p: p, x: x, cfg: c.cfg });
     });
+    if (duplicado) return items.map(function (it) {
+      return '<div class="hoja doc-n dn-hoja-boletas">' + boleta(empresa, it.p, it.x, it.cfg, 'TRABAJADOR') + '<div class="dn-corte"></div>' + boleta(empresa, it.p, it.x, it.cfg, 'EMPRESA') + '</div>';
+    }).join('');
     return hojasBoletas(empresa, items);
   };
 

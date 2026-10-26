@@ -48,6 +48,7 @@ Jhonny (CONTAX / NUMMEROS, Santa Cruz, Bolivia). No es programador: Claude hace 
 - Pendiente (Jhonny dijo "luego"): boletas/certificados por correo y portal del trabajador; firma de boletas digital (Ley 164: firma digital con certificado ADSIB/Digicert = misma validez; electrónica simple = solo indicio).
 - Pendiente (Jhonny dijo "luego"): subir documentos de la empresa (NIT, Matrícula, ROE) y del personal (CI, contrato).
 - Menú "Certificados y boletas" (V.certificados, pestañas): certificado de trabajo y boletas de pago por persona (#/certificados/<id>/boletas). Se marcan uno o varios meses (botones Último mes / Últimos 3 / Últimos 6, para créditos) y salen en un solo PDF, dos por hoja (Doc.boletasPersona). También desde Personal → ficha → "Boletas de pago".
+- Boletas en duplicado (Doc.boletas(..., duplicado) / Doc.boletasPersona(..., duplicado)): una hoja por persona con la misma boleta 2 veces, "EJEMPLAR TRABAJADOR" arriba y "EJEMPLAR EMPRESA" abajo, para recortar. Botón en Generar archivos y casilla en Certificados y boletas.
 - Generar archivos: cada tarjeta tiene "Ver" (js/visor.js) para previsualizar en pantalla completa antes de imprimir/descargar.
 - Planilla → botón "Limpiar": borra días, horas extra, bonos, F-110 y descuentos (mantiene personal, fecha y glosa).
 - Config versionConfig 3 fuerza horas extra al 50 % sin redondear (como el cliente) una vez en cada navegador.
