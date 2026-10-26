@@ -515,3 +515,11 @@ body.sin-scroll { overflow: hidden; }
 .dn-comp .dn-t th, .dn-comp .dn-t td { font-size: 7.6pt; padding: 3pt 7pt; }
 .dn-comp .dn-t td.n { font-size: 8pt; }
 .dn-aud2 td.nom { font-size: 6.6pt; }
+
+/* Certificados y boletas: lista de meses */
+.pestanas button svg { width: 16px; height: 16px; vertical-align: -3px; margin-right: 4px; }
+.lista-meses { display: flex; flex-direction: column; gap: 6px; max-height: 360px; overflow: auto; }
+.check-mes { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 10px; padding: 9px 12px; border: 1px solid var(--borde); border-radius: var(--r-sm); cursor: pointer; background: var(--superficie); }
+.check-mes input { width: 18px; height: 18px; accent-color: var(--acento); }
+.check-mes:has(input:checked) { border-color: var(--acento); background: color-mix(in srgb, var(--acento) 8%, var(--superficie)); }
+.check-mes b { font-family: var(--display); }

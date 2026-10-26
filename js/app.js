@@ -9,7 +9,7 @@
     { id: 'historial', titulo: 'Historial', icono: 'historial' },
     { grupo: 'Personal' },
     { id: 'personal', titulo: 'Personal', icono: 'personal' },
-    { id: 'certificados', titulo: 'Certificados', icono: 'certificado' },
+    { id: 'certificados', titulo: 'Certificados y boletas', icono: 'certificado' },
     { id: 'aguinaldos', titulo: 'Aguinaldos', icono: 'aguinaldo' },
     { grupo: 'Ajustes' },
     { id: 'empresas', titulo: 'Empresas', icono: 'empresa' },
@@ -39,14 +39,14 @@
 
   function navegar() {
     var partes = (location.hash || '#/inicio').replace(/^#\/?/, '').split('/');
-    var id = partes[0] || 'inicio', param = partes[1];
+    var id = partes[0] || 'inicio', param = partes[1], param2 = partes[2];
     var r = RUTAS.find(function (x) { return x.id === id; }) || RUTAS[0];
     pintarMenu(r.id);
     pintarEmpresas();
     U.$('#tituloVista').textContent = r.titulo;
     document.title = r.titulo + ' · RRHH NUMMEROS';
     var cont = U.$('#vista');
-    try { V[r.id](cont, param); }
+    try { V[r.id](cont, param, param2); }
     catch (err) {
       console.error(err);
       cont.innerHTML = '<div class="alerta error"><span><b>Algo salió mal al mostrar esta pantalla.</b> ' + U.esc(err.message) + '</span></div>';

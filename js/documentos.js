@@ -136,14 +136,28 @@
       '<div class="dn-firmas">' + firma(U.nombreCompleto(em), 'C.I.: ' + em.ci, 'Recibí conforme') + firmaRepresentante(empresa) + '</div>' +
       pie() + '</div>';
   }
-  Doc.boletas = function (empresa, p, calc, soloIds) {
-    var lista = calc.filas.filter(function (x) { return !soloIds || soloIds.indexOf(x.fila.empleadoId) >= 0; });
+  /* items: [{ p, x, cfg }] → dos boletas por hoja carta */
+  function hojasBoletas(empresa, items) {
     var html = '';
-    for (var i = 0; i < lista.length; i += 2) {
-      html += '<div class="hoja doc-n dn-hoja-boletas">' + boleta(empresa, p, lista[i], calc.cfg) +
-        (lista[i + 1] ? '<div class="dn-corte"></div>' + boleta(empresa, p, lista[i + 1], calc.cfg) : '') + '</div>';
+    for (var i = 0; i < items.length; i += 2) {
+      var a = items[i], b = items[i + 1];
+      html += '<div class="hoja doc-n dn-hoja-boletas">' + boleta(empresa, a.p, a.x, a.cfg) +
+        (b ? '<div class="dn-corte"></div>' + boleta(empresa, b.p, b.x, b.cfg) : '') + '</div>';
     }
     return html;
+  }
+  Doc.boletas = function (empresa, p, calc, soloIds) {
+    var lista = calc.filas.filter(function (x) { return !soloIds || soloIds.indexOf(x.fila.empleadoId) >= 0; });
+    return hojasBoletas(empresa, lista.map(function (x) { return { p: p, x: x, cfg: calc.cfg }; }));
+  };
+  /* Boletas de UNA persona en varios meses (para créditos: últimas 3 o 6), del más reciente al más antiguo */
+  Doc.boletasPersona = function (empresa, empleadoId, planillas) {
+    var items = [];
+    planillas.forEach(function (p) {
+      var c = D.calcularPlanilla(p), x = c.filas.find(function (k) { return k.fila.empleadoId === empleadoId; });
+      if (x) items.push({ p: p, x: x, cfg: c.cfg });
+    });
+    return hojasBoletas(empresa, items);
   };
 
   /* ---------- Certificado de trabajo ---------- */

@@ -350,6 +350,7 @@
         U.confirmar('Eliminar trabajador', 'Si la persona dejó de trabajar es mejor marcarla como RETIRADO para conservar su historial. ¿Eliminar de todas formas?', 'Eliminar', function () { D.eliminarEmpleado(x.id); App.refrescar(); }, true);
       } } : null,
       x.id ? { texto: 'Certificado', clase: 'btn', accion: function () { location.hash = '#/certificados/' + x.id; } } : null,
+      x.id ? { texto: 'Boletas de pago', clase: 'btn', accion: function () { location.hash = '#/certificados/' + x.id + '/boletas'; } } : null,
       { texto: 'Cancelar', clase: 'btn btn-fantasma' },
       { texto: 'Guardar', clase: 'btn btn-primario', accion: function (m) {
         var f = U.$('#fEmpl', m);
@@ -917,31 +918,99 @@
   /* =========================================================
      CERTIFICADOS DE TRABAJO
      ========================================================= */
-  V.certificados = function (cont, idEmp) {
+  /* La hoja carta se achica para entrar completa en la columna de vista previa */
+  function ajustarPrevia(caja) {
+    var hojas = U.$$('.hoja', caja); if (!hojas.length) return;
+    hojas.forEach(function (h) { h.style.zoom = ''; });
+    var z = Math.min(1, (caja.clientWidth - 24) / (hojas[0].offsetWidth || 1));
+    hojas.forEach(function (h) { h.style.zoom = z; });
+  }
+  V.certificados = function (cont, idEmp, pestana) {
     var emp = D.empresaActiva(); if (!emp) { cont.innerHTML = sinEmpresa(); return; }
-    var todos = D.empleados();
+    if (idEmp === 'boletas') { pestana = 'boletas'; idEmp = null; }
+    var todos = D.empleados().slice().sort(function (a, b) { return U.nombreCompleto(a).localeCompare(U.nombreCompleto(b), 'es'); });
     var sel = (idEmp && D.empleado(idEmp)) || null;
+    var esBol = pestana === 'boletas';
+    var opcTrab = [['', '— Elegir —']].concat(todos.map(function (k) { return [k.id, U.nombreCompleto(k) + ((k.estado || 'ACTIVO') === 'RETIRADO' ? ' (retirado)' : '')]; }));
     var h = '<section class="portada" style="background-image:url(assets/fotos/contrato-euclides-oscuro.jpg);min-height:200px"><div class="txt"><span class="kicker">Documentos del personal</span>' +
-      '<h1 style="font-size:clamp(30px,3.6vw,44px)">Certificados de trabajo</h1><p>Elige a la persona, revisa el texto y descárgalo en PDF.</p></div></section>' +
-      '<div class="rejilla r2 seccion" style="align-items:start"><div class="tarjeta"><form class="form" id="fCert">' +
-      campo('Trabajador', 'emp', sel ? sel.id : '', 'select', { ancho: true, opciones: [['', '— Elegir —']].concat(todos.map(function (k) { return [k.id, U.nombreCompleto(k) + ((k.estado || 'ACTIVO') === 'RETIRADO' ? ' (retirado)' : '')]; })) }) +
-      campo('Fecha del certificado', 'fecha', U.hoyIso(), 'date') +
-      campo('¿Mostrar el sueldo?', 'conSueldo', '0', 'select', { opciones: [['0', 'No'], ['1', 'Sí']] }) +
-      campo('Texto sobre su desempeño', 'conducta', 'Durante su permanencia demostró responsabilidad, honestidad y dedicación en las funciones encomendadas.', 'textarea', { ancho: true }) +
-      '</form><div class="acciones" style="margin-top:14px"><button class="btn btn-primario" id="certPdf">' + ic('imprimir') + 'Imprimir / PDF</button></div></div>' +
-      '<div class="vista-previa" id="certPrev"></div></div>';
+      '<h1 style="font-size:clamp(30px,3.6vw,44px)">Certificados y boletas</h1><p>Elige a la persona, revisa el documento y descárgalo en PDF.</p></div></section>' +
+      '<div class="pestanas seccion" style="margin-top:18px"><button data-pest="cert" aria-selected="' + !esBol + '">' + ic('certificado') + ' Certificado de trabajo</button>' +
+      '<button data-pest="boletas" aria-selected="' + esBol + '">' + ic('boleta') + ' Boletas de pago</button></div>';
+    if (!esBol) {
+      h += '<div class="rejilla r2" style="align-items:start"><div class="tarjeta"><form class="form" id="fCert">' +
+        campo('Trabajador', 'emp', sel ? sel.id : '', 'select', { ancho: true, opciones: opcTrab }) +
+        campo('Fecha del certificado', 'fecha', U.hoyIso(), 'date') +
+        campo('¿Mostrar el sueldo?', 'conSueldo', '0', 'select', { opciones: [['0', 'No'], ['1', 'Sí']] }) +
+        campo('Texto sobre su desempeño', 'conducta', 'Durante su permanencia demostró responsabilidad, honestidad y dedicación en las funciones encomendadas.', 'textarea', { ancho: true }) +
+        '</form><div class="acciones" style="margin-top:14px"><button class="btn btn-primario" id="certPdf">' + ic('imprimir') + 'Imprimir / PDF</button></div></div>' +
+        '<div class="vista-previa" id="certPrev"></div></div>';
+    } else {
+      h += '<div class="rejilla r2" style="align-items:start"><div class="tarjeta"><form class="form" id="fBol">' +
+        campo('Trabajador', 'emp', sel ? sel.id : '', 'select', { ancho: true, opciones: opcTrab }) + '</form>' +
+        '<div id="bolMeses" style="margin-top:14px"></div></div>' +
+        '<div class="vista-previa" id="bolPrev"></div></div>';
+    }
     cont.innerHTML = h;
-    var prev = function () {
-      var d = leerForm(U.$('#fCert', cont)), k = D.empleado(d.emp);
-      U.$('#certPrev', cont).innerHTML = k ? Doc.certificado(emp, k, { fecha: d.fecha, conSueldo: d.conSueldo === '1', textoConducta: d.conducta }) : '<p class="suave" style="padding:20px;text-align:center">Elige un trabajador para ver el certificado.</p>';
-      return { d: d, k: k };
+    U.$$('[data-pest]', cont).forEach(function (b) {
+      b.onclick = function () {
+        var f = U.$('#fCert', cont) || U.$('#fBol', cont), id = f ? leerForm(f).emp : '';
+        location.hash = '#/certificados/' + (id || '') + (b.dataset.pest === 'boletas' ? (id ? '/boletas' : 'boletas') : '');
+      };
+    });
+
+    if (!esBol) {
+      var prev = function () {
+        var d = leerForm(U.$('#fCert', cont)), k = D.empleado(d.emp);
+        U.$('#certPrev', cont).innerHTML = k ? Doc.certificado(emp, k, { fecha: d.fecha, conSueldo: d.conSueldo === '1', textoConducta: d.conducta }) : '<p class="suave" style="padding:20px;text-align:center">Elige un trabajador para ver el certificado.</p>';
+        ajustarPrevia(U.$('#certPrev', cont));
+        return { d: d, k: k };
+      };
+      prev();
+      U.$('#fCert', cont).oninput = prev; U.$('#fCert', cont).onchange = prev;
+      U.$('#certPdf', cont).onclick = function () {
+        var x = prev(); if (!x.k) { U.aviso('Elige un trabajador', 'error'); return; }
+        Doc.imprimir(Doc.certificado(emp, x.k, { fecha: x.d.fecha, conSueldo: x.d.conSueldo === '1', textoConducta: x.d.conducta }), false, 'Certificado de Trabajo - ' + U.nombreCompleto(x.k));
+      };
+      return;
+    }
+
+    /* ----- Boletas de pago por persona ----- */
+    var marcados = null; // ids de planillas elegidas
+    var mesesDe = function (id) {
+      return D.planillas().filter(function (p) { return p.filas.some(function (f) { return f.empleadoId === id; }); })
+        .sort(function (a, b) { return (b.anio * 12 + b.mes) - (a.anio * 12 + a.mes); });
     };
-    prev();
-    U.$('#fCert', cont).oninput = prev; U.$('#fCert', cont).onchange = prev;
-    U.$('#certPdf', cont).onclick = function () {
-      var x = prev(); if (!x.k) { U.aviso('Elige un trabajador', 'error'); return; }
-      Doc.imprimir(Doc.certificado(emp, x.k, { fecha: x.d.fecha, conSueldo: x.d.conSueldo === '1', textoConducta: x.d.conducta }), false, 'Certificado de Trabajo - ' + U.nombreCompleto(x.k));
+    var elegidas = function (id) { return mesesDe(id).filter(function (p) { return marcados.indexOf(p.id) >= 0; }); };
+    var pintar = function () {
+      var id = leerForm(U.$('#fBol', cont)).emp, k = D.empleado(id), caja = U.$('#bolMeses', cont), pv = U.$('#bolPrev', cont);
+      if (!k) { caja.innerHTML = ''; pv.innerHTML = '<p class="suave" style="padding:20px;text-align:center">Elige un trabajador para ver sus boletas.</p>'; return; }
+      var meses = mesesDe(id);
+      if (!meses.length) { caja.innerHTML = '<div class="alerta aviso"><span>Esta persona todavía no está en ninguna planilla.</span></div>'; pv.innerHTML = ''; return; }
+      if (marcados === null) marcados = [meses[0].id];
+      caja.innerHTML = '<p class="peq" style="margin-bottom:8px"><b>¿Qué meses?</b> Marca uno o varios. Salen en un solo PDF, dos boletas por hoja.</p>' +
+        '<div class="acciones" style="margin-bottom:10px"><button type="button" class="btn btn-sm" data-ult="1">Último mes</button>' +
+        '<button type="button" class="btn btn-sm" data-ult="3">Últimos 3 meses</button><button type="button" class="btn btn-sm" data-ult="6">Últimos 6 meses</button></div>' +
+        '<div class="lista-meses">' + meses.map(function (p) {
+          var c = D.calcularPlanilla(p), x = c.filas.find(function (f) { return f.fila.empleadoId === id; });
+          return '<label class="check-mes"><input type="checkbox" value="' + p.id + '"' + (marcados.indexOf(p.id) >= 0 ? ' checked' : '') + '><span>' + nombrePeriodo(p) +
+            (p.estado !== 'cerrada' ? ' <span class="etiqueta borrador">Borrador</span>' : '') + '</span><b>Bs ' + bs(x ? x.r.liquido : 0) + '</b></label>';
+        }).join('') + '</div>' +
+        '<div class="acciones" style="margin-top:14px"><button class="btn btn-primario" id="bolPdf">' + ic('imprimir') + 'Imprimir / PDF</button></div>';
+      U.$$('[data-ult]', caja).forEach(function (b) { b.onclick = function () { marcados = meses.slice(0, +b.dataset.ult).map(function (p) { return p.id; }); pintar(); }; });
+      U.$$('input[type=checkbox]', caja).forEach(function (c) {
+        c.onchange = function () { marcados = U.$$('input[type=checkbox]:checked', caja).map(function (z) { return z.value; }); pintar(); };
+      });
+      var lista = elegidas(id);
+      pv.innerHTML = lista.length ? Doc.boletasPersona(emp, id, lista) : '<p class="suave" style="padding:20px;text-align:center">Marca al menos un mes.</p>';
+      ajustarPrevia(pv);
+      U.$('#bolPdf', caja).onclick = function () {
+        var l = elegidas(id); if (!l.length) { U.aviso('Marca al menos un mes', 'error'); return; }
+        var rango = l.length === 1 ? nombrePeriodo(l[0]) : nombrePeriodo(l[l.length - 1]) + ' a ' + nombrePeriodo(l[0]);
+        Doc.imprimir(Doc.boletasPersona(emp, id, l), false, 'Boletas de Pago - ' + U.nombreCompleto(k) + ' - ' + rango);
+      };
     };
+    U.$('#fBol', cont).onchange = function () { marcados = null; pintar(); };
+    pintar();
   };
 
   /* =========================================================
