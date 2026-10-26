@@ -526,3 +526,11 @@ body.sin-scroll { overflow: hidden; }
 .campo-filtro { display: flex; flex-direction: column; gap: 5px; grid-column: 1 / -1; }
 .campo-filtro > span { font: 600 14px var(--display); }
 .filtro-trab button { padding: 5px 12px; font-size: 14px; }
+
+/* Espacio para firmar a mano en planillas (sueldos y aguinaldos) */
+.dn-con-firma th.dn-col-firma { width: 82pt; min-width: 82pt; }
+.dn-con-firma td.dn-col-firma { width: 82pt; min-width: 82pt; border-left: 1pt solid var(--dn-sep); }
+.dn-con-firma tbody td { height: 19.5pt; }
+.doc-n.horizontal .dn-con-firma ~ .dn-firmas { margin-top: 26pt; }
+.doc-n.horizontal .dn-con-firma ~ .dn-control { margin-top: 5pt; }
+.dn-con-firma td.cargo { max-width: 78pt; }

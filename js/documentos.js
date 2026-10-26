@@ -83,8 +83,8 @@
     var ok = Calc.r2(t.totalGanado - t.totalDescuentos) === Calc.r2(t.liquido);
     var cuerpo = encabezado(empresa, 'Planilla de Sueldos', periodo) +
       titulo('Planilla de sueldos y salarios', U.mayus(empresa.razonSocial) + ' | ' + periodo + ' | (Bs)') +
-      '<table class="dn-t dn-mini"><thead><tr><th>Nro</th><th>CI</th><th>Apellidos y nombres</th><th>Nacionalidad</th><th>F. nacim.</th><th>Sexo</th><th>Cargo</th><th>F. ingreso</th>' +
-      '<th>Sueldo básico</th><th>Días</th>' + M.map(function (c) { return '<th>' + c[0] + '</th>'; }).join('') + '<th>Firma</th></tr></thead>' +
+      '<table class="dn-t dn-mini dn-con-firma"><thead><tr><th>Nro</th><th>CI</th><th>Apellidos y nombres</th><th>Nacionalidad</th><th>F. nacim.</th><th>Sexo</th><th>Cargo</th><th>F. ingreso</th>' +
+      '<th>Sueldo básico</th><th>Días</th>' + M.map(function (c) { return '<th>' + c[0] + '</th>'; }).join('') + '<th class="dn-col-firma">Firma</th></tr></thead>' +
       '<tbody>' + filas + '</tbody><tfoot><tr><td colspan="8">TOTALES</td><td class="n">' + bs(t.basico) + '</td><td></td>' +
       M.map(function (c) { return celda(c, t[c[1]]); }).join('') + '<td></td></tr></tfoot></table>' +
       control('Total ganado: ' + bs(t.totalGanado) + ' | Descuentos: ' + bs(t.totalDescuentos) + ' | Líquido pagable: ' + bs(t.liquido), ok) +
@@ -204,7 +204,7 @@
     }).join('');
     var html = encabezado(empresa, 'Aguinaldo de Navidad', 'Gestión ' + anio) +
       titulo('Planilla de aguinaldo de navidad', U.mayus(empresa.razonSocial) + ' | Gestión ' + anio + ' | (Bs)') +
-      '<table class="dn-t dn-mini"><thead><tr><th>Nro</th><th>CI</th><th>Nombre</th><th>Cargo</th><th>F. ingreso</th><th>Septiembre</th><th>Octubre</th><th>Noviembre</th><th>Promedio</th><th>Meses</th><th>Días</th><th>Aguinaldo</th><th>Firma</th></tr></thead>' +
+      '<table class="dn-t dn-mini dn-con-firma"><thead><tr><th>Nro</th><th>CI</th><th>Nombre</th><th>Cargo</th><th>F. ingreso</th><th>Septiembre</th><th>Octubre</th><th>Noviembre</th><th>Promedio</th><th>Meses</th><th>Días</th><th>Aguinaldo</th><th class="dn-col-firma">Firma</th></tr></thead>' +
       '<tbody>' + cuerpo + '</tbody><tfoot><tr><td colspan="11">TOTAL AGUINALDOS</td><td class="n">' + bs(tot) + '</td><td></td></tr></tfoot></table>' +
       '<div class="dn-firmas">' + firmaRepresentante(empresa) + '</div>';
     return hoja(html, { horizontal: true });

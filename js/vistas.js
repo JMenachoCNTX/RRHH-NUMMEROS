@@ -956,7 +956,7 @@
         campo('Fecha del certificado', 'fecha', U.hoyIso(), 'date') +
         campo('¿Mostrar el sueldo?', 'conSueldo', '0', 'select', { opciones: [['0', 'No'], ['1', 'Sí']] }) +
         campo('Texto sobre su desempeño', 'conducta', 'Durante su permanencia demostró responsabilidad, honestidad y dedicación en las funciones encomendadas.', 'textarea', { ancho: true }) +
-        '</form><div class="acciones" style="margin-top:14px"><button class="btn btn-primario" id="certPdf">' + ic('imprimir') + 'Imprimir / PDF</button></div></div>' +
+        '</form><div class="acciones" style="margin-top:14px"><button class="btn" id="certVer">' + ic('ojo') + 'Ver en grande</button><button class="btn btn-primario" id="certPdf">' + ic('imprimir') + 'Imprimir / PDF</button></div></div>' +
         '<div class="vista-previa" id="certPrev"></div></div>';
     } else {
       h += '<div class="rejilla r2" style="align-items:start"><div class="tarjeta"><form class="form" id="fBol">' +
@@ -991,9 +991,15 @@
       };
       prev();
       U.$('#fCert', cont).oninput = prev; U.$('#fCert', cont).onchange = prev;
-      U.$('#certPdf', cont).onclick = function () {
+      var imprimirCert = function () {
         var x = prev(); if (!x.k) { U.aviso('Elige un trabajador', 'error'); return; }
         Doc.imprimir(Doc.certificado(emp, x.k, { fecha: x.d.fecha, conSueldo: x.d.conSueldo === '1', textoConducta: x.d.conducta }), false, 'Certificado de Trabajo - ' + U.nombreCompleto(x.k));
+      };
+      U.$('#certPdf', cont).onclick = imprimirCert;
+      U.$('#certVer', cont).onclick = function () {
+        var x = prev(); if (!x.k) { U.aviso('Elige un trabajador', 'error'); return; }
+        Visor.abrir({ titulo: 'Certificado de trabajo · ' + U.nombreCompleto(x.k), vistas: [{ nombre: 'Certificado', html: Doc.certificado(emp, x.k, { fecha: x.d.fecha, conSueldo: x.d.conSueldo === '1', textoConducta: x.d.conducta }) }],
+          acciones: [{ texto: 'Imprimir / PDF', icono: 'imprimir', primario: true, fn: imprimirCert }] });
       };
       return;
     }
@@ -1020,7 +1026,7 @@
             (p.estado !== 'cerrada' ? ' <span class="etiqueta borrador">Borrador</span>' : '') + '</span><b>Bs ' + bs(x ? x.r.liquido : 0) + '</b></label>';
         }).join('') + '</div>' +
         '<label class="check-mes" style="margin-top:12px"><input type="checkbox" id="bolDup"' + (dup ? ' checked' : '') + '><span>En duplicado <span class="suave peq">(cada boleta 2 veces por hoja: trabajador y empresa)</span></span><span></span></label>' +
-        '<div class="acciones" style="margin-top:14px"><button class="btn btn-primario" id="bolPdf">' + ic('imprimir') + 'Imprimir / PDF</button></div>';
+        '<div class="acciones" style="margin-top:14px"><button class="btn" id="bolVer">' + ic('ojo') + 'Ver en grande</button><button class="btn btn-primario" id="bolPdf">' + ic('imprimir') + 'Imprimir / PDF</button></div>';
       U.$$('[data-ult]', caja).forEach(function (b) { b.onclick = function () { marcados = meses.slice(0, +b.dataset.ult).map(function (p) { return p.id; }); pintar(); }; });
       U.$$('input[type=checkbox]', caja).forEach(function (c) {
         c.onchange = function () { marcados = U.$$('input[type=checkbox]:checked', caja).map(function (z) { return z.value; }); pintar(); };
@@ -1029,10 +1035,16 @@
       var lista = elegidas(id);
       pv.innerHTML = lista.length ? Doc.boletasPersona(emp, id, lista, dup) : '<p class="suave" style="padding:20px;text-align:center">Marca al menos un mes.</p>';
       ajustarPrevia(pv);
-      U.$('#bolPdf', caja).onclick = function () {
+      var imprimirBol = function () {
         var l = elegidas(id); if (!l.length) { U.aviso('Marca al menos un mes', 'error'); return; }
         var rango = l.length === 1 ? nombrePeriodo(l[0]) : nombrePeriodo(l[l.length - 1]) + ' a ' + nombrePeriodo(l[0]);
         Doc.imprimir(Doc.boletasPersona(emp, id, l, dup), false, 'Boletas de Pago' + (dup ? ' (duplicado)' : '') + ' - ' + U.nombreCompleto(k) + ' - ' + rango);
+      };
+      U.$('#bolPdf', caja).onclick = imprimirBol;
+      U.$('#bolVer', caja).onclick = function () {
+        var l = elegidas(id); if (!l.length) { U.aviso('Marca al menos un mes', 'error'); return; }
+        Visor.abrir({ titulo: 'Boletas de pago · ' + U.nombreCompleto(k), vistas: [{ nombre: 'Boletas', html: Doc.boletasPersona(emp, id, l, dup) }],
+          acciones: [{ texto: 'Imprimir / PDF', icono: 'imprimir', primario: true, fn: imprimirBol }] });
       };
     };
     U.$('#fBol', cont).onchange = function () { marcados = null; pintar(); };
