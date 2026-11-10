@@ -20,13 +20,17 @@ Reemplaza la planilla de Google Sheets "Sistema Pagos Sueldos": registra al pers
 
 ## Dónde se guardan los datos
 
-Los datos **no se suben a GitHub**: se guardan solo en el navegador de la computadora donde se usa el sistema. Por eso es importante descargar una **copia de seguridad** (Configuración → Descargar copia) cada mes y guardarla en Google Drive.
+Los datos se guardan en la **nube de Firebase** (proyecto `rrhh-nummeros`), nunca en GitHub. Todas las personas autorizadas ven lo mismo y los cambios aparecen solos.
+
+- Para entrar se usa una **cuenta de Google**. Solo entran los correos autorizados en Configuración → Personas con acceso.
+- Las reglas de seguridad están en `firestore.rules`: sin permiso nadie puede leer ni escribir.
+- Igual conviene descargar una **copia de seguridad** (Configuración → Descargar copia) cada mes y guardarla en Google Drive.
 
 ## Cómo abrirlo
 
 - En línea: https://jmenachocntx.github.io/RRHH-NUMMEROS/
-- En la computadora: abrir `index.html` con Chrome.
+- Hace falta internet y una cuenta de Google autorizada.
 
 ## Tecnología
 
-HTML, CSS y JavaScript sin instalaciones. Excel con [SheetJS](https://sheetjs.com) (incluido en `vendor/`). Publicado con GitHub Pages.
+HTML, CSS y JavaScript sin instalaciones, con Firebase (ingreso con Google y base de datos Firestore). Excel con [SheetJS](https://sheetjs.com) (incluido en `vendor/`). Publicado con GitHub Pages.

@@ -1,0 +1,15 @@
+{
+  "firestore": {
+    "database": "(default)",
+    "location": "southamerica-east1",
+    "rules": "firestore.rules"
+  },
+  "auth": {
+    "providers": {
+      "googleSignIn": {
+        "oAuthBrandDisplayName": "RRHH NUMMEROS",
+        "supportEmail": "info@contaxbolivia.com"
+      }
+    }
+  }
+}

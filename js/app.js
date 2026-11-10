@@ -41,6 +41,7 @@
     var partes = (location.hash || '#/inicio').replace(/^#\/?/, '').split('/');
     var id = partes[0] || 'inicio', param = partes[1], param2 = partes[2];
     var r = RUTAS.find(function (x) { return x.id === id; }) || RUTAS[0];
+    cambiosEnEspera = false;
     pintarMenu(r.id);
     pintarEmpresas();
     U.$('#tituloVista').textContent = r.titulo;
@@ -58,8 +59,56 @@
     refrescar: function () { var y = window.scrollY; navegar(); window.scrollTo(0, y); }
   };
 
+  /* ¿La persona está escribiendo o tiene una ventana abierta? Entonces no se repinta la pantalla. */
+  function ocupado() {
+    if (document.querySelector('.modal-fondo')) return true;
+    var a = document.activeElement;
+    return !!(a && /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName) && U.$('#vista').contains(a));
+  }
+  var cambiosEnEspera = false;
+  function alCambioAjeno(col, lista) {
+    D.cambioRemoto(col, lista);
+    if (ocupado()) {
+      if (!cambiosEnEspera) U.aviso('Otra persona guardó cambios. Se verán al cambiar de pantalla.');
+      cambiosEnEspera = true;
+      return;
+    }
+    cambiosEnEspera = false;
+    App.refrescar();
+  }
+
+  /* Al entrar por primera vez: ofrecer subir los datos que estaban guardados solo en esta computadora */
+  function ofrecerSubida() {
+    var r = D.resumenLocalAntiguo();
+    if (!r || r.subido) return;
+    var nubeVacia = !D.empresas().length && !D.get().empleados.length && !D.get().planillas.length;
+    var detalle = '<b>' + r.empresas + '</b> empresa(s), <b>' + r.empleados + '</b> trabajador(es) y <b>' + r.planillas + '</b> planilla(s)' +
+      (r.actualizado ? ', último cambio el ' + new Date(r.actualizado).toLocaleString('es-BO') : '');
+    var subir = function () {
+      D.subirLocalAntiguo().then(function (ok) {
+        App.refrescar();
+        if (ok) U.aviso('Listo: los datos de esta computadora ya están en la nube');
+      });
+    };
+    if (nubeVacia) {
+      U.modal('Subir tus datos a la nube', '<p>En esta computadora hay datos guardados: ' + detalle + '.</p>' +
+        '<p style="margin-top:10px">¿Quieres subirlos a la nube para que todas las personas autorizadas los vean?</p>' +
+        '<p class="suave peq" style="margin-top:10px">No se borran de esta computadora: quedan como respaldo.</p>', [
+        { texto: 'Ahora no', clase: 'btn btn-fantasma', accion: function () { } },
+        { texto: 'Subir a la nube', clase: 'btn btn-primario', accion: subir }
+      ]);
+    } else {
+      U.modal('Datos en esta computadora', '<p>Esta computadora tiene datos antiguos guardados solo aquí: ' + detalle + '.</p>' +
+        '<p style="margin-top:10px">La nube <b>ya tiene datos</b> (' + D.empresas().length + ' empresa(s), ' + D.get().empleados.length + ' trabajador(es), ' + D.get().planillas.length + ' planilla(s)).</p>' +
+        '<div class="alerta aviso" style="margin-top:10px"><span>Si eliges <b>Reemplazar la nube</b>, lo de la nube se cambia por lo de esta computadora para todos.</span></div>', [
+        { texto: 'Usar lo de la nube', clase: 'btn btn-primario', accion: function () { D.marcarLocalSubido(); } },
+        { texto: 'Reemplazar la nube', clase: 'btn btn-peligro', accion: subir }
+      ]);
+    }
+  }
+
   document.addEventListener('DOMContentLoaded', function () {
-    D.cargar();
+    D.cargarPreferencias();
     aplicarTema();
     window.addEventListener('hashchange', function () { navegar(); window.scrollTo(0, 0); });
     U.$('#selEmpresa').addEventListener('change', function (ev) {
@@ -79,7 +128,20 @@
       D.get().menuMini = !D.get().menuMini; D.guardar(); aplicarMenuMini();
     });
     U.$('#app').addEventListener('click', function (ev) { if (ev.target === U.$('#app')) U.$('#app').classList.remove('menu-abierto'); });
-    navegar();
+    U.$('#btnSalir').addEventListener('click', function () {
+      if (N.hayPendientes()) { U.aviso('Espera un momento: todavía se están guardando cambios.', 'error'); return; }
+      U.confirmar('Salir', '¿Cerrar tu sesión en esta computadora?', 'Salir', function () { N.salir(); });
+    });
+    var primeraVez = true;
+    N.iniciar(function (nube) {
+      D.desdeNube(nube);
+      aplicarTema(); aplicarMenuMini();
+      var u = N.usuario();
+      U.$('#usuarioNube').textContent = u.displayName || u.email;
+      U.$('#usuarioNube').title = u.email;
+      navegar();
+      if (primeraVez) { primeraVez = false; ofrecerSubida(); }
+    }, alCambioAjeno);
   });
 
   global.App = App;

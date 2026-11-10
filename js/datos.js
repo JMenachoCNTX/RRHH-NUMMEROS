@@ -1,9 +1,13 @@
 /* NUMMEROS RRHH — almacenamiento de datos
-   Los datos se guardan en este navegador (localStorage) y nunca se suben a GitHub.
-   Usa "Copia de seguridad" para descargar un archivo y moverlo a otra computadora. */
+   Los datos viven en la nube (Firebase, ver js/nube.js) y todas las personas autorizadas ven lo mismo.
+   En este navegador solo quedan las preferencias (tema, menú, empresa elegida).
+   Los datos antiguos que estaban guardados solo en el navegador (clave CLAVE) se pueden subir a la nube
+   una vez; no se borran de la computadora, quedan como respaldo. */
 (function (global) {
   'use strict';
-  var CLAVE = 'nummeros-rrhh-v1';
+  var CLAVE = 'nummeros-rrhh-v1';            // datos antiguos (antes de la nube)
+  var CLAVE_PREF = 'nummeros-rrhh-pref';      // preferencias de este navegador
+  var CLAVE_SUBIDO = 'nummeros-rrhh-v1-subido'; // fecha en que se subieron (o descartaron) los datos antiguos
 
   /* Catálogo de bancos (códigos ACH) */
   var BANCOS = [
@@ -75,38 +79,92 @@
     }
   }
 
-  function cargar() {
-    try {
-      var txt = localStorage.getItem(CLAVE);
-      if (txt) {
-        var d = JSON.parse(txt);
-        estado = Object.assign(estadoVacio(), d);
-        var versionGuardada = (d.config && d.config.versionConfig) || 1; // la versión real de lo guardado, antes de completar con valores nuevos
-        estado.config = Object.assign(JSON.parse(JSON.stringify(Calc.CONFIG_BASE)), d.config || {});
-        estado.config.versionConfig = versionGuardada;
-        limpiarBancoMercantil();
-        migrarConfig();
-      }
-    } catch (e) { console.warn('No se pudo leer los datos guardados', e); }
+  /* Completa un estado leído (de la nube, de una copia o del navegador antiguo) con los valores nuevos */
+  function normalizar(d) {
+    var e = Object.assign(estadoVacio(), d);
+    var versionGuardada = (d.config && d.config.versionConfig) || 1; // la versión real de lo guardado, antes de completar con valores nuevos
+    e.config = Object.assign(JSON.parse(JSON.stringify(Calc.CONFIG_BASE)), d.config || {});
+    e.config.versionConfig = versionGuardada;
+    return e;
+  }
+
+  /* Preferencias de este navegador (no se suben a la nube) */
+  function leerPref() { try { return JSON.parse(localStorage.getItem(CLAVE_PREF) || '{}') || {}; } catch (e) { return {}; } }
+  function guardarPref() {
+    try { localStorage.setItem(CLAVE_PREF, JSON.stringify({ tema: estado.tema, menuMini: !!estado.menuMini, empresaActiva: estado.empresaActiva })); } catch (e) { }
+  }
+  function cargarPreferencias() {
+    var p = leerPref(), viejo = leerLocalAntiguo();
+    /* La primera vez se toman las preferencias de los datos antiguos */
+    if (!localStorage.getItem(CLAVE_PREF) && viejo) p = { tema: viejo.tema, menuMini: viejo.menuMini, empresaActiva: viejo.empresaActiva };
+    if (p.tema) estado.tema = p.tema;
+    estado.menuMini = !!p.menuMini;
+    estado.empresaActiva = p.empresaActiva || null;
+  }
+
+  /* Arma el estado con lo que llegó de la nube */
+  function desdeNube(nube) {
+    var aj = (nube.ajustes || [])[0] || {};
+    var pref = { tema: estado.tema, menuMini: estado.menuMini, empresaActiva: estado.empresaActiva };
+    estado = normalizar({ config: aj.config, empresas: nube.empresas || [], empleados: nube.empleados || [], planillas: nube.planillas || [] });
+    Object.assign(estado, pref);
+    if (!D.empresa(estado.empresaActiva)) estado.empresaActiva = estado.empresas[0] ? estado.empresas[0].id : null;
+    limpiarBancoMercantil();
+    migrarConfig();
+    guardar();
     return estado;
   }
 
+  /* Llegó un cambio hecho por otra persona (o en otra pestaña) */
+  function cambioRemoto(col, lista) {
+    if (col === 'ajustes') {
+      var aj = lista[0] || {}, vg = (aj.config && aj.config.versionConfig) || 1;
+      estado.config = Object.assign(JSON.parse(JSON.stringify(Calc.CONFIG_BASE)), aj.config || {});
+      estado.config.versionConfig = vg;
+    } else estado[col] = lista;
+    if (col === 'empresas' && !D.empresa(estado.empresaActiva)) estado.empresaActiva = estado.empresas[0] ? estado.empresas[0].id : null;
+  }
+
+  /* ---------- Datos antiguos guardados solo en este navegador ---------- */
+  function leerLocalAntiguo() {
+    try { var t = localStorage.getItem(CLAVE); return t ? JSON.parse(t) : null; } catch (e) { return null; }
+  }
+  function resumenLocalAntiguo() {
+    var d = leerLocalAntiguo();
+    if (!d) return null;
+    var r = { empresas: (d.empresas || []).length, empleados: (d.empleados || []).length, planillas: (d.planillas || []).length, actualizado: d.actualizado || null, subido: localStorage.getItem(CLAVE_SUBIDO) };
+    return (r.empresas || r.empleados || r.planillas) ? r : null;
+  }
+  function marcarLocalSubido() { try { localStorage.setItem(CLAVE_SUBIDO, new Date().toISOString()); } catch (e) { } }
+  /* Sube a la nube los datos antiguos de este navegador, reemplazando lo que haya en la nube */
+  function subirLocalAntiguo() {
+    var d = leerLocalAntiguo();
+    if (!d) throw new Error('No hay datos guardados en esta computadora.');
+    var pref = { tema: estado.tema, menuMini: estado.menuMini, empresaActiva: estado.empresaActiva || d.empresaActiva };
+    estado = normalizar(d);
+    Object.assign(estado, pref);
+    limpiarBancoMercantil();
+    migrarConfig();
+    marcarLocalSubido();
+    return guardar();
+  }
+
   function guardar() {
-    try {
-      estado.actualizado = new Date().toISOString();
-      localStorage.setItem(CLAVE, JSON.stringify(estado));
-      return true;
-    } catch (e) {
-      U.aviso('No se pudo guardar: el navegador no tiene espacio o bloquea el guardado.', 'error');
-      return false;
-    }
+    estado.actualizado = new Date().toISOString();
+    guardarPref();
+    return N.guardar(estado);
   }
 
   var D = {
     BANCOS: BANCOS,
     bancoPorAbrev: bancoPorAbrev,
     get: function () { return estado; },
-    cargar: cargar,
+    cargarPreferencias: cargarPreferencias,
+    desdeNube: desdeNube,
+    cambioRemoto: cambioRemoto,
+    resumenLocalAntiguo: resumenLocalAntiguo,
+    subirLocalAntiguo: subirLocalAntiguo,
+    marcarLocalSubido: marcarLocalSubido,
     guardar: guardar,
 
     /* ---------- Empresas ---------- */
@@ -219,15 +277,15 @@
     importarRespaldo: function (txt) {
       var d = JSON.parse(txt);
       if (!d || !d.datos || !Array.isArray(d.datos.empleados)) throw new Error('El archivo no es una copia de seguridad de NUMMEROS RRHH.');
-      estado = Object.assign(estadoVacio(), d.datos);
-      var vg = (d.datos.config && d.datos.config.versionConfig) || 1;
-      estado.config = Object.assign(JSON.parse(JSON.stringify(Calc.CONFIG_BASE)), d.datos.config || {});
-      estado.config.versionConfig = vg;
+      var pref = { tema: estado.tema, menuMini: estado.menuMini, empresaActiva: estado.empresaActiva };
+      estado = normalizar(d.datos);
+      Object.assign(estado, pref);
+      if (!D.empresa(estado.empresaActiva)) estado.empresaActiva = estado.empresas[0] ? estado.empresas[0].id : null;
       limpiarBancoMercantil();
       migrarConfig();
       guardar();
     },
-    borrarTodo: function () { estado = estadoVacio(); guardar(); },
+    borrarTodo: function () { var t = estado.tema; estado = estadoVacio(); estado.tema = t; guardar(); },
     tema: function (t) { if (t) { estado.tema = t; guardar(); } return estado.tema; }
   };
 

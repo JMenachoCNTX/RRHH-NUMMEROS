@@ -1,0 +1,29 @@
+rules_version = '2';
+// Reglas de seguridad de RRHH NUMMEROS (proyecto Firebase: rrhh-nummeros)
+// Solo entran cuentas de Google autorizadas. Nadie más puede leer ni escribir.
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function correo() { return request.auth.token.email.lower(); }
+    function conCuenta() {
+      return request.auth != null && request.auth.token.email != null && request.auth.token.email_verified == true;
+    }
+    function ficha() { return /databases/$(database)/documents/autorizados/$(correo()); }
+    // Administrador principal (siempre puede entrar y autorizar a otros)
+    function esDueno() { return conCuenta() && correo() == 'info@contaxbolivia.com'; }
+    function autorizado() { return esDueno() || (conCuenta() && exists(ficha())); }
+    function esAdmin() { return esDueno() || (conCuenta() && exists(ficha()) && get(ficha()).data.admin == true); }
+
+    // Lista de personas autorizadas
+    match /autorizados/{email} {
+      allow read: if autorizado() || (conCuenta() && email == correo());
+      allow write: if esAdmin();
+    }
+
+    // Datos del sistema
+    match /empresas/{id}  { allow read, write: if autorizado(); }
+    match /empleados/{id} { allow read, write: if autorizado(); }
+    match /planillas/{id} { allow read, write: if autorizado(); }
+    match /ajustes/{id}   { allow read, write: if autorizado(); }
+  }
+}

@@ -194,7 +194,7 @@
         var inp = document.createElement('input'); inp.type = 'file'; inp.accept = 'image/png,image/jpeg,image/svg+xml,image/webp';
         inp.onchange = function () {
           var f = inp.files[0]; if (!f) return;
-          if (f.size > 600 * 1024) { U.aviso('El logo pesa mucho (máx. 600 KB). Usa una versión más liviana.', 'error'); return; }
+          if (f.size > 300 * 1024) { U.aviso('El logo pesa mucho (máx. 300 KB). Usa una versión más liviana.', 'error'); return; }
           var r = new FileReader();
           r.onload = function () { logos[bt.dataset.sube] = r.result; prev(bt.dataset.sube); };
           r.readAsDataURL(f);
@@ -1082,7 +1082,7 @@
      CONFIGURACIÓN
      ========================================================= */
   V.configuracion = function (cont) {
-    var c = D.config();
+    var c = D.config(), local = D.resumenLocalAntiguo();
     var n = function (etq, k, ayuda, paso) { return campo(etq, k, c[k], 'number', { paso: paso || '0.01', ayuda: ayuda }); };
     var h = '<div class="tarjeta-cab"><div><span class="kicker">Parámetros de ley</span><h2 style="font-size:30px">Configuración</h2><p class="suave">Valores que usa el sistema para calcular. Se aplican a todas las empresas y a las planillas en borrador.</p></div></div>' +
       '<div class="rejilla r2" style="align-items:start"><div class="tarjeta"><form class="form" id="fCfg">' +
@@ -1100,12 +1100,16 @@
       '<fieldset class="ancho"><legend>Aportes de la empresa</legend><div class="form">' + n('Caja de salud (%)', 'cajaSalud') + n('Gestora patronal (%)', 'gestoraPatronal') +
       n('Previsión indemnización (%)', 'provIndemnizacion') + n('Previsión aguinaldo (%)', 'provAguinaldo') + '</div></fieldset>' +
       '</form><div class="acciones"><button class="btn btn-primario" id="gCfg">Guardar configuración</button><button class="btn btn-fantasma" id="rCfg">Volver a los valores por defecto</button></div></div>' +
-      '<div class="rejilla"><div class="tarjeta"><h3>Copia de seguridad</h3><p class="suave" style="margin:4px 0 14px">Tus datos se guardan solo en este navegador. Descarga una copia cada mes y guárdala en tu Google Drive; sirve también para pasar los datos a otra computadora.</p>' +
+      '<div class="rejilla"><div class="tarjeta"><h3>Copia de seguridad</h3><p class="suave" style="margin:4px 0 14px">Tus datos ya se guardan en la nube. Igual conviene descargar una copia cada mes y guardarla en tu Google Drive, por si alguien borra algo por error. Restaurar una copia reemplaza los datos de la nube para todos.</p>' +
       '<div class="acciones"><button class="btn btn-primario" id="bkExp">' + ic('generar') + 'Descargar copia</button><button class="btn" id="bkImp">' + ic('subir') + 'Restaurar copia</button></div>' +
       (D.get().actualizado ? '<p class="suave peq" style="margin-top:10px">Último cambio guardado: ' + new Date(D.get().actualizado).toLocaleString('es-BO') + '</p>' : '') + '</div>' +
       '<div class="tarjeta" style="padding:0;overflow:hidden"><img src="assets/fotos/los-cuatro-oscuro.jpg" alt="Los clásicos de los números junto al Contador Virtual de CONTAX" style="width:100%;aspect-ratio:16/9;object-fit:cover">' +
       '<div style="padding:18px 20px"><span class="kicker">NUMMEROS × CONTAX</span><h3 style="margin-top:4px">Sistemas a la medida de tu empresa.</h3><p class="suave peq" style="margin-top:6px">Sistema desarrollado por NUMMEROS. Servicio contable y de recursos humanos de CONTAX.</p></div></div>' +
-      '<div class="tarjeta"><h3>Zona de cuidado</h3><p class="suave" style="margin:4px 0 14px">Borra todas las empresas, el personal y las planillas de este navegador.</p><button class="btn btn-peligro" id="borrarTodo">' + ic('borrar') + 'Borrar todos los datos</button></div></div></div>';
+      '<div class="tarjeta"><h3>Personas con acceso</h3><p class="suave" style="margin:4px 0 14px">Cuentas de Google que pueden entrar al sistema y ver los mismos datos.</p><div id="listaAcceso" class="suave peq">Cargando…</div></div>' +
+      (local ? '<div class="tarjeta"><h3>Datos de esta computadora</h3><p class="suave" style="margin:4px 0 14px">Antes de la nube, los datos se guardaban solo aquí: ' + local.empresas + ' empresa(s), ' + local.empleados + ' trabajador(es) y ' + local.planillas + ' planilla(s)' +
+        (local.subido ? '. Ya se revisaron el ' + new Date(local.subido).toLocaleString('es-BO') : '') + '. Siguen guardados aquí como respaldo.</p>' +
+        '<button class="btn" id="subirLocal">' + ic('subir') + 'Subir estos datos a la nube</button></div>' : '') +
+      (N.esAdmin() ? '<div class="tarjeta"><h3>Zona de cuidado</h3><p class="suave" style="margin:4px 0 14px">Borra todas las empresas, el personal y las planillas de la nube, para todas las personas.</p><button class="btn btn-peligro" id="borrarTodo">' + ic('borrar') + 'Borrar todos los datos</button></div>' : '') + '</div></div>';
     cont.innerHTML = h;
     U.$('#gCfg', cont).onclick = function () {
       var d = leerForm(U.$('#fCfg', cont)), nc = JSON.parse(JSON.stringify(c));
@@ -1123,7 +1127,7 @@
       inp.onchange = function () {
         var r = new FileReader();
         r.onload = function () {
-          U.confirmar('Restaurar copia', 'Los datos actuales de este navegador se reemplazarán por los de la copia.', 'Restaurar', function () {
+          U.confirmar('Restaurar copia', 'Los datos actuales de la nube se reemplazarán por los de la copia, para todas las personas.', 'Restaurar', function () {
             try { D.importarRespaldo(r.result); App.refrescar(); U.aviso('Copia restaurada'); } catch (err) { U.modal('No se pudo restaurar', '<div class="alerta error">' + e(err.message) + '</div>'); }
           });
         };
@@ -1131,9 +1135,45 @@
       };
       inp.click();
     };
-    U.$('#borrarTodo', cont).onclick = function () {
-      U.confirmar('Borrar todo', 'Se borrarán TODOS los datos de este navegador. Descarga antes una copia de seguridad.', 'Borrar todo', function () { D.borrarTodo(); App.refrescar(); }, true);
+    if (U.$('#borrarTodo', cont)) U.$('#borrarTodo', cont).onclick = function () {
+      U.confirmar('Borrar todo', 'Se borrarán TODOS los datos de la nube, para todas las personas. Descarga antes una copia de seguridad.', 'Borrar todo', function () { D.borrarTodo(); App.refrescar(); }, true);
     };
+    if (U.$('#subirLocal', cont)) U.$('#subirLocal', cont).onclick = function () {
+      U.confirmar('Subir datos de esta computadora', 'Los datos de la nube se reemplazarán por los de esta computadora, para todas las personas. Descarga antes una copia de seguridad si tienes dudas.', 'Subir y reemplazar', function () {
+        D.subirLocalAntiguo().then(function (ok) { App.refrescar(); if (ok) U.aviso('Listo: los datos de esta computadora ya están en la nube'); });
+      }, true);
+    };
+
+    /* Personas con acceso */
+    var pintarAcceso = function () {
+      var caja = U.$('#listaAcceso', cont); if (!caja) return;
+      N.listarAutorizados().then(function (l) {
+        var admin = N.esAdmin();
+        var filas = '<tr><td>' + e(N.DUENO) + '</td><td>Administrador principal</td><td></td></tr>' + l.filter(function (x) { return x.correo !== N.DUENO; }).map(function (x) {
+          return '<tr><td>' + e(x.correo) + (x.nombre ? '<br><span class="suave peq">' + e(x.nombre) + '</span>' : '') + '</td><td>' + (x.admin ? 'Administrador' : 'Usuario') + '</td><td>' +
+            (admin ? '<button class="btn btn-sm btn-fantasma" data-quitar="' + e(x.correo) + '">Quitar</button>' : '') + '</td></tr>';
+        }).join('');
+        caja.className = '';
+        caja.innerHTML = '<div class="tabla-caja"><table class="tabla"><thead><tr><th>Correo</th><th>Permiso</th><th></th></tr></thead><tbody>' + filas + '</tbody></table></div>' +
+          (admin ? '<form class="form" id="fAcceso" style="margin-top:14px" onsubmit="return false">' + campo('Correo de Google', 'correo', '', 'email') + campo('Nombre (opcional)', 'nombre', '', 'text') +
+            campo('Permiso', 'admin', '0', 'select', { opciones: [['0', 'Usuario (usa el sistema)'], ['1', 'Administrador (además agrega o quita personas)']] }) + '</form>' +
+            '<div class="acciones"><button class="btn btn-primario" id="agrAcceso">' + ic('personal') + 'Dar acceso</button></div>' : '<p class="suave peq" style="margin-top:10px">Solo un administrador puede agregar o quitar personas.</p>');
+        U.$$('[data-quitar]', caja).forEach(function (b) {
+          b.onclick = function () {
+            var cor = b.getAttribute('data-quitar');
+            U.confirmar('Quitar acceso', cor + ' ya no podrá entrar al sistema.', 'Quitar', function () {
+              N.quitarAutorizado(cor).then(function () { U.aviso('Acceso quitado'); pintarAcceso(); }).catch(function (err) { U.aviso('No se pudo: ' + err.message, 'error'); });
+            }, true);
+          };
+        });
+        if (U.$('#agrAcceso', caja)) U.$('#agrAcceso', caja).onclick = function () {
+          var d = leerForm(U.$('#fAcceso', caja));
+          N.autorizar(d.correo, d.nombre, d.admin === '1').then(function () { U.aviso('Listo: ' + d.correo + ' ya puede entrar con su cuenta de Google'); pintarAcceso(); })
+            .catch(function (err) { U.aviso('No se pudo: ' + err.message, 'error'); });
+        };
+      }).catch(function (err) { caja.textContent = 'No se pudo cargar la lista: ' + err.message; });
+    };
+    pintarAcceso();
   };
 
   global.V = V;

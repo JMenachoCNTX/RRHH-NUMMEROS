@@ -43,8 +43,13 @@
         <div class="selector-empresa">
           <select id="selEmpresa" aria-label="Empresa activa"></select>
         </div>
+        <div class="estado-nube" id="estadoNube" title="Conectando…"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.5 19a4.5 4.5 0 1 0-1.4-8.8A6 6 0 0 0 4.5 12.5 3.5 3.5 0 0 0 6 19z"/></svg><span>Conectando…</span></div>
         <button class="btn btn-fantasma btn-sm" id="btnTema" title="Cambiar modo claro / oscuro" aria-label="Cambiar modo claro u oscuro">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
+        </button>
+        <button class="btn btn-fantasma btn-sm btn-salir" id="btnSalir" title="Cerrar sesión" aria-label="Cerrar sesión">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></svg>
+          <span class="usuario-nube" id="usuarioNube"></span>
         </button>
       </header>
       <main class="contenido" id="vista" tabindex="-1"></main>
@@ -53,9 +58,13 @@
 
   <div id="impresion"></div>
 
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
   <script src="vendor/xlsx-js-style.min.js"></script>
   <script src="js/calculos.js"></script>
   <script src="js/util.js"></script>
+  <script src="js/nube.js"></script>
   <script src="js/datos.js"></script>
   <script src="js/documentos.js"></script>
   <script src="js/exportar.js"></script>

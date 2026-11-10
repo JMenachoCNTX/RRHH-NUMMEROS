@@ -16,7 +16,7 @@ Servicio contable de **CONTAX** con el sistema de **NUMMEROS**. Cliente actual: 
 cuyo logo está en `assets/empresas/` y se asigna solo. Admite varias empresas.
 
 ## Cómo está armado (archivos principales)
-- `index.html` — carga los scripts en orden. Sin compilación: HTML + CSS + JS plano.
+- `index.html` — carga Firebase (gstatic, compat 10.12.2) y los scripts en orden. Sin compilación: HTML + CSS + JS plano.
 - `js/calculos.js` — motor de cálculo puro (se prueba con Node: `node -e "require('./js/calculos.js')"`).
 - `js/datos.js` — almacenamiento, empresas, personal, planillas, respaldos.
 - `js/vistas.js` — todas las pantallas. `js/app.js` — navegación (rutas `#/...`).
@@ -25,11 +25,20 @@ cuyo logo está en `assets/empresas/` y se asigna solo. Admite varias empresas.
 - `vendor/xlsx-js-style.min.js` — librería Excel. `css/estilos.css`. `manifest.webmanifest` (app instalable).
 - `assets/` — logos NUMMEROS/CONTAX, fotos de campaña (`assets/fotos/`), fuentes e íconos.
 
-## Dónde se guardan los datos
-- Solo en el **navegador** de la computadora que lo usa: `localStorage`, clave `nummeros-rrhh-v1`.
-  No hay Firebase ni servidor; nada se sube a GitHub.
-- Por eso hay que descargar una **copia de seguridad** cada mes (Configuración → Descargar copia) y guardarla en Drive.
-- Nombres, C.I., cuentas, datos del representante legal y de terceros autorizados se cargan en el navegador, nunca en el código.
+## Dónde se guardan los datos (desde el 10/11/2026: en la nube)
+- **Firebase**, proyecto `rrhh-nummeros` (cuenta info@contaxbolivia.com), Firestore en `southamerica-east1`.
+- `js/nube.js`: ingreso con Google, escucha en vivo y guardado. Colecciones `empresas`, `empleados`, `planillas`
+  (un documento por registro, id = id del registro) y `ajustes/general` (`{config}`). Cada documento guarda el JSON
+  como texto en el campo `d` (más `en` y `por`). Solo se suben los documentos que cambiaron.
+- Acceso: `firestore.rules`. Entra `info@contaxbolivia.com` (dueño, fijo en las reglas y en `N.DUENO`) y los correos de la
+  colección `autorizados/{correo}` (`admin: true` puede agregar o quitar personas desde Configuración).
+- Ingreso con Google activado con `firebase.json` (`auth.providers`); dominio `jmenachocntx.github.io` autorizado en Auth.
+  Publicar reglas: `firebase deploy --only firestore --project rrhh-nummeros` (guardar copia de las reglas antes).
+- En el navegador solo quedan preferencias (`nummeros-rrhh-pref`: tema, menú, empresa activa). Los datos antiguos
+  (`nummeros-rrhh-v1`) no se borran: al entrar se ofrece subirlos y en Configuración hay un botón para subirlos otra vez.
+- Copia de seguridad mensual (Configuración → Descargar copia) sigue recomendada. Restaurar reemplaza la nube para todos.
+- Logos de empresa: máximo 300 KB (cada documento de Firestore admite hasta 1 MB).
+- Nombres, C.I., cuentas, datos del representante legal y de terceros autorizados viven en Firestore, nunca en el código.
 
 ## Cómo se publica
 - GitHub Pages desde `main` del repo `JMenachoCNTX/RRHH-NUMMEROS` (público), con `.nojekyll`.
@@ -63,7 +72,7 @@ cuyo logo está en `assets/empresas/` y se asigna solo. Admite varias empresas.
 ## Cuidados importantes
 - Repo **público**: nunca subir datos reales de personas (nombres, C.I., cuentas, sueldos), ni planillas del cliente.
   La plantilla de personal usa solo datos ficticios.
-- Si se borra el historial del navegador, se pierden los datos: recordar la copia de seguridad.
+- Si se cambian las reglas o la estructura de documentos, avisar antes: el sistema está en uso por varias personas.
 - Pendientes que Jhonny dejó para «luego»: boletas/certificados por correo, portal del trabajador, firma digital
   (Ley 164, ADSIB/Digicert), y subir documentos de empresa (NIT, Matrícula, ROE) y del personal (CI, contrato).
 - Se descartó leer capturas con OCR para horas extra (los números salían mal): usar pegar filas o subir Excel.
