@@ -148,6 +148,19 @@
     var caja = r2(totalGanado * cfg.cajaSalud / 100);
     var gestoraPat = r2(totalGanado * cfg.gestoraPatronal / 100);
 
+    /* Planillas antiguas importadas (ej. hoja BDSueldos): se respetan al centavo los montos que realmente se pagaron */
+    var fijos = mov.montosFijos;
+    if (fijos) {
+      var fj = function (k, actual) { return fijos[k] === undefined || fijos[k] === null || fijos[k] === '' ? actual : r2(num(fijos[k])); };
+      montoHE = fj('montoHorasExtra', montoHE); bonoAntig = fj('bonoAntiguedad', bonoAntig); otrosBonos = fj('otrosBonos', otrosBonos);
+      totalGanado = fj('totalGanado', totalGanado); afp = fj('afp', afp); ans = fj('ans', ans);
+      rc.aPagar = fj('rcIva', rc.aPagar); otrosDescuentos = fj('otrosDescuentos', otrosDescuentos);
+      totalDesc = fj('totalDescuentos', r2(afp + ans + rc.aPagar + anticipos + otrosDescuentos));
+      liquido = fj('liquido', r2(totalGanado - totalDesc));
+      caja = fj('cajaSalud', r2(totalGanado * cfg.cajaSalud / 100));
+      gestoraPat = fj('gestoraPatronal', r2(totalGanado * cfg.gestoraPatronal / 100));
+    }
+
     return {
       basico: r2(basico), dias: dias, horasDia: cfg.horasDia, salarioGanado: salarioGanado,
       anios: anios, pctAntiguedad: pct, bonoAntiguedad: bonoAntig,

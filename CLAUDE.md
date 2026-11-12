@@ -52,6 +52,9 @@ cuyo logo está en `assets/empresas/` y se asigna solo. Admite varias empresas.
 - Patronal: Caja 10 %, Gestora 7,21 %, previsiones 8,33 % + 8,33 %. Bono de antigüedad sobre 3 SMN (confirmado 24/10/2026).
 - `versionConfig` 3 fuerza horas extra al 50 % sin redondear una vez en cada navegador.
 - Planilla sin bono de producción ni dominicales; descuentos separados en Anticipos y Otros descuentos.
+- Planillas importadas de Google Sheets (hojas BDSueldos / BDSueldos2025): cerradas, con `importadaDe` y en cada fila
+  `montosFijos` (ganado, AFP, ANS, RC-IVA, descuentos, líquido, Caja, Gestora…) que `calcularFila` respeta al centavo,
+  para que las boletas antiguas muestren exactamente lo pagado. Ids `bdsAAAAMM`.
 
 ## Bancos
 - Sueldos solo por **Banco Ganadero** (Excel; cuenta y C.I. sin guiones, espacios ni puntos).
