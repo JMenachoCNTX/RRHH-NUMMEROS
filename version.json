@@ -1,9 +1,8 @@
 {
-  "version": "7",
+  "version": "8",
   "fecha": "26/11/2026",
   "novedades": [
-    "«Datos del cliente» ahora revisa la columna «Total Ganado (Bs)»: avisa si a alguien le cambiaron el sueldo y puedes actualizarlo con un clic.",
-    "También avisa si en la lista del cliente viene un trabajador nuevo que no está en el sistema, y lo puedes registrar desde ahí mismo.",
-    "Si la persona ya está en Personal pero no en la planilla del mes, se agrega al aplicar."
+    "En «Revisar datos del cliente», la fila TOTAL ahora muestra la suma del Total Ganado (sueldos) del cliente y la del sistema, y avisa si hay diferencia.",
+    "Se sigue mostrando el total de horas extra y su importe."
   ]
 }

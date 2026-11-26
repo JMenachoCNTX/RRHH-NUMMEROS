@@ -789,8 +789,13 @@
     };
     var totales = function (raiz) {
       var personas = 0, hAntes = 0, hNuevas = 0, impSis = 0, impCli = 0, conMontoCli = 0;
+      var tgCli = 0, tgSis = 0, tgCliConPersona = 0;
       pares.forEach(function (par, j) {
         pintarSueldo(raiz, j);
+        /* Total ganado (sueldo): el del cliente (todas sus filas) y el del sistema (personas encontradas) */
+        tgCli += Calc.num(par.cliente.totalGanado);
+        var quien = personaFila(raiz, j);
+        if (quien) { tgSis += Calc.num(quien.sueldoBasico); tgCliConPersona += Calc.num(par.cliente.totalGanado); }
         var sel = U.$('select[data-emp="' + j + '"]', raiz), celda = U.$('[data-imp="' + j + '"]', raiz);
         var x = sel && sel.value !== '' ? calc.filas.find(function (k) { return k.idx === +sel.value; }) : null;
         var imp = x ? importeSistema(x.emp, par.cliente.horasExtra) : 0;
@@ -806,7 +811,12 @@
       var coincide = conMontoCli ? (Math.abs(impSis - impCli) <= 0.05 * Math.max(1, conMontoCli)
         ? '<span class="etiqueta">✓ Coincide: ' + bs(impCli) + '</span>'
         : '<span class="etiqueta retirado-rojo">✗ No coincide</span><div class="peq" style="margin-top:4px">Cliente: ' + bs(impCli) + '</div>') : '';
-      U.$('#totCli', raiz).innerHTML = '<td>TOTAL · ' + personas + ' persona(s)</td><td></td><td></td><td class="num">' + Calc.r2(hAntes) + ' → ' + Calc.r2(hNuevas) + ' h</td>' +
+      tgCli = Calc.r2(tgCli); tgSis = Calc.r2(tgSis); tgCliConPersona = Calc.r2(tgCliConPersona);
+      var difTg = Calc.r2(tgCliConPersona - tgSis);
+      var celdaTg = tgCli ? '<div>Cliente: <b>' + bs(tgCli) + '</b></div><div>Sistema: <b>' + bs(tgSis) + '</b></div>' +
+        (Math.abs(difTg) <= 0.05 ? '<span class="etiqueta">✓ Sueldos iguales</span>' : '<span class="etiqueta retirado-rojo">✗ Diferencia ' + bs(Math.abs(difTg)) + '</span>') +
+        (Calc.r2(tgCli - tgCliConPersona) ? '<div class="peq suave" style="margin-top:4px">' + bs(Calc.r2(tgCli - tgCliConPersona)) + ' de personas sin elegir</div>' : '') : '<span class="suave">—</span>';
+      U.$('#totCli', raiz).innerHTML = '<td>TOTAL · ' + personas + ' persona(s)</td><td></td><td class="peq">' + celdaTg + '</td><td class="num">' + Calc.r2(hAntes) + ' → ' + Calc.r2(hNuevas) + ' h</td>' +
         '<td class="num destacado">' + bs(impSis) + '</td><td>' + coincide + '</td><td></td>';
     };
     var filaVacia = function (empleadoId, horas) { return { empleadoId: empleadoId, dias: '', horasExtra: horas || 0, bonoProduccion: 0, dominicales: 0, otrosBonos: 0, facturasF110: 0, anticipos: 0, otrosDescuentos: 0 }; };
