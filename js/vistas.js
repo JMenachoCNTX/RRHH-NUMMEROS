@@ -1131,7 +1131,8 @@
       '<div class="acciones"><button class="btn btn-primario" id="bkExp">' + ic('generar') + 'Descargar copia</button><button class="btn" id="bkImp">' + ic('subir') + 'Restaurar copia</button></div>' +
       (D.get().actualizado ? '<p class="suave peq" style="margin-top:10px">Último cambio guardado: ' + new Date(D.get().actualizado).toLocaleString('es-BO') + '</p>' : '') + '</div>' +
       '<div class="tarjeta" style="padding:0;overflow:hidden"><img src="assets/fotos/los-cuatro-oscuro.jpg" alt="Los clásicos de los números junto al Contador Virtual de CONTAX" style="width:100%;aspect-ratio:16/9;object-fit:cover">' +
-      '<div style="padding:18px 20px"><span class="kicker">NUMMEROS × CONTAX</span><h3 style="margin-top:4px">Sistemas a la medida de tu empresa.</h3><p class="suave peq" style="margin-top:6px">Sistema desarrollado por NUMMEROS. Servicio contable y de recursos humanos de CONTAX.</p></div></div>' +
+      '<div style="padding:18px 20px"><span class="kicker">NUMMEROS × CONTAX</span><h3 style="margin-top:4px">Sistemas a la medida de tu empresa.</h3><p class="suave peq" style="margin-top:6px">Sistema desarrollado por NUMMEROS. Servicio contable y de recursos humanos de CONTAX.</p>' +
+      '<div class="acciones" style="margin-top:12px;align-items:center"><span class="etiqueta" data-version></span><button class="btn btn-sm" id="buscarVersion">Buscar actualizaciones</button></div></div></div>' +
       '<div class="tarjeta"><h3>Personas con acceso</h3><p class="suave" style="margin:4px 0 14px">Cuentas de Google que pueden entrar al sistema y ver los mismos datos.</p><div id="listaAcceso" class="suave peq">Cargando…</div></div>' +
       (local ? '<div class="tarjeta"><h3>Datos de esta computadora</h3><p class="suave" style="margin:4px 0 14px">Antes de la nube, los datos se guardaban solo aquí: ' + local.empresas + ' empresa(s), ' + local.empleados + ' trabajador(es) y ' + local.planillas + ' planilla(s)' +
         (local.subido ? '. Ya se revisaron el ' + new Date(local.subido).toLocaleString('es-BO') : '') + '. Siguen guardados aquí como respaldo.</p>' +
@@ -1148,6 +1149,8 @@
       D.guardarConfig(nc); U.aviso('Configuración guardada');
     };
     U.$('#rCfg', cont).onclick = function () { U.confirmar('Valores de ley', 'Se restaurarán los valores por defecto.', 'Restaurar', function () { D.restaurarConfig(); App.refrescar(); }); };
+    if (global.VersionApp) { VersionApp.pintar(); U.$('#buscarVersion', cont).onclick = function () { VersionApp.revisar(true); }; }
+    else U.$('#buscarVersion', cont).hidden = true;
     U.$('#bkExp', cont).onclick = function () { U.descargar('Respaldo_NUMMEROS_RRHH_' + U.hoyIso() + '.json', D.exportarRespaldo(), 'application/json'); };
     U.$('#bkImp', cont).onclick = function () {
       var inp = document.createElement('input'); inp.type = 'file'; inp.accept = '.json';

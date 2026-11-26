@@ -5,10 +5,20 @@
    AL PUBLICAR un cambio: poner el MISMO valor nuevo en VERSION (aquí), en version.json y en los ?v= de index.html. */
 (function (global) {
   'use strict';
-  var VERSION = '20261126-2';
+  var VERSION = '20261126-3';
   var CADA = 5 * 60 * 1000;          // revisar cada 5 minutos
   var POSPONER = 30 * 60 * 1000;     // «Más tarde» vuelve a avisar en 30 minutos
   var pospuestoHasta = 0, mostrada = null;
+
+  /* «20261126-3» → «v2026.11.26-3» */
+  function etiqueta(v) {
+    var m = /^(\d{4})(\d{2})(\d{2})(?:-(\d+))?$/.exec(String(v || ''));
+    return m ? 'v' + m[1] + '.' + m[2] + '.' + m[3] + (m[4] ? '-' + m[4] : '') : 'v' + v;
+  }
+  /* Escribe el número de versión en todo lugar marcado con data-version */
+  function pintar() {
+    Array.prototype.forEach.call(document.querySelectorAll('[data-version]'), function (el) { el.textContent = 'Versión ' + etiqueta(VERSION).slice(1); el.title = 'Versión del sistema: ' + etiqueta(VERSION); });
+  }
 
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
 
@@ -32,7 +42,7 @@
     var el = document.createElement('div');
     el.id = 'avisoVersion'; el.className = 'aviso-version'; el.setAttribute('role', 'alert');
     var nov = (info.novedades || []).slice(0, 5);
-    el.innerHTML = '<div class="av-texto"><b>Hay una versión nueva del sistema</b>' + (info.fecha ? ' <span class="av-fecha">(' + esc(info.fecha) + ')</span>' : '') +
+    el.innerHTML = '<div class="av-texto"><b>Hay una versión nueva del sistema</b>' + '<div class="av-fecha">Tienes la ' + esc(etiqueta(VERSION)) + ' · nueva: <b>' + esc(etiqueta(info.version)) + '</b>' + (info.fecha ? ' (' + esc(info.fecha) + ')' : '') + '</div>' +
       (nov.length ? '<ul>' + nov.map(function (n) { return '<li>' + esc(n) + '</li>'; }).join('') + '</ul>' : '') +
       '<small>Tus datos están guardados en la nube: actualizar no borra nada.</small></div>' +
       '<div class="av-botones"><button class="btn btn-primario" data-av="si">Actualizar ahora</button><button class="btn btn-fantasma" data-av="luego">Más tarde</button></div>';
@@ -41,11 +51,17 @@
     document.body.appendChild(el);
   }
 
-  function revisar() {
-    if (Date.now() < pospuestoHasta || !global.fetch) return;
-    fetch('version.json?t=' + Date.now(), { cache: 'no-store' })
+  /* forzar = true: revisa aunque se haya elegido «Más tarde» y avisa si ya está al día */
+  function revisar(forzar) {
+    forzar = forzar === true; // los eventos del navegador también llaman aquí con otros valores
+    if ((!forzar && Date.now() < pospuestoHasta) || !global.fetch) return Promise.resolve();
+    if (forzar) pospuestoHasta = 0;
+    return fetch('version.json?t=' + Date.now(), { cache: 'no-store' })
       .then(function (r) { return r.ok ? r.json() : null; })
-      .then(function (info) { if (info && info.version && info.version !== VERSION) mostrarAviso(info); })
+      .then(function (info) {
+        if (info && info.version && info.version !== VERSION) mostrarAviso(info);
+        else if (forzar && global.U) U.aviso('Ya tienes la última versión (' + etiqueta(VERSION) + ')');
+      })
       .catch(function () { /* sin internet: se vuelve a intentar más tarde */ });
   }
 
@@ -54,10 +70,12 @@
     history.replaceState(null, '', location.pathname + location.hash);
   }
 
+  pintar();
+  document.addEventListener('DOMContentLoaded', pintar);
   global.addEventListener('load', function () { setTimeout(revisar, 3000); });
   setInterval(revisar, CADA);
   document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'visible') revisar(); });
   global.addEventListener('online', revisar);
 
-  global.VersionApp = { VERSION: VERSION, revisar: revisar };
+  global.VersionApp = { VERSION: VERSION, etiqueta: function () { return etiqueta(VERSION); }, revisar: revisar, pintar: pintar };
 })(window);

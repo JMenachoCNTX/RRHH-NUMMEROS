@@ -1,8 +1,8 @@
 {
-  "version": "20261126-2",
+  "version": "20261126-3",
   "fecha": "26/11/2026",
   "novedades": [
-    "Aviso automático cuando se publica una versión nueva del sistema.",
-    "Datos del cliente: importe de horas extra por persona y fila de totales (horas e importe)."
+    "Ahora se ve el número de versión del sistema: en el menú (abajo), en la pantalla de ingreso y en Configuración.",
+    "En Configuración hay un botón «Buscar actualizaciones»."
   ]
 }

@@ -48,6 +48,7 @@ cuyo logo está en `assets/empresas/` y se asigna solo. Admite varias empresas.
   `version.json`; si difiere de `VERSION` muestra un aviso con las novedades y «Actualizar ahora».
   **En CADA publicación** poner el MISMO valor nuevo (ej. `20261126-2`, fecha + número) en: `VERSION` de `js/version.js`,
   `version` de `version.json` y todos los `?v=` de `index.html`; y escribir en `novedades` 1 a 3 frases simples de lo nuevo.
+  El número se ve como «Versión 2026.11.26-3» en el menú, la pantalla de ingreso y Configuración (botón «Buscar actualizaciones»).
 
 ## Reglas de cálculo (verificadas con la planilla de septiembre 2026)
 - Salario ganado = básico ÷ 30 × días. Hora extra = básico ÷ 30 ÷ 8 × 1,5, **sin redondear** el valor hora (solo el monto final).

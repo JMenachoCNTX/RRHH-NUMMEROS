@@ -53,9 +53,11 @@
     el.innerHTML = '<div class="acceso-caja">' +
       '<img class="acceso-logo" src="assets/logos/nummeros-logotipo-horizontal-principal.svg" alt="NUMMEROS">' +
       '<p class="acceso-sub">Recursos Humanos y planillas de sueldos</p>' + html +
-      '<div class="acceso-pie"><small>Servicio contable</small><img src="assets/logos/contax-horizontal-color.svg" alt="CONTAX"></div></div>';
+      '<div class="acceso-pie"><small>Servicio contable</small><img src="assets/logos/contax-horizontal-color.svg" alt="CONTAX"></div>' +
+      '<small class="version-app" data-version></small></div>';
     el.hidden = false;
     document.body.classList.add('sin-sesion');
+    if (global.VersionApp) VersionApp.pintar();
     return el;
   }
   function quitarAcceso() {

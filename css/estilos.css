@@ -587,3 +587,7 @@ body.sin-sesion .app { visibility: hidden; }
 .aviso-version small { color: var(--texto-suave); }
 .aviso-version .av-botones { display: flex; flex-direction: column; gap: 8px; }
 @media (max-width: 600px) { .aviso-version { flex-direction: column; align-items: stretch; } .aviso-version .av-botones { flex-direction: row; } }
+.version-app { display: block; font-size: 11px; color: var(--texto-suave); letter-spacing: .02em; padding-top: 2px; }
+.acceso-caja .version-app { color: #557363; margin-top: -4px; }
+.aviso-version .av-fecha { font-size: 13px; margin-top: 2px; }
+@media (min-width: 901px) { .app.menu-mini .lateral:not(:hover) .version-app { display: none; } }
