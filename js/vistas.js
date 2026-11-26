@@ -15,6 +15,7 @@
     historial: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
     config: '<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.6 1.6 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.6 1.6 0 0 0-1.8-.3 1.6 1.6 0 0 0-1 1.5V21a2 2 0 0 1-4 0v-.1a1.6 1.6 0 0 0-1-1.5 1.6 1.6 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.6 1.6 0 0 0 .3-1.8 1.6 1.6 0 0 0-1.5-1H3a2 2 0 0 1 0-4h.1a1.6 1.6 0 0 0 1.5-1 1.6 1.6 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.6 1.6 0 0 0 1.8.3H9a1.6 1.6 0 0 0 1-1.5V3a2 2 0 0 1 4 0v.1a1.6 1.6 0 0 0 1 1.5 1.6 1.6 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.6 1.6 0 0 0-.3 1.8V9a1.6 1.6 0 0 0 1.5 1H21a2 2 0 0 1 0 4h-.1a1.6 1.6 0 0 0-1.5 1z"/>',
     mas: '<path d="M12 5v14M5 12h14"/>',
+    embudo: '<path d="M3 5h18l-7 8v6l-4 2v-8z"/>',
     buscar: '<circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/>',
     imprimir: '<path d="M6 9V3h12v6"/><rect x="3" y="9" width="18" height="8" rx="2"/><path d="M6 14h12v7H6z"/>',
     excel: '<rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8l8 8M16 8l-8 8"/>',
@@ -210,7 +211,6 @@
      PERSONAL
      ========================================================= */
   /* ---------- Orden alfabético (personal y planilla) ---------- */
-  var OPC_ORDEN = [['nombre-asc', 'Nombre (A-Z)'], ['nombre-desc', 'Nombre (Z-A)'], ['apellido-asc', 'Apellido (A-Z)'], ['apellido-desc', 'Apellido (Z-A)'], ['grupo-asc', 'Por grupo']];
   function claveOrden(k, campo) {
     switch (campo) {
       case 'apellido': return U.sinAcentos([U.apellidos(k), k.nombres].join(' ')).toLowerCase();
@@ -220,6 +220,8 @@
       case 'ingreso': return k.fechaIngreso || '';
       case 'sueldo': return Calc.num(k.sueldoBasico);
       case 'banco': return U.sinAcentos(k.banco || '').toLowerCase();
+      case 'cuenta': return String(k.cuenta || '');
+      case 'cua': return String(k.cua || '');
       case 'estado': return k.estado || 'ACTIVO';
       default: return U.sinAcentos(U.nombreCompleto(k)).toLowerCase();
     }
@@ -237,8 +239,92 @@
     return /^apellido/.test(orden || '') && U.apellidos(k) ? U.apellidos(k) + ', ' + k.nombres : U.nombreCompleto(k);
   }
   V.compararPor = compararPor;
+  /* ---------- Menú de un título de columna: ordenar y filtrar (como en Excel) ----------
+     opc = { ordenes: [[valor, texto]], ordenActual, alOrdenar(valor),
+             secciones: [{ clave, titulo, valores: [texto…], elegidos: Set|null }], alFiltrar({clave: Set|null}) } */
+  function cerrarMenuColumna() {
+    var v = document.getElementById('menuCol'); if (v) { v.remove(); }
+    document.removeEventListener('mousedown', fueraMenuColumna, true); document.removeEventListener('keydown', teclaMenuColumna, true);
+  }
+  function fueraMenuColumna(ev) { var m = document.getElementById('menuCol'); if (m && !m.contains(ev.target) && !(m._th && m._th.contains(ev.target))) cerrarMenuColumna(); }
+  function teclaMenuColumna(ev) { if (ev.key === 'Escape') { ev.stopPropagation(); cerrarMenuColumna(); } }
+  function menuColumna(th, opc) {
+    var abierto = document.getElementById('menuCol');
+    if (abierto && abierto._th === th) { cerrarMenuColumna(); return; }
+    cerrarMenuColumna();
+    var el = document.createElement('div'); el.id = 'menuCol'; el.className = 'menu-col'; el._th = th;
+    var h = '<div class="menu-col-ord">' + (opc.ordenes || []).map(function (o) {
+      return '<button type="button" data-orden="' + e(o[0]) + '"' + (opc.ordenActual === o[0] ? ' class="activo"' : '') + '>' + (opc.ordenActual === o[0] ? '✓ ' : '') + e(o[1]) + '</button>';
+    }).join('') + '</div>';
+    (opc.secciones || []).forEach(function (sec, n) {
+      var vals = sec.valores.filter(function (v, i, a) { return a.indexOf(v) === i; })
+        .sort(function (a, b) { return String(a).localeCompare(String(b), 'es', { numeric: true }); });
+      h += '<div class="menu-col-sec" data-sec="' + n + '"><b>' + e(sec.titulo) + '</b>' +
+        (vals.length > 6 ? '<input class="menu-col-busca" placeholder="Buscar…" autocomplete="off">' : '') +
+        '<label class="menu-col-todos"><input type="checkbox" data-todos' + (sec.elegidos ? '' : ' checked') + '> (Seleccionar todo)</label><div class="menu-col-lista">' +
+        vals.map(function (v) {
+          return '<label><input type="checkbox" data-v="' + e(v) + '"' + (!sec.elegidos || sec.elegidos.has(v) ? ' checked' : '') + '> ' + (v === '' ? '<i class="suave">(Vacío)</i>' : e(v)) + '</label>';
+        }).join('') + '</div></div>';
+    });
+    if ((opc.secciones || []).length) h += '<div class="menu-col-pie"><button type="button" class="btn btn-sm btn-fantasma" data-quitar>Quitar filtro</button><button type="button" class="btn btn-sm btn-primario" data-aplicar>Aplicar</button></div>';
+    el.innerHTML = h;
+    document.body.appendChild(el);
+    var r = th.getBoundingClientRect(), ancho = el.offsetWidth;
+    el.style.left = Math.max(8, Math.min(r.left, window.innerWidth - ancho - 8)) + 'px';
+    el.style.top = (r.bottom + 4) + 'px';
+    el.style.maxHeight = Math.max(200, window.innerHeight - r.bottom - 16) + 'px';
+    U.$$('[data-orden]', el).forEach(function (b) { b.onclick = function () { cerrarMenuColumna(); opc.alOrdenar(b.dataset.orden); }; });
+    U.$$('.menu-col-sec', el).forEach(function (secEl) {
+      var todos = U.$('[data-todos]', secEl), cajas = U.$$('[data-v]', secEl), busca = U.$('.menu-col-busca', secEl);
+      var visibles = function () { return cajas.filter(function (c) { return c.parentNode.style.display !== 'none'; }); };
+      var revisarTodos = function () { var v = visibles(); todos.checked = v.length > 0 && v.every(function (c) { return c.checked; }); };
+      todos.onchange = function () { visibles().forEach(function (c) { c.checked = todos.checked; }); };
+      cajas.forEach(function (c) { c.onchange = revisarTodos; });
+      if (busca) busca.oninput = function () {
+        var t = U.sinAcentos(busca.value.toLowerCase());
+        cajas.forEach(function (c) { c.parentNode.style.display = U.sinAcentos(c.dataset.v.toLowerCase()).indexOf(t) >= 0 ? '' : 'none'; });
+        if (t) cajas.forEach(function (c) { c.checked = c.parentNode.style.display !== 'none'; }); // como Excel: al buscar quedan marcadas solo las que coinciden
+        revisarTodos();
+      };
+    });
+    var quitar = U.$('[data-quitar]', el), aplicar = U.$('[data-aplicar]', el);
+    if (quitar) quitar.onclick = function () {
+      var m = {}; opc.secciones.forEach(function (sec) { m[sec.clave] = null; });
+      cerrarMenuColumna(); opc.alFiltrar(m);
+    };
+    if (aplicar) aplicar.onclick = function () {
+      var m = {}, vacio = false;
+      opc.secciones.forEach(function (sec, n) {
+        var cajas = U.$$('.menu-col-sec[data-sec="' + n + '"] [data-v]', el), marcadas = cajas.filter(function (c) { return c.checked; });
+        if (!marcadas.length) vacio = true;
+        m[sec.clave] = marcadas.length === cajas.length ? null : new Set(marcadas.map(function (c) { return c.dataset.v; }));
+      });
+      if (vacio) { U.aviso('Marca al menos un valor', 'error'); return; }
+      cerrarMenuColumna(); opc.alFiltrar(m);
+    };
+    setTimeout(function () { document.addEventListener('mousedown', fueraMenuColumna, true); document.addEventListener('keydown', teclaMenuColumna, true); }, 0);
+    var b0 = U.$('.menu-col-busca', el); if (b0) b0.focus();
+  }
+  /* Texto del título con flecha de orden y embudo de filtro */
+  function tituloCol(txt, ordenado, desc, filtrado) {
+    return '<span class="tit-col">' + txt + (ordenado ? '<span class="tit-flecha">' + (desc ? '↓' : '↑') + '</span>' : '') +
+      '<span class="tit-embudo' + (filtrado ? ' activo' : '') + '" title="' + (filtrado ? 'Filtro activo' : 'Ordenar y filtrar') + '">' + ic('embudo') + '</span></span>';
+  }
+  window.addEventListener('resize', cerrarMenuColumna);
+  window.addEventListener('hashchange', cerrarMenuColumna);
 
-  var filtroPers = { texto: '', estado: 'ACTIVO', orden: 'nombre-asc' };
+  var filtroPers = { texto: '', estado: 'ACTIVO', orden: 'nombre-asc', col: {} };
+  /* Texto que se ve en cada columna de Personal (sirve para filtrar) */
+  var COLS_PERS = [['nombre', 'Nombre', 'fija'], ['ci', 'CI'], ['cargo', 'Cargo'], ['grupo', 'Grupo'], ['ingreso', 'Ingreso'], ['sueldo', 'Sueldo básico', 'num'], ['banco', 'Banco'], ['cuenta', 'Cuenta'], ['cua', 'CUA'], ['estado', 'Estado']];
+  function textoColPers(k, c) {
+    switch (c) {
+      case 'nombre': return U.nombreCompleto(k);
+      case 'ingreso': return U.fecha(k.fechaIngreso);
+      case 'sueldo': return bs(k.sueldoBasico);
+      case 'estado': return k.estado || 'ACTIVO';
+      default: return String(k[{ ci: 'ci', cargo: 'cargo', grupo: 'grupo', banco: 'banco', cuenta: 'cuenta', cua: 'cua' }[c]] || '').trim();
+    }
+  }
   V.personal = function (cont) {
     var emp = D.empresaActiva(); if (!emp) { cont.innerHTML = sinEmpresa(); return; }
     var todos = D.empleados();
@@ -258,21 +344,20 @@
       h += '<div class="acciones" style="margin-bottom:14px"><div class="buscador">' + ic('buscar') + '<input id="busca" placeholder="Buscar por nombre, CI, cargo o grupo" value="' + e(filtroPers.texto) + '"></div>' +
         '<div class="pestanas" style="margin:0" role="tablist">' + [['ACTIVO', 'Activos'], ['RETIRADO', 'Retirados'], ['', 'Todos']].map(function (t) {
           return '<button role="tab" data-est="' + t[0] + '" aria-selected="' + (filtroPers.estado === t[0]) + '">' + t[1] + ' (' + todos.filter(function (k) { return !t[0] || (k.estado || 'ACTIVO') === t[0]; }).length + ')</button>';
-        }).join('') + '</div><label class="campo" style="flex-direction:row;align-items:center;gap:8px;margin-left:auto">Ordenar <select id="ordPers" style="width:170px">' +
-        OPC_ORDEN.map(function (o) { return '<option value="' + o[0] + '"' + (filtroPers.orden === o[0] ? ' selected' : '') + '>' + o[1] + '</option>'; }).join('') +
-        (OPC_ORDEN.some(function (o) { return o[0] === filtroPers.orden; }) ? '' : '<option selected value="' + filtroPers.orden + '">Por columna</option>') + '</select></label></div>' +
+        }).join('') + '</div>' + (Object.keys(filtroPers.col).length ? '<button class="btn btn-sm" id="quitarFiltrosPers" style="margin-left:auto">' + ic('embudo') + 'Quitar filtros</button>' : '') +
+        '<span class="suave peq" style="margin-left:' + (Object.keys(filtroPers.col).length ? '0' : 'auto') + '">Haz clic en un título para ordenar o filtrar</span></div>' +
         '<div class="tabla-caja" style="max-height:66vh"><table class="tabla"><thead><tr>' +
-        [['nombre', 'Nombre', 'fija'], ['ci', 'CI'], ['cargo', 'Cargo'], ['grupo', 'Grupo'], ['ingreso', 'Ingreso'], ['sueldo', 'Sueldo básico', 'num'], ['banco', 'Banco'], [null, 'Cuenta'], [null, 'CUA'], ['estado', 'Estado']].map(function (c) {
-          if (!c[0]) return '<th>' + c[1] + '</th>';
+        COLS_PERS.map(function (c) {
           var act = filtroPers.orden.split('-')[0] === c[0] || (c[0] === 'nombre' && /^apellido/.test(filtroPers.orden));
-          var flecha = act ? (/desc$/.test(filtroPers.orden) ? ' ↓' : ' ↑') : '';
-          return '<th class="ordenable' + (c[2] ? ' ' + c[2] : '') + (act ? ' activo' : '') + '" data-ord="' + c[0] + '" title="Ordenar">' + c[1] + flecha + '</th>';
+          return '<th class="ordenable' + (c[2] ? ' ' + c[2] : '') + (act || filtroPers.col[c[0]] ? ' activo' : '') + '" data-ord="' + c[0] + '" title="Ordenar y filtrar">' +
+            tituloCol(c[1], act, /desc$/.test(filtroPers.orden), !!filtroPers.col[c[0]]) + '</th>';
         }).join('') + '</tr></thead><tbody id="tbPers"></tbody></table></div>';
       cont.innerHTML = h;
       var pintar = function () {
         var t = U.sinAcentos(filtroPers.texto.toLowerCase());
         var lista = todos.filter(function (k) {
           if (filtroPers.estado && (k.estado || 'ACTIVO') !== filtroPers.estado) return false;
+          for (var c in filtroPers.col) { if (!filtroPers.col[c].has(textoColPers(k, c))) return false; }
           if (!t) return true;
           return U.sinAcentos((U.nombreCompleto(k) + ' ' + k.ci + ' ' + (k.cargo || '') + ' ' + (k.grupo || '')).toLowerCase()).indexOf(t) >= 0;
         }).sort(compararPor(filtroPers.orden));
@@ -290,13 +375,20 @@
       pintar();
       U.$('#busca', cont).oninput = function (ev) { filtroPers.texto = ev.target.value; pintar(); };
       U.$$('[data-est]', cont).forEach(function (b) { b.onclick = function () { filtroPers.estado = b.dataset.est; V.personal(cont); }; });
-      U.$('#ordPers', cont).onchange = function (ev) { filtroPers.orden = ev.target.value; V.personal(cont); };
+      var bq = U.$('#quitarFiltrosPers', cont); if (bq) bq.onclick = function () { filtroPers.col = {}; V.personal(cont); };
       U.$$('th[data-ord]', cont).forEach(function (th) {
         th.onclick = function () {
-          var campo = th.dataset.ord, actual = filtroPers.orden.split('-');
-          if (campo === 'nombre' && /^apellido/.test(filtroPers.orden)) campo = 'apellido';
-          filtroPers.orden = campo + '-' + (actual[0] === campo && actual[1] === 'asc' ? 'desc' : 'asc');
-          V.personal(cont);
+          var c = th.dataset.ord, num = c === 'sueldo' || c === 'ingreso';
+          var ordenes = c === 'nombre' ? [['nombre-asc', 'Nombre A → Z'], ['nombre-desc', 'Nombre Z → A'], ['apellido-asc', 'Apellido A → Z'], ['apellido-desc', 'Apellido Z → A']]
+            : [[c + '-asc', num ? (c === 'ingreso' ? 'Más antiguo primero' : 'Menor a mayor') : 'A → Z'], [c + '-desc', num ? (c === 'ingreso' ? 'Más reciente primero' : 'Mayor a menor') : 'Z → A']];
+          /* Valores para filtrar: los de las personas de la pestaña elegida (Activos / Retirados / Todos) */
+          var base = todos.filter(function (k) { return !filtroPers.estado || (k.estado || 'ACTIVO') === filtroPers.estado; });
+          menuColumna(th, {
+            ordenes: ordenes, ordenActual: filtroPers.orden,
+            alOrdenar: function (o) { filtroPers.orden = o; V.personal(cont); },
+            secciones: [{ clave: c, titulo: 'Filtrar ' + th.textContent.trim(), valores: base.map(function (k) { return textoColPers(k, c); }), elegidos: filtroPers.col[c] || null }],
+            alFiltrar: function (m) { Object.keys(m).forEach(function (k) { if (m[k]) filtroPers.col[k] = m[k]; else delete filtroPers.col[k]; }); V.personal(cont); }
+          });
         };
       });
       U.$('#btnImportar', cont).onclick = importarPersonal;
@@ -460,6 +552,38 @@
     ['facturasF110', 'Facturas F-110'], ['anticipos', 'Anticipos'], ['otrosDescuentos', 'Otros descuentos']
   ];
 
+  /* Columnas de la planilla: [clave, título, destacada] */
+  var COLS_PL = [['nombre', 'Trabajador'], ['basico', 'Básico'], ['dias', 'Días'], ['salarioGanado', 'Salario ganado'], ['horasExtra', 'Cantidad'], ['montoHorasExtra', 'Monto'],
+    ['bonoAntiguedad', 'Antigüedad'], ['otrosBonos', 'Otros bonos'], ['totalGanado', 'Total ganado', true], ['afp', 'AFP'], ['ans', 'ANS'], ['rcIva', 'RC-IVA <span title="Facturas presentadas en el F-110">(Fact.)</span>'],
+    ['anticipos', 'Anticipos'], ['otrosDescuentos', 'Otros desc.'], ['totalDescuentos', 'Total desc.'], ['liquido', 'Líquido pagable', true], ['patronal', 'Patronal']];
+  var filtrosPl = {}; // filtros de cada planilla (solo en esta pantalla; no cambian la planilla)
+  function numColPl(x, c) { return c === 'patronal' ? x.r.cajaSalud + x.r.gestoraPatronal : Calc.num(x.r[c]); }
+  function valorColPl(x, c) {
+    if (c === 'nombre') return U.nombreCompleto(x.emp);
+    if (c === 'cargo') return String(x.emp.cargo || '').trim();
+    if (c === 'grupo') return x.grupo || '';
+    if (c === 'dias' || c === 'horasExtra') return String(numColPl(x, c));
+    return bs(numColPl(x, c));
+  }
+  function pasaFiltroPl(x, filtros) {
+    for (var c in filtros) { if (filtros[c] && !filtros[c].has(valorColPl(x, c))) return false; }
+    return true;
+  }
+  /* Ordena las filas de la planilla (este orden se usa también en el banco, las boletas y las entidades) */
+  function ordenarPlanillaPor(p, orden) {
+    var campo = orden.split('-')[0];
+    if (campo === 'nombre' || campo === 'apellido' || campo === 'grupo') { D.ordenarPlanilla(p, orden, compararPor(orden)); return; }
+    var sentido = /desc$/.test(orden) ? -1 : 1, porId = {};
+    D.calcularPlanilla(p).filas.forEach(function (x) { porId[x.fila.empleadoId] = x; });
+    var nom = function (f) { var x = porId[f.empleadoId]; return x ? U.sinAcentos(U.nombreCompleto(x.emp)).toLowerCase() : '~'; };
+    p.filas.sort(function (a, b) {
+      var xa = porId[a.empleadoId], xb = porId[b.empleadoId];
+      if (!xa || !xb) return xa ? -1 : xb ? 1 : 0;
+      return (numColPl(xa, campo) - numColPl(xb, campo)) * sentido || nom(a).localeCompare(nom(b), 'es');
+    });
+    p.orden = orden; D.guardarPlanilla(p);
+  }
+
   V.planilla = function (cont, idPlanilla) {
     var emp = D.empresaActiva(); if (!emp) { cont.innerHTML = sinEmpresa(); return; }
     var p = idPlanilla ? D.planilla(idPlanilla) : null;
@@ -491,12 +615,14 @@
 
     var cerrada = p.estado === 'cerrada';
     var calc = D.calcularPlanilla(p);
+    var filtros = filtrosPl[p.id] || (filtrosPl[p.id] = {});
+    var hayFiltro = Object.keys(filtros).length > 0;
+    var visibles = calc.filas.filter(function (x) { return pasaFiltroPl(x, filtros); }).length;
     h += '<div class="tarjeta" style="margin-bottom:16px;padding:14px 18px"><div class="acciones" style="justify-content:space-between">' +
       '<div class="acciones"><span class="etiqueta ' + p.estado + '">' + (cerrada ? 'Cerrada' : 'Borrador') + '</span>' +
       '<label class="campo" style="flex-direction:row;align-items:center;gap:8px">Fecha de pago <input type="date" id="fPago" value="' + e(p.fechaPago || '') + '" style="width:160px"' + (cerrada ? ' disabled' : '') + '></label>' +
       '<label class="campo" style="flex-direction:row;align-items:center;gap:8px">Glosa <input id="fGlosa" value="' + e(p.glosa || '') + '" style="width:220px"' + (cerrada ? ' disabled' : '') + '></label></div>' +
-      '<div class="acciones"><label class="campo" style="flex-direction:row;align-items:center;gap:8px">Ordenar <select id="ordPl" style="width:160px">' +
-      OPC_ORDEN.map(function (o) { return '<option value="' + o[0] + '"' + ((p.orden || 'nombre-asc') === o[0] ? ' selected' : '') + '>' + o[1] + '</option>'; }).join('') + '</select></label>' +
+      '<div class="acciones">' +
       (cerrada ? '<button class="btn" id="reabrir">' + ic('editar') + 'Reabrir</button>' :
         '<button class="btn" id="limpiarPl" title="Borra lo escrito en la planilla">' + ic('borrar') + 'Limpiar</button><button class="btn" id="datosCliente">' + ic('subir') + 'Datos del cliente</button><button class="btn" id="agregar">' + ic('mas') + 'Agregar / quitar personal</button><button class="btn btn-primario" id="cerrar">' + ic('candado') + 'Cerrar planilla</button>') +
       '<button class="btn" id="btnGrupos" title="Separar al personal por grupo (ej. Yango y Junkers) para ver subtotales">' + ic('personal') + 'Grupos</button>' +
@@ -504,10 +630,15 @@
       (cerrada ? '<p class="suave peq" style="margin-top:8px">La planilla está cerrada: los montos quedan fijos aunque luego cambien los datos del personal o la configuración. Reábrela si necesitas corregir algo.</p>' :
         '<p class="suave peq" style="margin-top:8px">Escribe en las casillas verdes; todo se calcula y se guarda solo. Haz clic en un nombre para ver el detalle del cálculo. Deja "Días" vacío para que el sistema los calcule por fecha de ingreso/retiro.</p>') + '</div>';
 
+    if (hayFiltro) h += '<div class="alerta aviso" style="margin-bottom:10px;align-items:center"><span><b>Filtro activo:</b> se ven <b>' + visibles + '</b> de ' + calc.filas.length + ' personas. Los archivos y el pago siguen incluyendo a todos.</span><button class="btn btn-sm" id="quitarFiltrosPl" style="margin-left:auto">Quitar filtros</button></div>';
     h += '<div class="tabla-caja" style="max-height:68vh"><table class="tabla" id="tPl"><thead>' +
       '<tr class="grupo-cab"><th class="fija"></th><th colspan="3">Haber</th><th colspan="2">Horas extra</th><th colspan="2">Bonos</th><th></th><th colspan="6">Descuentos</th><th></th><th></th></tr>' +
-      '<tr><th class="fija">Trabajador</th><th class="num">Básico</th><th class="num">Días</th><th class="num">Salario ganado</th><th class="num">Cantidad</th><th class="num">Monto</th><th class="num">Antigüedad</th><th class="num">Otros bonos</th>' +
-      '<th class="num destacado">Total ganado</th><th class="num">AFP</th><th class="num">ANS</th><th class="num">RC-IVA <span title="Facturas presentadas en el F-110">(Fact.)</span></th><th class="num">Anticipos</th><th class="num">Otros desc.</th><th class="num">Total desc.</th><th class="num destacado">Líquido pagable</th><th class="num">Patronal</th></tr></thead><tbody>';
+      '<tr>' + COLS_PL.map(function (c) {
+        var ord = (p.orden || 'nombre-asc').split('-'), act = ord[0] === c[0] || (c[0] === 'nombre' && (ord[0] === 'apellido' || ord[0] === 'grupo'));
+        var filtrado = c[0] === 'nombre' ? !!(filtros.nombre || filtros.grupo || filtros.cargo) : !!filtros[c[0]];
+        return '<th class="ordenable ' + (c[0] === 'nombre' ? 'fija' : 'num') + (c[2] ? ' destacado' : '') + (act || filtrado ? ' activo' : '') + '" data-col="' + c[0] + '" title="Ordenar y filtrar">' +
+          tituloCol(c[1], act && ord[0] !== 'grupo', ord[1] === 'desc', filtrado) + '</th>';
+      }).join('') + '</tr></thead><tbody>';
     calc.filas.forEach(function (x) {
       var f = x.fila, r = x.r, k = x.emp, i = x.idx;
       var inp = function (campoN, cls) {
@@ -515,7 +646,7 @@
         if (campoN === 'dias' && (v === '' || v === undefined || v === null)) return '<input class="dias" data-i="' + i + '" data-c="dias" placeholder="' + r.dias + '" aria-label="Días"' + (cerrada ? ' disabled' : '') + '>';
         return '<input class="' + (cls || '') + '" data-i="' + i + '" data-c="' + campoN + '" value="' + (Calc.num(v) ? v : '') + '" placeholder="0" inputmode="decimal" aria-label="' + campoN + '"' + (cerrada ? ' disabled' : '') + '>';
       };
-      h += '<tr data-i="' + i + '"><td class="nombre fija"><a href="#" data-det="' + i + '">' + e(nombreSegunOrden(k, p.orden)) + '</a><div class="suave peq" style="font-weight:400">' + e(k.cargo || '') + (x.grupo ? ' <span class="etiqueta etiqueta-grupo">' + e(x.grupo) + '</span>' : '') + '</div></td>' +
+      h += '<tr data-i="' + i + '"' + (pasaFiltroPl(x, filtros) ? '' : ' hidden') + '><td class="nombre fija"><a href="#" data-det="' + i + '">' + e(nombreSegunOrden(k, p.orden)) + '</a><div class="suave peq" style="font-weight:400">' + e(k.cargo || '') + (x.grupo ? ' <span class="etiqueta etiqueta-grupo">' + e(x.grupo) + '</span>' : '') + '</div></td>' +
         '<td class="num">' + bs(r.basico) + '</td><td class="num">' + inp('dias', 'dias') + '</td><td class="num" data-o="salarioGanado">' + bs(r.salarioGanado) + '</td>' +
         '<td class="num">' + inp('horasExtra', 'dias') + '</td><td class="num" data-o="montoHorasExtra">' + bs(r.montoHorasExtra) + '</td>' +
         '<td class="num" data-o="bonoAntiguedad" title="' + r.anios + ' año(s) · ' + r.pctAntiguedad + '%">' + bs(r.bonoAntiguedad) + '</td>' +
@@ -531,7 +662,26 @@
     pintarTotales(cont, calc);
 
     U.$$('[data-det]', cont).forEach(function (a) { a.onclick = function (ev) { ev.preventDefault(); detalleFila(p, +a.dataset.det); }; });
-    U.$('#ordPl', cont).onchange = function (ev) { D.ordenarPlanilla(p, ev.target.value, compararPor(ev.target.value)); App.refrescar(); };
+    var bqf = U.$('#quitarFiltrosPl', cont); if (bqf) bqf.onclick = function () { filtrosPl[p.id] = {}; App.refrescar(); };
+    U.$$('#tPl th[data-col]', cont).forEach(function (th) {
+      th.onclick = function () {
+        var c = th.dataset.col, cf = D.calcularPlanilla(p), secciones;
+        var ordenes = c === 'nombre'
+          ? [['nombre-asc', 'Nombre A → Z'], ['nombre-desc', 'Nombre Z → A'], ['apellido-asc', 'Apellido A → Z'], ['apellido-desc', 'Apellido Z → A'], ['grupo-asc', 'Por grupo']]
+          : [[c + '-asc', 'Menor a mayor'], [c + '-desc', 'Mayor a menor']];
+        if (c === 'nombre') {
+          secciones = [{ clave: 'nombre', titulo: 'Personas', valores: cf.filas.map(function (x) { return valorColPl(x, 'nombre'); }), elegidos: filtros.nombre || null },
+            { clave: 'cargo', titulo: 'Cargo', valores: cf.filas.map(function (x) { return valorColPl(x, 'cargo'); }), elegidos: filtros.cargo || null }];
+          if (cf.filas.some(function (x) { return x.grupo; })) secciones.push({ clave: 'grupo', titulo: 'Grupo', valores: cf.filas.map(function (x) { return valorColPl(x, 'grupo'); }), elegidos: filtros.grupo || null });
+        } else secciones = [{ clave: c, titulo: 'Filtrar ' + th.textContent.trim(), valores: cf.filas.map(function (x) { return valorColPl(x, c); }), elegidos: filtros[c] || null }];
+        menuColumna(th, {
+          ordenes: ordenes, ordenActual: p.orden || 'nombre-asc',
+          alOrdenar: function (o) { ordenarPlanillaPor(p, o); App.refrescar(); },
+          secciones: secciones,
+          alFiltrar: function (m) { Object.keys(m).forEach(function (k) { if (m[k]) filtros[k] = m[k]; else delete filtros[k]; }); App.refrescar(); }
+        });
+      };
+    });
     U.$('#btnGrupos', cont).onclick = function () { gruposPlanilla(p); };
     if (!cerrada) {
       U.$$('#tPl input', cont).forEach(function (inp) {
@@ -551,7 +701,7 @@
         inp.addEventListener('keydown', function (ev) {
           if (ev.key === 'Enter' || ev.key === 'ArrowDown' || ev.key === 'ArrowUp') {
             ev.preventDefault();
-            var col = U.$$('#tPl input[data-c="' + inp.dataset.c + '"]', cont), pos = col.indexOf(inp);
+            var col = U.$$('#tPl input[data-c="' + inp.dataset.c + '"]', cont).filter(function (k) { return !k.closest('tr').hidden; }), pos = col.indexOf(inp);
             var sig = col[pos + (ev.key === 'ArrowUp' ? -1 : 1)];
             if (sig) { sig.focus(); sig.select(); }
           }
@@ -604,7 +754,9 @@
 
   function pintarTotales(cont, calc) {
     var grupos = D.porGrupo(calc);
-    U.$('#pieTot', cont).innerHTML = grupos.map(function (g) {
+    var vis = U.$$('#tPl tbody tr[data-i]', cont).filter(function (tr) { return !tr.hidden; }).map(function (tr) { return +tr.dataset.i; });
+    var filtrada = vis.length < calc.filas.length ? calc.filas.filter(function (x) { return vis.indexOf(x.idx) >= 0; }) : null;
+    U.$('#pieTot', cont).innerHTML = (filtrada ? '<tr class="subtotal filtrado">' + celdasTotales(Calc.totalizar(filtrada.map(function (x) { return x.r; })), 'Filtrado · ' + filtrada.length + ' de ' + calc.filas.length) + '</tr>' : '') + grupos.map(function (g) {
       return '<tr class="subtotal">' + celdasTotales(g.totales, 'Subtotal ' + e(g.grupo) + ' · ' + g.filas.length) + '</tr>';
     }).join('') + '<tr id="filaTot">' + celdasTotales(calc.totales, 'TOTAL · ' + calc.filas.length + ' persona(s)') + '</tr>';
   }

@@ -600,3 +600,26 @@ body.sin-sesion .app { visibility: hidden; }
 /* Casilla con su texto al lado (ventana Datos del cliente) */
 .modal label.marca-linea, label.marca-linea { display: inline-flex; flex-direction: row; align-items: center; gap: 6px; white-space: nowrap; margin-top: 4px; font-weight: 600; }
 .marca-linea input { width: auto; margin: 0; }
+
+/* Títulos de columna: ordenar y filtrar (como en Excel) */
+.tit-col { display: inline-flex; align-items: center; gap: 4px; }
+.tit-flecha { font-size: 12px; }
+.tit-embudo { display: inline-flex; opacity: .35; }
+.tit-embudo svg { width: 12px; height: 12px; }
+.tabla th.ordenable:hover .tit-embudo { opacity: .8; }
+.tit-embudo.activo { opacity: 1; color: var(--acento); }
+.tit-embudo.activo svg { fill: currentColor; }
+.menu-col { position: fixed; z-index: 2000; width: 270px; overflow: auto; background: var(--superficie); color: var(--texto); border: 1px solid var(--borde-control); border-radius: var(--r-md); box-shadow: 0 12px 32px rgba(5, 31, 32, .22); padding: 8px; font-size: 14px; text-transform: none; letter-spacing: 0; font-weight: 400; text-align: left; }
+.menu-col-ord { display: flex; flex-direction: column; gap: 2px; }
+.menu-col-ord button { text-align: left; background: none; border: 0; padding: 7px 10px; border-radius: var(--r-sm); cursor: pointer; color: inherit; font: inherit; }
+.menu-col-ord button:hover { background: var(--campo); }
+.menu-col-ord button.activo { color: var(--acento); font-weight: 600; }
+.menu-col-sec { border-top: 1px solid var(--borde); margin-top: 6px; padding-top: 8px; display: flex; flex-direction: column; gap: 4px; }
+.menu-col-sec > b { font-family: var(--display); font-size: 13px; padding: 0 4px; }
+.menu-col-busca { padding: 6px 8px; font-size: 13px; }
+.menu-col-lista { max-height: 210px; overflow: auto; display: flex; flex-direction: column; }
+.menu-col label { display: flex; flex-direction: row; align-items: center; gap: 8px; padding: 3px 4px; font-size: 13px; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.menu-col label input { width: auto; margin: 0; flex: none; }
+.menu-col-todos { font-weight: 600; }
+.menu-col-pie { display: flex; justify-content: flex-end; gap: 6px; border-top: 1px solid var(--borde); margin-top: 8px; padding-top: 8px; }
+.tabla tfoot tr.subtotal.filtrado td { color: var(--acento); }

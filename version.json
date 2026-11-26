@@ -1,8 +1,9 @@
 {
-  "version": "8",
+  "version": "9",
   "fecha": "26/11/2026",
   "novedades": [
-    "En «Revisar datos del cliente», la fila TOTAL ahora muestra la suma del Total Ganado (sueldos) del cliente y la del sistema, y avisa si hay diferencia.",
-    "Se sigue mostrando el total de horas extra y su importe."
+    "Se quitó el botón «Ordenar»: ahora haces clic en el título de cualquier columna (Planilla del mes y Personal) para ordenar de menor a mayor, de A a Z, etc.",
+    "Desde el mismo título puedes filtrar, como en Excel: marca solo las personas, grupos, cargos o montos que quieras ver.",
+    "El filtro solo cambia lo que ves en pantalla: la planilla, el pago y los archivos siguen incluyendo a todos."
   ]
 }
