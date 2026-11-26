@@ -1,0 +1,8 @@
+{
+  "version": "20261126-2",
+  "fecha": "26/11/2026",
+  "novedades": [
+    "Aviso automático cuando se publica una versión nueva del sistema.",
+    "Datos del cliente: importe de horas extra por persona y fila de totales (horas e importe)."
+  ]
+}

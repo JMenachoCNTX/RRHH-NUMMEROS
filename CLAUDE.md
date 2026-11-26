@@ -43,7 +43,11 @@ cuyo logo está en `assets/empresas/` y se asigna solo. Admite varias empresas.
 ## Cómo se publica
 - GitHub Pages desde `main` del repo `JMenachoCNTX/RRHH-NUMMEROS` (público), con `.nojekyll`.
 - En línea: https://jmenachocntx.github.io/RRHH-NUMMEROS/ (sin dominio propio, no hay `CNAME`).
-- No hay número de versión: los commits son frases en español que describen el cambio.
+- Commits: frases en español que describen el cambio.
+- **Aviso de versión nueva** (`js/version.js` + `version.json`): cada 5 min (y al volver a la pestaña) el sistema lee
+  `version.json`; si difiere de `VERSION` muestra un aviso con las novedades y «Actualizar ahora».
+  **En CADA publicación** poner el MISMO valor nuevo (ej. `20261126-2`, fecha + número) en: `VERSION` de `js/version.js`,
+  `version` de `version.json` y todos los `?v=` de `index.html`; y escribir en `novedades` 1 a 3 frases simples de lo nuevo.
 
 ## Reglas de cálculo (verificadas con la planilla de septiembre 2026)
 - Salario ganado = básico ÷ 30 × días. Hora extra = básico ÷ 30 ÷ 8 × 1,5, **sin redondear** el valor hora (solo el monto final).
