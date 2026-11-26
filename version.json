@@ -1,9 +1,9 @@
 {
-  "version": "9",
+  "version": "10",
   "fecha": "26/11/2026",
   "novedades": [
-    "Se quitó el botón «Ordenar»: ahora haces clic en el título de cualquier columna (Planilla del mes y Personal) para ordenar de menor a mayor, de A a Z, etc.",
-    "Desde el mismo título puedes filtrar, como en Excel: marca solo las personas, grupos, cargos o montos que quieras ver.",
-    "El filtro solo cambia lo que ves en pantalla: la planilla, el pago y los archivos siguen incluyendo a todos."
+    "Filtros más simples: al marcar o desmarcar, la tabla cambia al instante (ya no hay que pulsar «Aplicar»).",
+    "En «Trabajador» el filtro está separado en pestañas: Grupo, Persona y Cargo.",
+    "En las columnas de montos puedes elegir rápido «Mayor a 0», «Igual a 0» o escribir un rango «Entre … y …»."
   ]
 }

@@ -239,9 +239,20 @@
     return /^apellido/.test(orden || '') && U.apellidos(k) ? U.apellidos(k) + ', ' + k.nombres : U.nombreCompleto(k);
   }
   V.compararPor = compararPor;
-  /* ---------- Menú de un título de columna: ordenar y filtrar (como en Excel) ----------
+  /* ---------- Menú de un título de columna: ordenar y filtrar ----------
+     Los cambios del filtro se ven al instante (no hay que «Aplicar»).
      opc = { ordenes: [[valor, texto]], ordenActual, alOrdenar(valor),
-             secciones: [{ clave, titulo, valores: [texto…], elegidos: Set|null }], alFiltrar({clave: Set|null}) } */
+             secciones: [{ clave, titulo, tipo: 'texto'|'num', valores: [texto…], estado }], alCambiar(clave, estado|null) }
+     estado de un filtro: texto → Set con los valores que se ven; num → { modo: 'pos'|'cero'|'rango', desde, hasta } */
+  function pasaFiltro(estado, texto, numero) {
+    if (!estado) return true;
+    if (estado instanceof Set) return estado.has(texto);
+    if (estado.modo === 'pos') return numero > 0.004;
+    if (estado.modo === 'cero') return Math.abs(numero) < 0.005;
+    if (estado.desde !== null && numero < estado.desde - 0.004) return false;
+    if (estado.hasta !== null && numero > estado.hasta + 0.004) return false;
+    return true;
+  }
   function cerrarMenuColumna() {
     var v = document.getElementById('menuCol'); if (v) { v.remove(); }
     document.removeEventListener('mousedown', fueraMenuColumna, true); document.removeEventListener('keydown', teclaMenuColumna, true);
@@ -252,58 +263,94 @@
     var abierto = document.getElementById('menuCol');
     if (abierto && abierto._th === th) { cerrarMenuColumna(); return; }
     cerrarMenuColumna();
+    var secs = opc.secciones || [];
     var el = document.createElement('div'); el.id = 'menuCol'; el.className = 'menu-col'; el._th = th;
-    var h = '<div class="menu-col-ord">' + (opc.ordenes || []).map(function (o) {
-      return '<button type="button" data-orden="' + e(o[0]) + '"' + (opc.ordenActual === o[0] ? ' class="activo"' : '') + '>' + (opc.ordenActual === o[0] ? '✓ ' : '') + e(o[1]) + '</button>';
+    var h = '<div class="menu-col-tit">Ordenar</div><div class="menu-col-chips">' + (opc.ordenes || []).map(function (o) {
+      return '<button type="button" class="chip' + (opc.ordenActual === o[0] ? ' activo' : '') + '" data-orden="' + e(o[0]) + '">' + e(o[1]) + '</button>';
     }).join('') + '</div>';
-    (opc.secciones || []).forEach(function (sec, n) {
-      var vals = sec.valores.filter(function (v, i, a) { return a.indexOf(v) === i; })
-        .sort(function (a, b) { return String(a).localeCompare(String(b), 'es', { numeric: true }); });
-      h += '<div class="menu-col-sec" data-sec="' + n + '"><b>' + e(sec.titulo) + '</b>' +
-        (vals.length > 6 ? '<input class="menu-col-busca" placeholder="Buscar…" autocomplete="off">' : '') +
-        '<label class="menu-col-todos"><input type="checkbox" data-todos' + (sec.elegidos ? '' : ' checked') + '> (Seleccionar todo)</label><div class="menu-col-lista">' +
-        vals.map(function (v) {
-          return '<label><input type="checkbox" data-v="' + e(v) + '"' + (!sec.elegidos || sec.elegidos.has(v) ? ' checked' : '') + '> ' + (v === '' ? '<i class="suave">(Vacío)</i>' : e(v)) + '</label>';
-        }).join('') + '</div></div>';
-    });
-    if ((opc.secciones || []).length) h += '<div class="menu-col-pie"><button type="button" class="btn btn-sm btn-fantasma" data-quitar>Quitar filtro</button><button type="button" class="btn btn-sm btn-primario" data-aplicar>Aplicar</button></div>';
+    if (secs.length) {
+      h += '<div class="menu-col-tit">Filtrar</div>';
+      if (secs.length > 1) h += '<div class="menu-col-pestanas">' + secs.map(function (sec, n) {
+        return '<button type="button" data-pest="' + n + '"' + (n === 0 ? ' class="activo"' : '') + '>' + e(sec.titulo) + '<i data-punto="' + n + '"' + (sec.estado ? '' : ' hidden') + '></i></button>';
+      }).join('') + '</div>';
+      secs.forEach(function (sec, n) {
+        h += '<div class="menu-col-panel" data-panel="' + n + '"' + (n ? ' hidden' : '') + '>';
+        if (sec.tipo === 'num') {
+          var st = sec.estado || {};
+          h += '<div class="menu-col-chips">' + [['', 'Todos'], ['pos', 'Mayor a 0'], ['cero', 'Igual a 0']].map(function (m) {
+            return '<button type="button" class="chip' + ((st.modo || '') === m[0] ? ' activo' : '') + '" data-modo="' + m[0] + '">' + m[1] + '</button>';
+          }).join('') + '</div>' +
+            '<div class="menu-col-rango">Entre <input data-desde inputmode="decimal" placeholder="desde" value="' + (st.modo === 'rango' && st.desde !== null ? st.desde : '') + '"> y <input data-hasta inputmode="decimal" placeholder="hasta" value="' + (st.modo === 'rango' && st.hasta !== null ? st.hasta : '') + '"></div>';
+        } else {
+          var vals = sec.valores.filter(function (v, i, a) { return a.indexOf(v) === i; })
+            .sort(function (a, b) { return String(a).localeCompare(String(b), 'es', { numeric: true }); });
+          h += (vals.length > 6 ? '<input class="menu-col-busca" placeholder="Buscar…" autocomplete="off">' : '') +
+            '<div class="menu-col-links"><button type="button" data-todos="1">Marcar todos</button><button type="button" data-todos="0">Quitar marcas</button></div>' +
+            '<div class="menu-col-lista">' + vals.map(function (v) {
+              return '<label><input type="checkbox" data-v="' + e(v) + '"' + (!sec.estado || sec.estado.has(v) ? ' checked' : '') + '> <span>' + (v === '' ? '<i class="suave">(Vacío)</i>' : e(v)) + '</span></label>';
+            }).join('') + '</div>';
+        }
+        h += '</div>';
+      });
+      h += '<div class="menu-col-pie"><button type="button" class="btn btn-sm btn-fantasma" data-quitar>Quitar filtro</button><button type="button" class="btn btn-sm btn-primario" data-listo>Listo</button></div>';
+    }
     el.innerHTML = h;
     document.body.appendChild(el);
     var r = th.getBoundingClientRect(), ancho = el.offsetWidth;
     el.style.left = Math.max(8, Math.min(r.left, window.innerWidth - ancho - 8)) + 'px';
     el.style.top = (r.bottom + 4) + 'px';
-    el.style.maxHeight = Math.max(200, window.innerHeight - r.bottom - 16) + 'px';
+    el.style.maxHeight = Math.max(220, window.innerHeight - r.bottom - 16) + 'px';
+
     U.$$('[data-orden]', el).forEach(function (b) { b.onclick = function () { cerrarMenuColumna(); opc.alOrdenar(b.dataset.orden); }; });
-    U.$$('.menu-col-sec', el).forEach(function (secEl) {
-      var todos = U.$('[data-todos]', secEl), cajas = U.$$('[data-v]', secEl), busca = U.$('.menu-col-busca', secEl);
-      var visibles = function () { return cajas.filter(function (c) { return c.parentNode.style.display !== 'none'; }); };
-      var revisarTodos = function () { var v = visibles(); todos.checked = v.length > 0 && v.every(function (c) { return c.checked; }); };
-      todos.onchange = function () { visibles().forEach(function (c) { c.checked = todos.checked; }); };
-      cajas.forEach(function (c) { c.onchange = revisarTodos; });
-      if (busca) busca.oninput = function () {
-        var t = U.sinAcentos(busca.value.toLowerCase());
-        cajas.forEach(function (c) { c.parentNode.style.display = U.sinAcentos(c.dataset.v.toLowerCase()).indexOf(t) >= 0 ? '' : 'none'; });
-        if (t) cajas.forEach(function (c) { c.checked = c.parentNode.style.display !== 'none'; }); // como Excel: al buscar quedan marcadas solo las que coinciden
-        revisarTodos();
+    U.$$('[data-pest]', el).forEach(function (b) {
+      b.onclick = function () {
+        U.$$('[data-pest]', el).forEach(function (x) { x.classList.toggle('activo', x === b); });
+        U.$$('[data-panel]', el).forEach(function (p) { p.hidden = p.dataset.panel !== b.dataset.pest; });
+        var bu = U.$('[data-panel="' + b.dataset.pest + '"] .menu-col-busca', el); if (bu) bu.focus();
       };
     });
-    var quitar = U.$('[data-quitar]', el), aplicar = U.$('[data-aplicar]', el);
-    if (quitar) quitar.onclick = function () {
-      var m = {}; opc.secciones.forEach(function (sec) { m[sec.clave] = null; });
-      cerrarMenuColumna(); opc.alFiltrar(m);
+    /* Avisa el nuevo filtro de una sección y marca el punto de su pestaña */
+    var avisar = function (n, estado) {
+      secs[n].estado = estado;
+      var punto = U.$('[data-punto="' + n + '"]', el); if (punto) punto.hidden = !estado;
+      opc.alCambiar(secs[n].clave, estado);
     };
-    if (aplicar) aplicar.onclick = function () {
-      var m = {}, vacio = false;
-      opc.secciones.forEach(function (sec, n) {
-        var cajas = U.$$('.menu-col-sec[data-sec="' + n + '"] [data-v]', el), marcadas = cajas.filter(function (c) { return c.checked; });
-        if (!marcadas.length) vacio = true;
-        m[sec.clave] = marcadas.length === cajas.length ? null : new Set(marcadas.map(function (c) { return c.dataset.v; }));
-      });
-      if (vacio) { U.aviso('Marca al menos un valor', 'error'); return; }
-      cerrarMenuColumna(); opc.alFiltrar(m);
-    };
+    secs.forEach(function (sec, n) {
+      var panel = U.$('[data-panel="' + n + '"]', el);
+      if (sec.tipo === 'num') {
+        var desde = U.$('[data-desde]', panel), hasta = U.$('[data-hasta]', panel);
+        var chips = U.$$('[data-modo]', panel);
+        var marcarChip = function (modo) { chips.forEach(function (c) { c.classList.toggle('activo', c.dataset.modo === modo); }); };
+        chips.forEach(function (c) {
+          c.onclick = function () { desde.value = ''; hasta.value = ''; marcarChip(c.dataset.modo); avisar(n, c.dataset.modo ? { modo: c.dataset.modo, desde: null, hasta: null } : null); };
+        });
+        var rango = function () {
+          var d = desde.value.trim() === '' ? null : Calc.num(desde.value), a = hasta.value.trim() === '' ? null : Calc.num(hasta.value);
+          marcarChip(d === null && a === null ? '' : 'rango');
+          avisar(n, d === null && a === null ? null : { modo: 'rango', desde: d, hasta: a });
+        };
+        desde.oninput = rango; hasta.oninput = rango;
+      } else {
+        var cajas = U.$$('[data-v]', panel), busca = U.$('.menu-col-busca', panel);
+        var visibles = function () { return cajas.filter(function (c) { return c.parentNode.style.display !== 'none'; }); };
+        var leer = function () {
+          var marcadas = cajas.filter(function (c) { return c.checked; });
+          avisar(n, marcadas.length === cajas.length ? null : new Set(marcadas.map(function (c) { return c.dataset.v; })));
+        };
+        cajas.forEach(function (c) { c.onchange = leer; });
+        U.$$('[data-todos]', panel).forEach(function (b) {
+          b.onclick = function () { var v = b.dataset.todos === '1'; visibles().forEach(function (c) { c.checked = v; }); leer(); };
+        });
+        if (busca) busca.oninput = function () {
+          var t = U.sinAcentos(busca.value.toLowerCase());
+          cajas.forEach(function (c) { c.parentNode.style.display = U.sinAcentos(c.dataset.v.toLowerCase()).indexOf(t) >= 0 ? '' : 'none'; });
+        };
+      }
+    });
+    var quitar = U.$('[data-quitar]', el), listo = U.$('[data-listo]', el);
+    if (quitar) quitar.onclick = function () { cerrarMenuColumna(); secs.forEach(function (sec, n) { if (sec.estado) avisar(n, null); }); };
+    if (listo) listo.onclick = cerrarMenuColumna;
     setTimeout(function () { document.addEventListener('mousedown', fueraMenuColumna, true); document.addEventListener('keydown', teclaMenuColumna, true); }, 0);
-    var b0 = U.$('.menu-col-busca', el); if (b0) b0.focus();
   }
   /* Texto del título con flecha de orden y embudo de filtro */
   function tituloCol(txt, ordenado, desc, filtrado) {
@@ -344,8 +391,7 @@
       h += '<div class="acciones" style="margin-bottom:14px"><div class="buscador">' + ic('buscar') + '<input id="busca" placeholder="Buscar por nombre, CI, cargo o grupo" value="' + e(filtroPers.texto) + '"></div>' +
         '<div class="pestanas" style="margin:0" role="tablist">' + [['ACTIVO', 'Activos'], ['RETIRADO', 'Retirados'], ['', 'Todos']].map(function (t) {
           return '<button role="tab" data-est="' + t[0] + '" aria-selected="' + (filtroPers.estado === t[0]) + '">' + t[1] + ' (' + todos.filter(function (k) { return !t[0] || (k.estado || 'ACTIVO') === t[0]; }).length + ')</button>';
-        }).join('') + '</div>' + (Object.keys(filtroPers.col).length ? '<button class="btn btn-sm" id="quitarFiltrosPers" style="margin-left:auto">' + ic('embudo') + 'Quitar filtros</button>' : '') +
-        '<span class="suave peq" style="margin-left:' + (Object.keys(filtroPers.col).length ? '0' : 'auto') + '">Haz clic en un título para ordenar o filtrar</span></div>' +
+        }).join('') + '</div><span id="zonaFiltroPers" style="margin-left:auto;display:flex;gap:10px;align-items:center"></span></div>' +
         '<div class="tabla-caja" style="max-height:66vh"><table class="tabla"><thead><tr>' +
         COLS_PERS.map(function (c) {
           var act = filtroPers.orden.split('-')[0] === c[0] || (c[0] === 'nombre' && /^apellido/.test(filtroPers.orden));
@@ -357,7 +403,7 @@
         var t = U.sinAcentos(filtroPers.texto.toLowerCase());
         var lista = todos.filter(function (k) {
           if (filtroPers.estado && (k.estado || 'ACTIVO') !== filtroPers.estado) return false;
-          for (var c in filtroPers.col) { if (!filtroPers.col[c].has(textoColPers(k, c))) return false; }
+          for (var c in filtroPers.col) { if (!pasaFiltro(filtroPers.col[c], textoColPers(k, c), c === 'sueldo' ? Calc.num(k.sueldoBasico) : 0)) return false; }
           if (!t) return true;
           return U.sinAcentos((U.nombreCompleto(k) + ' ' + k.ci + ' ' + (k.cargo || '') + ' ' + (k.grupo || '')).toLowerCase()).indexOf(t) >= 0;
         }).sort(compararPor(filtroPers.orden));
@@ -371,11 +417,19 @@
             '</td><td>' + e(k.cuenta) + '</td><td>' + e(k.cua) + '</td><td><span class="etiqueta ' + (retirado ? (verTodos ? 'retirado-rojo' : 'retirado') : '') + '">' + e(k.estado || 'ACTIVO') + '</span></td></tr>';
         }).join('') || '<tr><td colspan="10" class="suave">No hay resultados.</td></tr>';
         U.$$('#tbPers tr[data-id]', cont).forEach(function (tr) { tr.onclick = function () { formEmpleado(D.empleado(tr.dataset.id)); }; });
+        /* Títulos con filtro marcados y botón «Quitar filtros» */
+        U.$$('th[data-ord]', cont).forEach(function (th) {
+          var f = !!filtroPers.col[th.dataset.ord], emb = U.$('.tit-embudo', th);
+          if (emb) emb.classList.toggle('activo', f);
+          th.classList.toggle('activo', f || filtroPers.orden.split('-')[0] === th.dataset.ord || (th.dataset.ord === 'nombre' && /^apellido/.test(filtroPers.orden)));
+        });
+        var nF = Object.keys(filtroPers.col).length;
+        U.$('#zonaFiltroPers', cont).innerHTML = nF ? '<span class="peq"><b>' + lista.length + '</b> persona(s) con el filtro</span><button class="btn btn-sm" id="quitarFiltrosPers">Quitar filtros</button>' : '<span class="suave peq">Haz clic en un título para ordenar o filtrar</span>';
+        var bq = U.$('#quitarFiltrosPers', cont); if (bq) bq.onclick = function () { filtroPers.col = {}; cerrarMenuColumna(); pintar(); };
       };
       pintar();
       U.$('#busca', cont).oninput = function (ev) { filtroPers.texto = ev.target.value; pintar(); };
       U.$$('[data-est]', cont).forEach(function (b) { b.onclick = function () { filtroPers.estado = b.dataset.est; V.personal(cont); }; });
-      var bq = U.$('#quitarFiltrosPers', cont); if (bq) bq.onclick = function () { filtroPers.col = {}; V.personal(cont); };
       U.$$('th[data-ord]', cont).forEach(function (th) {
         th.onclick = function () {
           var c = th.dataset.ord, num = c === 'sueldo' || c === 'ingreso';
@@ -386,8 +440,8 @@
           menuColumna(th, {
             ordenes: ordenes, ordenActual: filtroPers.orden,
             alOrdenar: function (o) { filtroPers.orden = o; V.personal(cont); },
-            secciones: [{ clave: c, titulo: 'Filtrar ' + th.textContent.trim(), valores: base.map(function (k) { return textoColPers(k, c); }), elegidos: filtroPers.col[c] || null }],
-            alFiltrar: function (m) { Object.keys(m).forEach(function (k) { if (m[k]) filtroPers.col[k] = m[k]; else delete filtroPers.col[k]; }); V.personal(cont); }
+            secciones: [{ clave: c, titulo: th.textContent.trim(), tipo: c === 'sueldo' ? 'num' : 'texto', valores: base.map(function (k) { return textoColPers(k, c); }), estado: filtroPers.col[c] || null }],
+            alCambiar: function (clave, est) { if (est) filtroPers.col[clave] = est; else delete filtroPers.col[clave]; pintar(); }
           });
         };
       });
@@ -566,8 +620,26 @@
     return bs(numColPl(x, c));
   }
   function pasaFiltroPl(x, filtros) {
-    for (var c in filtros) { if (filtros[c] && !filtros[c].has(valorColPl(x, c))) return false; }
+    for (var c in filtros) {
+      var esTexto = c === 'nombre' || c === 'cargo' || c === 'grupo';
+      if (!pasaFiltro(filtros[c], esTexto ? valorColPl(x, c) : '', esTexto ? 0 : numColPl(x, c))) return false;
+    }
     return true;
+  }
+  /* Aplica los filtros de la planilla sin volver a dibujar la pantalla (el menú queda abierto) */
+  function refrescarFiltroPl(cont, p) {
+    var calc = D.calcularPlanilla(p), filtros = filtrosPl[p.id] || {}, vis = 0;
+    calc.filas.forEach(function (x) { var tr = U.$('#tPl tr[data-i="' + x.idx + '"]', cont), ok = pasaFiltroPl(x, filtros); if (tr) tr.hidden = !ok; if (ok) vis++; });
+    var ord = (p.orden || 'nombre-asc').split('-');
+    U.$$('#tPl th[data-col]', cont).forEach(function (th) {
+      var c = th.dataset.col, f = c === 'nombre' ? !!(filtros.nombre || filtros.grupo || filtros.cargo) : !!filtros[c], emb = U.$('.tit-embudo', th);
+      if (emb) emb.classList.toggle('activo', f);
+      th.classList.toggle('activo', f || ord[0] === c || (c === 'nombre' && (ord[0] === 'apellido' || ord[0] === 'grupo')));
+    });
+    var hay = Object.keys(filtros).length > 0;
+    U.$('#avisoFiltroPl', cont).innerHTML = hay ? '<div class="alerta aviso" style="margin-bottom:10px;align-items:center"><span><b>Filtro activo:</b> se ven <b>' + vis + '</b> de ' + calc.filas.length + ' personas. Los archivos y el pago siguen incluyendo a todos.</span><button class="btn btn-sm" id="quitarFiltrosPl" style="margin-left:auto">Quitar filtros</button></div>' : '';
+    var bqf = U.$('#quitarFiltrosPl', cont); if (bqf) bqf.onclick = function () { filtrosPl[p.id] = {}; cerrarMenuColumna(); refrescarFiltroPl(cont, p); };
+    pintarTotales(cont, calc);
   }
   /* Ordena las filas de la planilla (este orden se usa también en el banco, las boletas y las entidades) */
   function ordenarPlanillaPor(p, orden) {
@@ -616,8 +688,6 @@
     var cerrada = p.estado === 'cerrada';
     var calc = D.calcularPlanilla(p);
     var filtros = filtrosPl[p.id] || (filtrosPl[p.id] = {});
-    var hayFiltro = Object.keys(filtros).length > 0;
-    var visibles = calc.filas.filter(function (x) { return pasaFiltroPl(x, filtros); }).length;
     h += '<div class="tarjeta" style="margin-bottom:16px;padding:14px 18px"><div class="acciones" style="justify-content:space-between">' +
       '<div class="acciones"><span class="etiqueta ' + p.estado + '">' + (cerrada ? 'Cerrada' : 'Borrador') + '</span>' +
       '<label class="campo" style="flex-direction:row;align-items:center;gap:8px">Fecha de pago <input type="date" id="fPago" value="' + e(p.fechaPago || '') + '" style="width:160px"' + (cerrada ? ' disabled' : '') + '></label>' +
@@ -630,7 +700,7 @@
       (cerrada ? '<p class="suave peq" style="margin-top:8px">La planilla está cerrada: los montos quedan fijos aunque luego cambien los datos del personal o la configuración. Reábrela si necesitas corregir algo.</p>' :
         '<p class="suave peq" style="margin-top:8px">Escribe en las casillas verdes; todo se calcula y se guarda solo. Haz clic en un nombre para ver el detalle del cálculo. Deja "Días" vacío para que el sistema los calcule por fecha de ingreso/retiro.</p>') + '</div>';
 
-    if (hayFiltro) h += '<div class="alerta aviso" style="margin-bottom:10px;align-items:center"><span><b>Filtro activo:</b> se ven <b>' + visibles + '</b> de ' + calc.filas.length + ' personas. Los archivos y el pago siguen incluyendo a todos.</span><button class="btn btn-sm" id="quitarFiltrosPl" style="margin-left:auto">Quitar filtros</button></div>';
+    h += '<div id="avisoFiltroPl"></div>';
     h += '<div class="tabla-caja" style="max-height:68vh"><table class="tabla" id="tPl"><thead>' +
       '<tr class="grupo-cab"><th class="fija"></th><th colspan="3">Haber</th><th colspan="2">Horas extra</th><th colspan="2">Bonos</th><th></th><th colspan="6">Descuentos</th><th></th><th></th></tr>' +
       '<tr>' + COLS_PL.map(function (c) {
@@ -659,26 +729,27 @@
     h += '</tbody><tfoot id="pieTot"></tfoot></table></div>';
     cont.innerHTML = h;
     ligarPeriodo(cont);
-    pintarTotales(cont, calc);
+    refrescarFiltroPl(cont, p);
 
     U.$$('[data-det]', cont).forEach(function (a) { a.onclick = function (ev) { ev.preventDefault(); detalleFila(p, +a.dataset.det); }; });
-    var bqf = U.$('#quitarFiltrosPl', cont); if (bqf) bqf.onclick = function () { filtrosPl[p.id] = {}; App.refrescar(); };
     U.$$('#tPl th[data-col]', cont).forEach(function (th) {
       th.onclick = function () {
         var c = th.dataset.col, cf = D.calcularPlanilla(p), secciones;
         var ordenes = c === 'nombre'
-          ? [['nombre-asc', 'Nombre A → Z'], ['nombre-desc', 'Nombre Z → A'], ['apellido-asc', 'Apellido A → Z'], ['apellido-desc', 'Apellido Z → A'], ['grupo-asc', 'Por grupo']]
+          ? [['nombre-asc', 'Nombre A → Z'], ['nombre-desc', 'Nombre Z → A'], ['apellido-asc', 'Apellido A → Z'], ['apellido-desc', 'Apellido Z → A']].concat(cf.filas.some(function (x) { return x.grupo; }) ? [['grupo-asc', 'Por grupo']] : [])
           : [[c + '-asc', 'Menor a mayor'], [c + '-desc', 'Mayor a menor']];
         if (c === 'nombre') {
-          secciones = [{ clave: 'nombre', titulo: 'Personas', valores: cf.filas.map(function (x) { return valorColPl(x, 'nombre'); }), elegidos: filtros.nombre || null },
-            { clave: 'cargo', titulo: 'Cargo', valores: cf.filas.map(function (x) { return valorColPl(x, 'cargo'); }), elegidos: filtros.cargo || null }];
-          if (cf.filas.some(function (x) { return x.grupo; })) secciones.push({ clave: 'grupo', titulo: 'Grupo', valores: cf.filas.map(function (x) { return valorColPl(x, 'grupo'); }), elegidos: filtros.grupo || null });
-        } else secciones = [{ clave: c, titulo: 'Filtrar ' + th.textContent.trim(), valores: cf.filas.map(function (x) { return valorColPl(x, c); }), elegidos: filtros[c] || null }];
+          secciones = [];
+          /* Primero el grupo (lo más usado), luego persona y cargo: cada uno en su pestaña */
+          if (cf.filas.some(function (x) { return x.grupo; })) secciones.push({ clave: 'grupo', titulo: 'Grupo', tipo: 'texto', valores: cf.filas.map(function (x) { return valorColPl(x, 'grupo'); }), estado: filtros.grupo || null });
+          secciones.push({ clave: 'nombre', titulo: 'Persona', tipo: 'texto', valores: cf.filas.map(function (x) { return valorColPl(x, 'nombre'); }), estado: filtros.nombre || null });
+          secciones.push({ clave: 'cargo', titulo: 'Cargo', tipo: 'texto', valores: cf.filas.map(function (x) { return valorColPl(x, 'cargo'); }), estado: filtros.cargo || null });
+        } else secciones = [{ clave: c, titulo: th.textContent.trim(), tipo: 'num', estado: filtros[c] || null }];
         menuColumna(th, {
           ordenes: ordenes, ordenActual: p.orden || 'nombre-asc',
           alOrdenar: function (o) { ordenarPlanillaPor(p, o); App.refrescar(); },
           secciones: secciones,
-          alFiltrar: function (m) { Object.keys(m).forEach(function (k) { if (m[k]) filtros[k] = m[k]; else delete filtros[k]; }); App.refrescar(); }
+          alCambiar: function (clave, est) { if (est) filtros[clave] = est; else delete filtros[clave]; refrescarFiltroPl(cont, p); }
         });
       };
     });
