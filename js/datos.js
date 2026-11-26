@@ -251,12 +251,29 @@
         var emp = f.estado === 'cerrada' || p.estado === 'cerrada' ? (f.empleado || D.empleado(f.empleadoId)) : (D.empleado(f.empleadoId) || f.empleado);
         if (!emp) return null;
         var r = Calc.calcularFila(emp, f, { anio: p.anio, mes: p.mes }, cfg);
-        return { fila: f, emp: emp, r: r, idx: idx };
+        /* Grupo (ej. Yango, Junkers): solo para separar en reportes, no cambia ningún monto.
+           Planilla cerrada: el grupo que tenía al cerrar; si no lo guardó (las antiguas), el grupo actual de la persona. */
+        var grupo = p.estado === 'cerrada' && f.grupo !== undefined ? f.grupo : ((D.empleado(f.empleadoId) || emp).grupo || '');
+        return { fila: f, emp: emp, r: r, idx: idx, grupo: String(grupo || '').trim() };
       }).filter(Boolean);
       return { filas: filas, totales: Calc.totalizar(filas.map(function (x) { return x.r; })), cfg: cfg };
     },
 
     /* Total ganado de un empleado en un mes (desde planillas guardadas) */
+    /* Nombres de grupo ya usados en la empresa (para sugerirlos al escribir) */
+    grupos: function (empresaId) {
+      var vistos = {};
+      D.empleados(empresaId).forEach(function (k) { var g = String(k.grupo || '').trim(); if (g) vistos[g.toLowerCase()] = vistos[g.toLowerCase()] || g; });
+      return Object.keys(vistos).map(function (k) { return vistos[k]; }).sort(function (a, b) { return a.localeCompare(b, 'es'); });
+    },
+    /* Separa una planilla calculada por grupo: [{grupo, filas, totales}]. Vacío si nadie tiene grupo. */
+    porGrupo: function (calc) {
+      var m = {}, nombres = [];
+      calc.filas.forEach(function (x) { var g = x.grupo || 'Sin grupo'; if (!m[g]) { m[g] = []; nombres.push(g); } m[g].push(x); });
+      if (!nombres.length || (nombres.length === 1 && nombres[0] === 'Sin grupo')) return [];
+      return nombres.sort(function (a, b) { return a === 'Sin grupo' ? 1 : b === 'Sin grupo' ? -1 : a.localeCompare(b, 'es'); })
+        .map(function (g) { return { grupo: g, filas: m[g], totales: Calc.totalizar(m[g].map(function (x) { return x.r; })) }; });
+    },
     totalGanadoMes: function (empleadoId, anio, mes) {
       var emp = D.empleado(empleadoId); if (!emp) return 0;
       var p = D.planillaDe(emp.empresaId, anio, mes); if (!p) return 0;

@@ -210,12 +210,13 @@
      PERSONAL
      ========================================================= */
   /* ---------- Orden alfabético (personal y planilla) ---------- */
-  var OPC_ORDEN = [['nombre-asc', 'Nombre (A-Z)'], ['nombre-desc', 'Nombre (Z-A)'], ['apellido-asc', 'Apellido (A-Z)'], ['apellido-desc', 'Apellido (Z-A)']];
+  var OPC_ORDEN = [['nombre-asc', 'Nombre (A-Z)'], ['nombre-desc', 'Nombre (Z-A)'], ['apellido-asc', 'Apellido (A-Z)'], ['apellido-desc', 'Apellido (Z-A)'], ['grupo-asc', 'Por grupo']];
   function claveOrden(k, campo) {
     switch (campo) {
       case 'apellido': return U.sinAcentos([U.apellidos(k), k.nombres].join(' ')).toLowerCase();
       case 'ci': return String(k.ci || '');
       case 'cargo': return U.sinAcentos(k.cargo || '').toLowerCase();
+      case 'grupo': return String(k.grupo || '').trim() ? U.sinAcentos(String(k.grupo).trim()).toLowerCase() : '\uffff'; // sin grupo al final
       case 'ingreso': return k.fechaIngreso || '';
       case 'sueldo': return Calc.num(k.sueldoBasico);
       case 'banco': return U.sinAcentos(k.banco || '').toLowerCase();
@@ -254,14 +255,14 @@
       U.$('#btnExpPers', cont).onclick = function () { X.plantillaPersonal(); };
       U.$('#btnPlantilla', cont).onclick = function () { X.plantillaPersonal(); };
     } else {
-      h += '<div class="acciones" style="margin-bottom:14px"><div class="buscador">' + ic('buscar') + '<input id="busca" placeholder="Buscar por nombre, CI o cargo" value="' + e(filtroPers.texto) + '"></div>' +
+      h += '<div class="acciones" style="margin-bottom:14px"><div class="buscador">' + ic('buscar') + '<input id="busca" placeholder="Buscar por nombre, CI, cargo o grupo" value="' + e(filtroPers.texto) + '"></div>' +
         '<div class="pestanas" style="margin:0" role="tablist">' + [['ACTIVO', 'Activos'], ['RETIRADO', 'Retirados'], ['', 'Todos']].map(function (t) {
           return '<button role="tab" data-est="' + t[0] + '" aria-selected="' + (filtroPers.estado === t[0]) + '">' + t[1] + ' (' + todos.filter(function (k) { return !t[0] || (k.estado || 'ACTIVO') === t[0]; }).length + ')</button>';
         }).join('') + '</div><label class="campo" style="flex-direction:row;align-items:center;gap:8px;margin-left:auto">Ordenar <select id="ordPers" style="width:170px">' +
         OPC_ORDEN.map(function (o) { return '<option value="' + o[0] + '"' + (filtroPers.orden === o[0] ? ' selected' : '') + '>' + o[1] + '</option>'; }).join('') +
         (OPC_ORDEN.some(function (o) { return o[0] === filtroPers.orden; }) ? '' : '<option selected value="' + filtroPers.orden + '">Por columna</option>') + '</select></label></div>' +
         '<div class="tabla-caja" style="max-height:66vh"><table class="tabla"><thead><tr>' +
-        [['nombre', 'Nombre', 'fija'], ['ci', 'CI'], ['cargo', 'Cargo'], ['ingreso', 'Ingreso'], ['sueldo', 'Sueldo básico', 'num'], ['banco', 'Banco'], [null, 'Cuenta'], [null, 'CUA'], ['estado', 'Estado']].map(function (c) {
+        [['nombre', 'Nombre', 'fija'], ['ci', 'CI'], ['cargo', 'Cargo'], ['grupo', 'Grupo'], ['ingreso', 'Ingreso'], ['sueldo', 'Sueldo básico', 'num'], ['banco', 'Banco'], [null, 'Cuenta'], [null, 'CUA'], ['estado', 'Estado']].map(function (c) {
           if (!c[0]) return '<th>' + c[1] + '</th>';
           var act = filtroPers.orden.split('-')[0] === c[0] || (c[0] === 'nombre' && /^apellido/.test(filtroPers.orden));
           var flecha = act ? (/desc$/.test(filtroPers.orden) ? ' ↓' : ' ↑') : '';
@@ -273,7 +274,7 @@
         var lista = todos.filter(function (k) {
           if (filtroPers.estado && (k.estado || 'ACTIVO') !== filtroPers.estado) return false;
           if (!t) return true;
-          return U.sinAcentos((U.nombreCompleto(k) + ' ' + k.ci + ' ' + (k.cargo || '')).toLowerCase()).indexOf(t) >= 0;
+          return U.sinAcentos((U.nombreCompleto(k) + ' ' + k.ci + ' ' + (k.cargo || '') + ' ' + (k.grupo || '')).toLowerCase()).indexOf(t) >= 0;
         }).sort(compararPor(filtroPers.orden));
         var verTodos = filtroPers.estado === '';
         U.$('#tbPers', cont).innerHTML = lista.map(function (k) {
@@ -281,9 +282,9 @@
           var retirado = (k.estado || 'ACTIVO') === 'RETIRADO';
           return '<tr data-id="' + k.id + '" style="cursor:pointer"' + (verTodos && retirado ? ' class="fila-retirada"' : '') + '><td class="nombre fija">' + e(nombreSegunOrden(k, filtroPers.orden)) + (falta ? ' <span class="etiqueta borrador" title="Faltan datos (cuenta, CUA o fecha de nacimiento)">Completar</span>' : '') +
             (k.terceroActivo === '1' ? ' <span class="etiqueta" title="El banco paga a: ' + e(k.terceroNombre || '') + '">Pago a tercero</span>' : '') +
-            '</td><td>' + e(k.ci) + '</td><td>' + e(k.cargo) + '</td><td>' + U.fecha(k.fechaIngreso) + '</td><td class="num">' + bs(k.sueldoBasico) + '</td><td>' + e(k.banco) +
+            '</td><td>' + e(k.ci) + '</td><td>' + e(k.cargo) + '</td><td>' + (k.grupo ? '<span class="etiqueta etiqueta-grupo">' + e(k.grupo) + '</span>' : '<span class="suave">—</span>') + '</td><td>' + U.fecha(k.fechaIngreso) + '</td><td class="num">' + bs(k.sueldoBasico) + '</td><td>' + e(k.banco) +
             '</td><td>' + e(k.cuenta) + '</td><td>' + e(k.cua) + '</td><td><span class="etiqueta ' + (retirado ? (verTodos ? 'retirado-rojo' : 'retirado') : '') + '">' + e(k.estado || 'ACTIVO') + '</span></td></tr>';
-        }).join('') || '<tr><td colspan="9" class="suave">No hay resultados.</td></tr>';
+        }).join('') || '<tr><td colspan="10" class="suave">No hay resultados.</td></tr>';
         U.$$('#tbPers tr[data-id]', cont).forEach(function (tr) { tr.onclick = function () { formEmpleado(D.empleado(tr.dataset.id)); }; });
       };
       pintar();
@@ -318,7 +319,9 @@
       campo('Nacionalidad', 'nacionalidad', x.nacionalidad || 'BOLIVIANA') + campo('Celular', 'celular', x.celular) + campo('Correo', 'correo', x.correo, 'email') +
       '</div></fieldset>' +
       '<fieldset class="ancho"><legend>Trabajo</legend><div class="form">' +
-      campo('Cargo', 'cargo', x.cargo, 'text', { req: true }) + campo('Sueldo básico (Bs)', 'sueldoBasico', x.sueldoBasico, 'number', { req: true, paso: '0.01' }) +
+      campo('Cargo', 'cargo', x.cargo, 'text', { req: true }) +
+      campo('Grupo', 'grupo', x.grupo, 'text', { ph: 'Ej. Yango, Junkers', ayuda: 'Opcional. Para ver subtotales por grupo en la planilla y los reportes. No cambia el pago.' }).replace('name="grupo"', 'name="grupo" list="listaGrupos" autocomplete="off"') +
+      listaGrupos() + campo('Sueldo básico (Bs)', 'sueldoBasico', x.sueldoBasico, 'number', { req: true, paso: '0.01' }) +
       campo('Fecha de ingreso', 'fechaIngreso', x.fechaIngreso, 'date', { req: true }) + campo('Horario', 'horario', x.horario, 'text', { ph: 'Lu - Vi 08:00 - 16:00' }) +
       campo('Estado', 'estado', x.estado || 'ACTIVO', 'select', { opciones: ['ACTIVO', 'RETIRADO'] }) + campo('Fecha de retiro', 'fechaRetiro', x.fechaRetiro, 'date') +
       campo('Motivo de retiro', 'motivoRetiro', x.motivoRetiro, 'select', { opciones: [['', '—'], ['1', 'Renuncia voluntaria'], ['2', 'Despido / retiro forzoso'], ['3', 'Conclusión de contrato'], ['4', 'Jubilación'], ['5', 'Fallecimiento'], ['6', 'Otro']] }) +
@@ -494,6 +497,7 @@
       OPC_ORDEN.map(function (o) { return '<option value="' + o[0] + '"' + ((p.orden || 'nombre-asc') === o[0] ? ' selected' : '') + '>' + o[1] + '</option>'; }).join('') + '</select></label>' +
       (cerrada ? '<button class="btn" id="reabrir">' + ic('editar') + 'Reabrir</button>' :
         '<button class="btn" id="limpiarPl" title="Borra lo escrito en la planilla">' + ic('borrar') + 'Limpiar</button><button class="btn" id="datosCliente">' + ic('subir') + 'Datos del cliente</button><button class="btn" id="agregar">' + ic('mas') + 'Agregar / quitar personal</button><button class="btn btn-primario" id="cerrar">' + ic('candado') + 'Cerrar planilla</button>') +
+      '<button class="btn" id="btnGrupos" title="Separar al personal por grupo (ej. Yango y Junkers) para ver subtotales">' + ic('personal') + 'Grupos</button>' +
       '<a class="btn" href="#/generar/' + p.id + '">' + ic('generar') + 'Generar archivos</a></div></div>' +
       (cerrada ? '<p class="suave peq" style="margin-top:8px">La planilla está cerrada: los montos quedan fijos aunque luego cambien los datos del personal o la configuración. Reábrela si necesitas corregir algo.</p>' :
         '<p class="suave peq" style="margin-top:8px">Escribe en las casillas verdes; todo se calcula y se guarda solo. Haz clic en un nombre para ver el detalle del cálculo. Deja "Días" vacío para que el sistema los calcule por fecha de ingreso/retiro.</p>') + '</div>';
@@ -509,7 +513,7 @@
         if (campoN === 'dias' && (v === '' || v === undefined || v === null)) return '<input class="dias" data-i="' + i + '" data-c="dias" placeholder="' + r.dias + '" aria-label="Días"' + (cerrada ? ' disabled' : '') + '>';
         return '<input class="' + (cls || '') + '" data-i="' + i + '" data-c="' + campoN + '" value="' + (Calc.num(v) ? v : '') + '" placeholder="0" inputmode="decimal" aria-label="' + campoN + '"' + (cerrada ? ' disabled' : '') + '>';
       };
-      h += '<tr data-i="' + i + '"><td class="nombre fija"><a href="#" data-det="' + i + '">' + e(nombreSegunOrden(k, p.orden)) + '</a><div class="suave peq" style="font-weight:400">' + e(k.cargo || '') + '</div></td>' +
+      h += '<tr data-i="' + i + '"><td class="nombre fija"><a href="#" data-det="' + i + '">' + e(nombreSegunOrden(k, p.orden)) + '</a><div class="suave peq" style="font-weight:400">' + e(k.cargo || '') + (x.grupo ? ' <span class="etiqueta etiqueta-grupo">' + e(x.grupo) + '</span>' : '') + '</div></td>' +
         '<td class="num">' + bs(r.basico) + '</td><td class="num">' + inp('dias', 'dias') + '</td><td class="num" data-o="salarioGanado">' + bs(r.salarioGanado) + '</td>' +
         '<td class="num">' + inp('horasExtra', 'dias') + '</td><td class="num" data-o="montoHorasExtra">' + bs(r.montoHorasExtra) + '</td>' +
         '<td class="num" data-o="bonoAntiguedad" title="' + r.anios + ' año(s) · ' + r.pctAntiguedad + '%">' + bs(r.bonoAntiguedad) + '</td>' +
@@ -519,13 +523,14 @@
         '<td class="num" data-o="totalDescuentos">' + bs(r.totalDescuentos) + '</td><td class="num destacado" data-o="liquido"><b>' + bs(r.liquido) + '</b></td>' +
         '<td class="num suave" data-o="patronal">' + bs(r.cajaSalud + r.gestoraPatronal) + '</td></tr>';
     });
-    h += '</tbody><tfoot><tr id="filaTot"></tr></tfoot></table></div>';
+    h += '</tbody><tfoot id="pieTot"></tfoot></table></div>';
     cont.innerHTML = h;
     ligarPeriodo(cont);
     pintarTotales(cont, calc);
 
     U.$$('[data-det]', cont).forEach(function (a) { a.onclick = function (ev) { ev.preventDefault(); detalleFila(p, +a.dataset.det); }; });
     U.$('#ordPl', cont).onchange = function (ev) { D.ordenarPlanilla(p, ev.target.value, compararPor(ev.target.value)); App.refrescar(); };
+    U.$('#btnGrupos', cont).onclick = function () { gruposPlanilla(p); };
     if (!cerrada) {
       U.$$('#tPl input', cont).forEach(function (inp) {
         inp.addEventListener('input', function () {
@@ -572,7 +577,7 @@
           '<div class="detalle-calc"><span>Total ganado</span><b class="num">' + bs(c.totales.totalGanado) + '</b><span>Total descuentos</span><b class="num">' + bs(c.totales.totalDescuentos) + '</b><span class="tot">Líquido pagable</span><span class="tot num">Bs ' + bs(c.totales.liquido) + '</span></div>' +
           (faltan.length ? '<div class="alerta aviso"><span><b>Ojo:</b> a ' + faltan.length + ' persona(s) les falta la cuenta bancaria o el CUA: ' + e(faltan.join(', ')) + '.</span></div>' : ''),
           [{ texto: 'Cancelar', clase: 'btn btn-fantasma' }, { texto: 'Cerrar planilla', clase: 'btn btn-primario', accion: function () {
-            p.filas.forEach(function (f) { var em = D.empleado(f.empleadoId); if (em) f.empleado = JSON.parse(JSON.stringify(em)); });
+            p.filas.forEach(function (f) { var em = D.empleado(f.empleadoId); if (em) { f.empleado = JSON.parse(JSON.stringify(em)); f.grupo = String(em.grupo || '').trim(); } });
             p.configUsada = JSON.parse(JSON.stringify(D.config()));
             p.estado = 'cerrada'; p.cerrada = new Date().toISOString();
             D.guardarPlanilla(p); App.refrescar(); U.aviso('Planilla cerrada');
@@ -596,10 +601,63 @@
   }
 
   function pintarTotales(cont, calc) {
-    var t = calc.totales;
-    U.$('#filaTot', cont).innerHTML = '<td class="fija">TOTAL · ' + calc.filas.length + ' persona(s)</td><td class="num">' + bs(t.basico) + '</td><td></td><td class="num">' + bs(t.salarioGanado) +
+    var grupos = D.porGrupo(calc);
+    U.$('#pieTot', cont).innerHTML = grupos.map(function (g) {
+      return '<tr class="subtotal">' + celdasTotales(g.totales, 'Subtotal ' + e(g.grupo) + ' · ' + g.filas.length) + '</tr>';
+    }).join('') + '<tr id="filaTot">' + celdasTotales(calc.totales, 'TOTAL · ' + calc.filas.length + ' persona(s)') + '</tr>';
+  }
+  function celdasTotales(t, etiquetaFila) {
+    return '<td class="fija">' + etiquetaFila + '</td><td class="num">' + bs(t.basico) + '</td><td></td><td class="num">' + bs(t.salarioGanado) +
       '</td><td class="num">' + t.horasExtra + '</td><td class="num">' + bs(t.montoHorasExtra) + '</td><td class="num">' + bs(t.bonoAntiguedad) + '</td><td class="num">' + bs(t.otrosBonos) + '</td><td class="num destacado">' + bs(t.totalGanado) + '</td><td class="num">' + bs(t.afp) + '</td><td class="num">' + bs(t.ans) + '</td><td class="num">' + bs(t.rcIva) +
       '</td><td class="num">' + bs(t.anticipos) + '</td><td class="num">' + bs(t.otrosDescuentos) + '</td><td class="num">' + bs(t.totalDescuentos) + '</td><td class="num destacado">' + bs(t.liquido) + '</td><td class="num">' + bs(t.cajaSalud + t.gestoraPatronal) + '</td>';
+  }
+
+  /* Lista de grupos ya usados, para sugerirlos al escribir */
+  function listaGrupos() {
+    var emp = D.empresaActiva();
+    return '<datalist id="listaGrupos">' + (emp ? D.grupos(emp.id) : []).map(function (g) { return '<option value="' + e(g) + '">'; }).join('') + '</datalist>';
+  }
+
+  /* Ventana «Grupos»: asignar a cada persona su grupo (ej. Yango, Junkers). Solo sirve para separar
+     subtotales y reportes: el pago sigue siendo una sola planilla y no cambia ningún monto. */
+  function gruposPlanilla(p) {
+    var calc = D.calcularPlanilla(p), cerrada = p.estado === 'cerrada';
+    var filas = calc.filas.map(function (x) {
+      return '<tr><td><input type="checkbox" data-marca="' + x.idx + '" aria-label="Marcar"></td><td class="nombre">' + e(U.nombreCompleto(x.emp)) + '<div class="suave peq" style="font-weight:400">' + e(x.emp.cargo || '') + '</div></td>' +
+        '<td><input data-grupo="' + x.idx + '" value="' + e(x.grupo) + '" list="listaGrupos" autocomplete="off" placeholder="Sin grupo" style="width:200px"></td></tr>';
+    }).join('');
+    var html = '<p>Escribe el grupo de cada persona (por ejemplo <b>Yango</b> o <b>Junkers</b>). Se sigue pagando en <b>una sola planilla</b>: los grupos solo sirven para ver subtotales en la planilla y en los reportes.</p>' +
+      '<div class="acciones" style="margin:12px 0"><label class="campo" style="flex-direction:row;align-items:center;gap:8px">Poner a las personas marcadas: <input id="grupoMasivo" list="listaGrupos" autocomplete="off" placeholder="Ej. Yango" style="width:180px"></label>' +
+      '<button class="btn" id="aplicarGrupo" type="button">Aplicar</button><button class="btn btn-fantasma" id="marcarTodos" type="button">Marcar todos</button></div>' +
+      listaGrupos() +
+      '<div class="tabla-caja" style="max-height:52vh"><table class="tabla"><thead><tr><th></th><th>Trabajador</th><th>Grupo</th></tr></thead><tbody>' + filas + '</tbody></table></div>' +
+      (cerrada ? '<p class="suave peq" style="margin-top:8px">La planilla está cerrada: los montos no cambian, solo se actualiza el grupo para los reportes.</p>' : '');
+    U.modal('Grupos de la planilla de ' + nombrePeriodo(p), html, [
+      { texto: 'Cancelar', clase: 'btn btn-fantasma' },
+      { texto: 'Guardar grupos', clase: 'btn btn-primario', accion: function (m) {
+        var cambios = 0;
+        U.$$('input[data-grupo]', m).forEach(function (inp) {
+          var i = +inp.dataset.grupo, f = p.filas[i], g = inp.value.trim().replace(/\s+/g, ' ');
+          /* Se usa la misma forma de escribir si el grupo ya existe (yango → Yango) */
+          var igual = D.grupos(p.empresaId).find(function (k) { return k.toLowerCase() === g.toLowerCase(); }); if (igual) g = igual;
+          var em = D.empleado(f.empleadoId);
+          if (em && String(em.grupo || '') !== g) { em.grupo = g; D.guardarEmpleado(em); cambios++; }
+          if (cerrada && f.grupo !== g) { f.grupo = g; cambios++; }
+        });
+        if (cerrada) D.guardarPlanilla(p);
+        App.refrescar(); U.aviso(cambios ? 'Grupos guardados' : 'No hubo cambios');
+      } }
+    ], { ancho: true });
+    var m = document.querySelector('.modal-fondo:last-of-type');
+    U.$('#marcarTodos', m).onclick = function () {
+      var cajas = U.$$('input[data-marca]', m), todas = cajas.every(function (c) { return c.checked; });
+      cajas.forEach(function (c) { c.checked = !todas; });
+    };
+    U.$('#aplicarGrupo', m).onclick = function () {
+      var g = U.$('#grupoMasivo', m).value.trim(), n = 0;
+      U.$$('input[data-marca]', m).forEach(function (c) { if (c.checked) { U.$('input[data-grupo="' + c.dataset.marca + '"]', m).value = g; c.checked = false; n++; } });
+      U.aviso(n ? 'Grupo puesto a ' + n + ' persona(s). Falta «Guardar grupos».' : 'Marca primero a las personas', n ? '' : 'error');
+    };
   }
 
   function detalleFila(p, i) {

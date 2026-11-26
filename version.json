@@ -1,8 +1,9 @@
 {
-  "version": "5",
+  "version": "6",
   "fecha": "26/11/2026",
   "novedades": [
-    "El número de versión ahora es corto y simple: esta es la versión 5.",
-    "Se ve en el menú (abajo), en la pantalla de ingreso y en Configuración, con el botón «Buscar actualizaciones»."
+    "Grupos: ahora puedes separar al personal por grupo (por ejemplo Yango y Junkers) con el botón «Grupos» de la planilla o en los datos de cada trabajador.",
+    "La planilla muestra un subtotal por cada grupo, y el Resumen para gerencia y el Excel de la planilla traen cuánto corresponde a cada grupo.",
+    "Se sigue pagando en una sola planilla: los grupos no cambian ningún monto."
   ]
 }

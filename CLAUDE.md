@@ -46,7 +46,7 @@ cuyo logo está en `assets/empresas/` y se asigna solo. Admite varias empresas.
 - Commits: frases en español que describen el cambio.
 - **Aviso de versión nueva** (`js/version.js` + `version.json`): cada 5 min (y al volver a la pestaña) el sistema lee
   `version.json`; si difiere de `VERSION` muestra un aviso con las novedades y «Actualizar ahora».
-  **En CADA publicación** subir el número de versión de 1 en 1 (va en la 5, desde el 26/11/2026) y poner el MISMO número en:
+  **En CADA publicación** subir el número de versión de 1 en 1 (va en la 6, desde el 26/11/2026) y poner el MISMO número en:
   `VERSION` de `js/version.js`, `version` de `version.json` y todos los `?v=` de `index.html`; y escribir en `novedades`
   1 a 3 frases simples de lo nuevo. Se ve como «Versión 5» en el menú, la pantalla de ingreso y Configuración
   (botón «Buscar actualizaciones»).
@@ -57,6 +57,10 @@ cuyo logo está en `assets/empresas/` y se asigna solo. Admite varias empresas.
 - RC-IVA: (ganado − AFP − ANS − 2 SMN) × 13 % − 13 % de 2 SMN − 13 % facturas F-110.
 - Patronal: Caja 10 %, Gestora 7,21 %, previsiones 8,33 % + 8,33 %. Bono de antigüedad sobre 3 SMN (confirmado 24/10/2026).
 - `versionConfig` 3 fuerza horas extra al 50 % sin redondear una vez en cada navegador.
+- **Grupos** (ej. Yango, Junkers): campo `grupo` del trabajador (formulario o botón «Grupos» de la planilla). Solo separa
+  subtotales: planilla del mes (filas «Subtotal …»), Resumen para gerencia (página 2) y hoja «Por grupo» del Excel de la planilla.
+  No cambia montos; se paga en una sola planilla. Al cerrar se guarda `fila.grupo`; las cerradas sin él usan el grupo actual.
+  `D.porGrupo(calc)` y `D.grupos(empresaId)` en `js/datos.js`.
 - Planilla sin bono de producción ni dominicales; descuentos separados en Anticipos y Otros descuentos.
 - Planillas importadas de Google Sheets (hojas BDSueldos / BDSueldos2025): cerradas, con `importadaDe` y en cada fila
   `montosFijos` (ganado, AFP, ANS, RC-IVA, descuentos, líquido, Caja, Gestora…) que `calcularFila` respeta al centavo,

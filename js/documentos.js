@@ -418,17 +418,29 @@
       var barra = '<svg viewBox="0 0 ' + W + ' 9" width="' + W + 'pt" height="9pt"><title>Sueldo Bs ' + bs(base) + ' · Horas extra y bonos Bs ' + bs(extra) + '</title>' +
         '<rect x="0" y="0" width="' + Math.max(0, w1 - (w2 > 0 ? 1 : 0)).toFixed(1) + '" height="9" rx="1.5" fill="' + VERDE + '"/>' +
         (w2 > 0 ? '<rect x="' + (w1 + 1).toFixed(1) + '" y="0" width="' + Math.max(0.5, w2 - 1).toFixed(1) + '" height="9" rx="1.5" fill="' + VERDE_CLARO + '"/>' : '') + '</svg>';
-      return '<tr><td class="nom">' + e(U.mayus(U.nombreCompleto(x.emp))) + '</td><td class="cargo">' + e(x.emp.cargo || '') + '</td><td>' + barra + '</td><td class="n">' + bs(r.totalGanado) +
+      return '<tr><td class="nom">' + e(U.mayus(U.nombreCompleto(x.emp))) + (x.grupo ? ' <span class="dn-gris">· ' + e(x.grupo) + '</span>' : '') + '</td><td class="cargo">' + e(x.emp.cargo || '') + '</td><td>' + barra + '</td><td class="n">' + bs(r.totalGanado) +
         '</td><td class="n">' + (r.horasExtra ? r.horasExtra + ' h' : '—') + '</td><td class="n">' + bs(r.totalDescuentos) + '</td><td class="n fuerte">' + bs(r.liquido) + '</td></tr>';
     }).join('');
     var porPersona = '<h3 class="dn-sub">¿Cuánto recibe cada persona? <span>de mayor a menor</span></h3>' +
       '<div class="dn-leyenda dn-ley-linea"><div><i style="background:' + VERDE + '"></i><span>Sueldo y antigüedad</span></div><div><i style="background:' + VERDE_CLARO + '"></i><span>Horas extra y bonos</span></div></div>' +
       '<table class="dn-t dn-mini dn-persona"><thead><tr><th>Nombre</th><th>Cargo</th><th>Composición del ganado</th><th>Total ganado</th><th>Horas extra</th><th>Descuentos</th><th>Líquido</th></tr></thead><tbody>' + filasP +
       '</tbody><tfoot><tr><td colspan="3">TOTAL</td><td class="n">' + bs(t.totalGanado) + '</td><td class="n">' + (t.horasExtra || 0) + ' h</td><td class="n">' + bs(t.totalDescuentos) + '</td><td class="n">' + bs(t.liquido) + '</td></tr></tfoot></table>';
+    /* Por grupo (ej. Yango, Junkers): se paga en una sola planilla, pero el dueño ve cuánto corresponde a cada uno */
+    var grupos = D.porGrupo(calc), porGrupo = '';
+    if (grupos.length) {
+      porGrupo = '<h3 class="dn-sub">¿Cuánto corresponde a cada grupo? <span>se paga en una sola planilla</span></h3>' +
+        barrasH(grupos.map(function (g) { return { txt: g.grupo, v: g.totales.liquido, sub: g.filas.length + ' pers.' }; }), { titulo: 'Líquido por grupo' }) +
+        '<table class="dn-t"><thead><tr><th>Grupo</th><th class="n">Personas</th><th class="n">Total ganado</th><th class="n">Descuentos</th><th class="n">Líquido a pagar</th><th class="n">Costo empresa</th><th class="n">% del costo</th></tr></thead><tbody>' +
+        grupos.map(function (g) {
+          var tg = g.totales;
+          return '<tr><td>' + e(g.grupo) + '</td><td class="n">' + g.filas.length + '</td><td class="n">' + bs(tg.totalGanado) + '</td><td class="n">' + bs(tg.totalDescuentos) + '</td><td class="n fuerte">' + bs(tg.liquido) + '</td><td class="n">' + bs(costo(tg)) + '</td><td class="n">' + pct(costo(tg), costoTotal) + '</td></tr>';
+        }).join('') +
+        '</tbody><tfoot><tr><td>TOTAL</td><td class="n">' + calc.filas.length + '</td><td class="n">' + bs(t.totalGanado) + '</td><td class="n">' + bs(t.totalDescuentos) + '</td><td class="n">' + bs(t.liquido) + '</td><td class="n">' + bs(costoTotal) + '</td><td class="n">100 %</td></tr></tfoot></table>';
+    }
     var sub = U.mayus(empresa.razonSocial) + ' | ' + periodo + ' | (Bs)';
     return hoja(encabezado(empresa, 'Resumen para Gerencia', periodo) + titulo('Resumen de la planilla de sueldos', sub) + kpis + composicion + aQuien +
         '<div class="dn-dos dn-dos-gr"><div><h3 class="dn-sub">Pago por banco</h3>' + tablaBancos + '</div><div>' + revisar + '</div></div><div class="dn-comp">' + comp + '</div>') +
-      hoja(encabezado(empresa, 'Resumen para Gerencia', periodo) + titulo('Detalle por persona', sub) + porPersona +
+      hoja(encabezado(empresa, 'Resumen para Gerencia', periodo) + titulo(grupos.length ? 'Detalle por grupo y por persona' : 'Detalle por persona', sub) + porGrupo + porPersona +
         '<div class="dn-firmas">' + firmaElaborado(empresa) + firmaRepresentante(empresa, 'Aprobado — ') + '</div>');
   };
 

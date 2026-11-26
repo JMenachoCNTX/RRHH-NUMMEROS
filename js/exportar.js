@@ -34,17 +34,28 @@
       ['Otros bonos (D)', 'otrosBonos'], ['Total ganado (E)', 'totalGanado'], ['AFP (F)', 'afp'], ['Aporte Nal. Solidario (G)', 'ans'], ['RC-IVA (H)', 'rcIva'],
       ['Anticipos (I)', 'anticipos'], ['Otros descuentos (J)', 'otrosDescuentos'], ['Total descuentos (K)', 'totalDescuentos'], ['Líquido pagable', 'liquido'],
       ['Caja salud patronal', 'cajaSalud'], ['Gestora patronal', 'gestoraPatronal'], ['Total Gestora', 'totalGestora'], ['Prev. indemnización', 'provIndemnizacion'], ['Prev. aguinaldo', 'provAguinaldo']];
+    var grupos = D.porGrupo(calc);
     var cab = ['Nro', 'CI', 'Nombre(s)', 'Apellido(s)', 'Nacionalidad', 'Fecha de nacimiento', 'Sexo', 'Ocupación', 'Fecha de ingreso', 'Sueldo básico', 'Días pagados', 'Horas/día']
-      .concat(M.map(function (c) { return c[0]; }));
+      .concat(M.map(function (c) { return c[0]; })).concat(grupos.length ? ['Grupo'] : []);
     var filas = [[empresa.razonSocial], ['NIT: ' + empresa.nit], ['PLANILLA DE SUELDOS Y SALARIOS - ' + U.mayus(Calc.MESES[p.mes - 1]) + ' ' + p.anio], ['(Expresado en bolivianos)'], [], cab];
     calc.filas.forEach(function (x, i) {
       var e = x.emp, r = x.r;
       filas.push([i + 1, e.ci, e.nombres, U.apellidos(e), e.nacionalidad || 'BOLIVIANA', U.fecha(e.fechaNac), e.sexo, e.cargo, U.fecha(e.fechaIngreso), r.basico, r.dias, r.horasDia]
-        .concat(M.map(function (c) { return r[c[1]]; })));
+        .concat(M.map(function (c) { return r[c[1]]; })).concat(grupos.length ? [x.grupo || 'Sin grupo'] : []));
     });
     var t = calc.totales;
     filas.push(['', '', 'TOTALES', '', '', '', '', '', '', t.basico, '', ''].concat(M.map(function (c) { return t[c[1]]; })));
-    X.excel(X.nombreDoc(X.NOMBRES.sueldos, empresa, p) + '.xlsx', [{ nombre: 'Planilla', filas: filas, anchos: [5, 11, 18, 22, 12, 12, 6, 24, 12].concat(Array(22).fill(13)) }]);
+    var hojas = [{ nombre: 'Planilla', filas: filas, anchos: [5, 11, 18, 22, 12, 12, 6, 24, 12].concat(Array(22).fill(13)) }];
+    /* Hoja «Por grupo» (ej. Yango, Junkers): subtotales de la misma planilla */
+    if (grupos.length) {
+      var G = [['Total ganado', 'totalGanado'], ['AFP', 'afp'], ['ANS', 'ans'], ['RC-IVA', 'rcIva'], ['Anticipos', 'anticipos'], ['Otros descuentos', 'otrosDescuentos'],
+        ['Total descuentos', 'totalDescuentos'], ['Líquido pagable', 'liquido'], ['Caja salud patronal', 'cajaSalud'], ['Gestora patronal', 'gestoraPatronal'], ['Prev. indemnización', 'provIndemnizacion'], ['Prev. aguinaldo', 'provAguinaldo']];
+      var fg = [[empresa.razonSocial], ['PLANILLA DE SUELDOS - ' + U.mayus(Calc.MESES[p.mes - 1]) + ' ' + p.anio + ' - SUBTOTALES POR GRUPO'], ['(Expresado en bolivianos)'], [], ['Grupo', 'Personas'].concat(G.map(function (c) { return c[0]; }))];
+      grupos.forEach(function (g) { fg.push([g.grupo, g.filas.length].concat(G.map(function (c) { return g.totales[c[1]]; }))); });
+      fg.push(['TOTAL', calc.filas.length].concat(G.map(function (c) { return t[c[1]]; })));
+      hojas.push({ nombre: 'Por grupo', filas: fg, anchos: [22, 10].concat(Array(G.length).fill(15)) });
+    }
+    X.excel(X.nombreDoc(X.NOMBRES.sueldos, empresa, p) + '.xlsx', hojas);
   };
 
   /* ---------- Banco Ganadero (pago masivo) ----------
