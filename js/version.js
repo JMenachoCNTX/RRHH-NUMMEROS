@@ -2,22 +2,20 @@
    VERSION es la versión de los archivos que tiene abiertos esta persona.
    Cada pocos minutos se consulta version.json (lo último publicado en GitHub). Si es distinta,
    aparece un aviso con las novedades y el botón «Actualizar ahora».
-   AL PUBLICAR un cambio: poner el MISMO valor nuevo en VERSION (aquí), en version.json y en los ?v= de index.html. */
+   La versión es un número simple que sube de 1 en 1 (5, 6, 7…).
+   AL PUBLICAR un cambio: poner el MISMO número nuevo en VERSION (aquí), en version.json y en los ?v= de index.html. */
 (function (global) {
   'use strict';
-  var VERSION = '20261126-3';
+  var VERSION = '5';
   var CADA = 5 * 60 * 1000;          // revisar cada 5 minutos
   var POSPONER = 30 * 60 * 1000;     // «Más tarde» vuelve a avisar en 30 minutos
   var pospuestoHasta = 0, mostrada = null;
 
-  /* «20261126-3» → «v2026.11.26-3» */
-  function etiqueta(v) {
-    var m = /^(\d{4})(\d{2})(\d{2})(?:-(\d+))?$/.exec(String(v || ''));
-    return m ? 'v' + m[1] + '.' + m[2] + '.' + m[3] + (m[4] ? '-' + m[4] : '') : 'v' + v;
-  }
+  /* «5» → «versión 5» (las versiones antiguas tenían fecha, ej. «20261126-3») */
+  function etiqueta(v) { return 'versión ' + v; }
   /* Escribe el número de versión en todo lugar marcado con data-version */
   function pintar() {
-    Array.prototype.forEach.call(document.querySelectorAll('[data-version]'), function (el) { el.textContent = 'Versión ' + etiqueta(VERSION).slice(1); el.title = 'Versión del sistema: ' + etiqueta(VERSION); });
+    Array.prototype.forEach.call(document.querySelectorAll('[data-version]'), function (el) { el.textContent = 'Versión ' + VERSION; el.title = 'Versión del sistema: ' + VERSION; });
   }
 
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }

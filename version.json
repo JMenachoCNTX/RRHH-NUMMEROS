@@ -1,8 +1,8 @@
 {
-  "version": "20261126-3",
+  "version": "5",
   "fecha": "26/11/2026",
   "novedades": [
-    "Ahora se ve el número de versión del sistema: en el menú (abajo), en la pantalla de ingreso y en Configuración.",
-    "En Configuración hay un botón «Buscar actualizaciones»."
+    "El número de versión ahora es corto y simple: esta es la versión 5.",
+    "Se ve en el menú (abajo), en la pantalla de ingreso y en Configuración, con el botón «Buscar actualizaciones»."
   ]
 }
