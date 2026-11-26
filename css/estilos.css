@@ -633,3 +633,35 @@ body.sin-sesion .app { visibility: hidden; }
 .menu-col-rango input { width: 92px; padding: 6px 8px; font-size: 13px; }
 .menu-col-pie { display: flex; justify-content: space-between; gap: 6px; border-top: 1px solid var(--borde); margin-top: 10px; padding-top: 10px; }
 .tabla tfoot tr.subtotal.filtrado td { color: var(--acento); }
+
+/* =========================================================
+   Menú lateral y títulos de tablas en color oscuro (v11)
+   ========================================================= */
+:root {
+  --menu-fondo: #0B2B26; --menu-texto: #DAF1DE; --menu-activo: #8EB69B; --menu-activo-texto: #051F20;
+  --cab-fondo: #163832; --cab-texto: #FFFFFF; --cab-suave: #8EB69B; --cab-destacado: #235347;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-tema="claro"]) { --menu-fondo: #051F20; --cab-fondo: #051F20; --cab-destacado: #163832; } }
+:root[data-tema="oscuro"] { --menu-fondo: #051F20; --cab-fondo: #051F20; --cab-destacado: #163832; }
+
+/* Menú: siempre con los logos en versión clara (van sobre fondo oscuro) */
+.lateral { border-right: 1px solid rgba(142, 182, 155, .15); }
+.lateral .logo-claro { display: none !important; }
+.lateral .logo-oscuro { display: block !important; }
+.app.menu-mini .lateral:not(:hover) .marca .logo-claro, .app.menu-mini .lateral:not(:hover) .marca .logo-oscuro { display: none !important; }
+.app.menu-mini .lateral:not(:hover) .marca .logo-mini-claro { display: none !important; }
+.app.menu-mini .lateral:not(:hover) .marca .logo-mini-oscuro { display: block !important; height: 30px; width: auto; }
+.menu a:hover { background: rgba(218, 241, 222, .08); }
+.menu a.activo:hover { background: var(--menu-activo); }
+.marca-empresa { border-bottom-color: rgba(218, 241, 222, .15); }
+
+/* Títulos de las tablas: banda oscura con letra clara */
+.tabla th { background: var(--cab-fondo); color: var(--cab-texto); border-bottom-color: var(--cab-fondo); }
+.tabla th.destacado { background: var(--cab-destacado); }
+.tabla th.fija { background: var(--cab-fondo); }
+.tabla .grupo-cab th { color: var(--cab-suave); }
+.tabla th.ordenable:hover, .tabla th.ordenable.activo { color: var(--cab-suave); }
+.tabla th .tit-embudo { opacity: .5; }
+.tabla th.ordenable:hover .tit-embudo { opacity: .9; }
+.tabla th .tit-embudo.activo { opacity: 1; color: var(--cab-suave); }
+.tabla th .suave, .tabla th span[title] { color: inherit; }

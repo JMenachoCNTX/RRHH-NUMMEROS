@@ -46,7 +46,7 @@ cuyo logo está en `assets/empresas/` y se asigna solo. Admite varias empresas.
 - Commits: frases en español que describen el cambio.
 - **Aviso de versión nueva** (`js/version.js` + `version.json`): cada 5 min (y al volver a la pestaña) el sistema lee
   `version.json`; si difiere de `VERSION` muestra un aviso con las novedades y «Actualizar ahora».
-  **En CADA publicación** subir el número de versión de 1 en 1 (va en la 10, desde el 26/11/2026) y poner el MISMO número en:
+  **En CADA publicación** subir el número de versión de 1 en 1 (va en la 11, desde el 26/11/2026) y poner el MISMO número en:
   `VERSION` de `js/version.js`, `version` de `version.json` y todos los `?v=` de `index.html`; y escribir en `novedades`
   1 a 3 frases simples de lo nuevo. Se ve como «Versión 5» en el menú, la pantalla de ingreso y Configuración
   (botón «Buscar actualizaciones»).
@@ -73,6 +73,7 @@ cuyo logo está en `assets/empresas/` y se asigna solo. Admite varias empresas.
 
 ## Marca y documentos
 - Menú con marca NUMMEROS y CONTAX abajo como servicio; el logo del cliente solo en documentos.
+- Menú lateral oscuro (#0B2B26, con logos en versión clara) y títulos de tablas en banda oscura (`--cab-fondo`), también en modo claro.
 - Colores NUMMEROS: #051F20 #0B2B26 #163832 #235347 (principal) #8EB69B #DAF1DE; títulos Akshar, texto Questrial/Century Gothic.
 - Documentos (`.doc-n` / `.dn-*`) con formato de estados financieros CONTAX · NUMMEROS: carta, encabezado NUMMEROS + CONTAX,
   barra con logo del cliente y «RAZÓN | NIT | periodo», firmas y pie «Elaborado por CONTAX · NUMMEROS».

@@ -1,9 +1,8 @@
 {
-  "version": "10",
+  "version": "11",
   "fecha": "26/11/2026",
   "novedades": [
-    "Filtros más simples: al marcar o desmarcar, la tabla cambia al instante (ya no hay que pulsar «Aplicar»).",
-    "En «Trabajador» el filtro está separado en pestañas: Grupo, Persona y Cargo.",
-    "En las columnas de montos puedes elegir rápido «Mayor a 0», «Igual a 0» o escribir un rango «Entre … y …»."
+    "Nuevo diseño: el menú de la izquierda ahora es oscuro.",
+    "Los títulos de las tablas (planilla, personal y demás) van en una banda oscura con letra clara, para leerlos mejor."
   ]
 }
