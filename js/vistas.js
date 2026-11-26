@@ -670,6 +670,8 @@
         .map(function (x) { return '<option value="' + x.idx + '"' + (sel && x.emp.id === sel.id ? ' selected' : '') + '>' + e(U.nombreCompleto(x.emp)) + '</option>'; }).join('');
     };
     var idxDe = function (emp) { var x = emp && calc.filas.find(function (k) { return k.emp.id === emp.id; }); return x ? x.idx : null; };
+    /* Importe de horas extra según el sistema, para la persona elegida en la fila */
+    var importeSistema = function (emp, horas) { return emp && horas ? Calc.calcularFila(emp, { dias: 30, horasExtra: horas }, { anio: p.anio, mes: p.mes }, cfg).montoHorasExtra : 0; };
     var filasHtml = pares.map(function (par, j) {
       var c = par.cliente, emp = par.emp, avisos = [];
       if (emp && c.totalGanado && Math.abs(c.totalGanado - Calc.num(emp.sueldoBasico)) > 0.05) avisos.push('Sueldo: cliente ' + bs(c.totalGanado) + ' · sistema ' + bs(emp.sueldoBasico) + ' <label style="white-space:nowrap"><input type="checkbox" data-sueldo="' + j + '"> actualizar</label>');
@@ -682,14 +684,36 @@
       var actual = emp ? Calc.num((p.filas[idxDe(emp)] || {}).horasExtra) : 0;
       return '<tr data-j="' + j + '"' + (emp ? '' : ' class="fila-retirada"') + '><td class="nombre">' + e(c.nombres + ' ' + c.apellidos) + '</td>' +
         '<td><select data-emp="' + j + '" style="min-width:200px">' + opciones(emp) + '</select></td>' +
-        '<td class="num">' + (emp ? actual : '—') + ' → <b>' + c.horasExtra + '</b></td><td>' + verif + '</td><td class="peq">' + (avisos.join('<br>') || '<span class="suave">—</span>') + '</td></tr>';
+        '<td class="num">' + (emp ? actual : '—') + ' → <b>' + c.horasExtra + '</b></td><td class="num" data-imp="' + j + '">' + (emp && c.horasExtra ? bs(importeSistema(emp, c.horasExtra)) : '—') + '</td><td>' + verif + '</td><td class="peq">' + (avisos.join('<br>') || '<span class="suave">—</span>') + '</td></tr>';
     }).join('');
     var sinPareja = pares.filter(function (x) { return !x.emp; }).length;
     var html = '<p>Se leyeron <b>' + pares.length + '</b> filas. Revisa que cada una corresponda a la persona correcta (puedes cambiarla en la lista).' +
       (sinPareja ? ' <b style="color:var(--error)">' + sinPareja + ' no se encontraron</b> en la planilla: elige a la persona o déjala en "No aplicar".' : '') + '</p>' +
-      '<div class="tabla-caja" style="max-height:52vh"><table class="tabla"><thead><tr><th>En la lista del cliente</th><th>Persona en la planilla</th><th class="num">Horas extra</th><th>¿El monto coincide?</th><th>Avisos</th></tr></thead><tbody>' + filasHtml + '</tbody></table></div>' +
+      '<div class="tabla-caja" style="max-height:52vh"><table class="tabla"><thead><tr><th>En la lista del cliente</th><th>Persona en la planilla</th><th class="num">Horas extra</th><th class="num">Importe (Bs)</th><th>¿El monto coincide?</th><th>Avisos</th></tr></thead><tbody>' + filasHtml + '</tbody>' +
+      '<tfoot><tr id="totCli"></tr></tfoot></table></div>' +
       '<p class="suave peq"><b>¿El monto coincide?</b> El cliente ya calcula cuánto pagar de horas extra; el sistema hace su propio cálculo y los compara. ✓ = son iguales, todo bien. ✗ = son distintos: revisa el sueldo de esa persona o el recargo de horas extra en Configuración antes de aplicar.</p>';
-    U.modal('Revisar datos del cliente', html, [
+    var totales = function (raiz) {
+      var personas = 0, hAntes = 0, hNuevas = 0, impSis = 0, impCli = 0, conMontoCli = 0;
+      pares.forEach(function (par, j) {
+        var sel = U.$('select[data-emp="' + j + '"]', raiz), celda = U.$('[data-imp="' + j + '"]', raiz);
+        var x = sel && sel.value !== '' ? calc.filas.find(function (k) { return k.idx === +sel.value; }) : null;
+        var imp = x ? importeSistema(x.emp, par.cliente.horasExtra) : 0;
+        if (celda) celda.textContent = x && par.cliente.horasExtra ? bs(imp) : '—';
+        if (!x) return;
+        personas++;
+        hAntes += Calc.num((p.filas[x.idx] || {}).horasExtra);
+        hNuevas += Calc.num(par.cliente.horasExtra);
+        impSis += imp;
+        if (par.cliente.montoHE) { impCli += Calc.num(par.cliente.montoHE); conMontoCli++; }
+      });
+      impSis = Calc.r2(impSis); impCli = Calc.r2(impCli);
+      var coincide = conMontoCli ? (Math.abs(impSis - impCli) <= 0.05 * Math.max(1, conMontoCli)
+        ? '<span class="etiqueta">✓ Coincide: ' + bs(impCli) + '</span>'
+        : '<span class="etiqueta retirado-rojo">✗ No coincide</span><div class="peq" style="margin-top:4px">Cliente: ' + bs(impCli) + '</div>') : '';
+      U.$('#totCli', raiz).innerHTML = '<td>TOTAL · ' + personas + ' persona(s)</td><td></td><td class="num">' + Calc.r2(hAntes) + ' → ' + Calc.r2(hNuevas) + ' h</td>' +
+        '<td class="num destacado">' + bs(impSis) + '</td><td>' + coincide + '</td><td></td>';
+    };
+    var mRev = U.modal('Revisar datos del cliente', html, [
       { texto: 'Cancelar', clase: 'btn btn-fantasma' },
       { texto: 'Aplicar a la planilla', clase: 'btn btn-primario', accion: function (mm) {
         var n = 0, ns = 0, vistos = {};
@@ -713,6 +737,9 @@
         U.aviso('Horas extra cargadas para ' + n + ' persona(s)' + (ns ? ' · ' + ns + ' sueldo(s) actualizado(s)' : '') + '. Las demás no cambiaron.');
       } }
     ], { ancho: true });
+    var ventana = mRev.el;
+    totales(ventana);
+    U.$$('select[data-emp]', ventana).forEach(function (sel) { sel.addEventListener('change', function () { totales(ventana); }); });
   }
 
   function gestionarFilas(p) {
