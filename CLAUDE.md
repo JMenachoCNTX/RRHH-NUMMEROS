@@ -46,7 +46,7 @@ cuyo logo está en `assets/empresas/` y se asigna solo. Admite varias empresas.
 - Commits: frases en español que describen el cambio.
 - **Aviso de versión nueva** (`js/version.js` + `version.json`): cada 5 min (y al volver a la pestaña) el sistema lee
   `version.json`; si difiere de `VERSION` muestra un aviso con las novedades y «Actualizar ahora».
-  **En CADA publicación** subir el número de versión de 1 en 1 (va en la 14, desde el 26/11/2026) y poner el MISMO número en:
+  **En CADA publicación** subir el número de versión de 1 en 1 (va en la 15, desde el 26/11/2026) y poner el MISMO número en:
   `VERSION` de `js/version.js`, `version` de `version.json` y todos los `?v=` de `index.html`; y escribir en `novedades`
   1 a 3 frases simples de lo nuevo. Se ve como «Versión 5» en el menú, la pantalla de ingreso y Configuración
   (botón «Buscar actualizaciones»).
@@ -57,6 +57,9 @@ cuyo logo está en `assets/empresas/` y se asigna solo. Admite varias empresas.
 - Horas extra nocturnas (hechas entre 20:00 y 06:00; el personal trabaja de día): campo `horasNocturnas`.
   Valor = hora extra + (básico ÷ 30 ÷ 8 × `recargoNocturno` %, 25 % por defecto, editable). Con 50 %: hora normal × 1,75.
   Van aparte de «Horas extra» (no se suman dos veces). Columnas en PDF/Excel solo si alguien tiene.
+- **Hora extra por grupo** (`recargoHEGrupos` en la configuración, desde la versión 15): Yango usa el general 50 % (×1,5, acordado
+  con Yango); **Junkers 100 % (×2, como la ley)**. Se edita en Configuración → Ingresos. `Calc.calcularFila(emp, mov, periodo, cfg, grupo)`
+  toma el grupo de la fila; sin grupo o grupo sin % propio = general. Las planillas cerradas usan su `configUsada` (las anteriores, 50 % para todos).
 - AFP 12,71 %; ANS por tramos sobre el excedente (13.000 → 1,15 %, 25.000 → 5 %, 35.000 → 10 %).
 - RC-IVA: (ganado − AFP − ANS − 2 SMN) × 13 % − 13 % de 2 SMN − 13 % facturas F-110.
 - Patronal: Caja 10 %, Gestora 7,21 %, previsiones 8,33 % + 8,33 %. Bono de antigüedad sobre 3 SMN (confirmado 24/10/2026).

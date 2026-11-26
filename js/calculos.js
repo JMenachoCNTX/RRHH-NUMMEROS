@@ -23,6 +23,7 @@
     rcIvaCreditoSMN: 2,        // Se descuenta el 13% de 2 SMN (pago a cuenta)
     horasDia: 8,
     recargoHoraExtra: 50,      // % de recargo de la hora extra (práctica de Milthagor: 50%; la LGT indica 100%)
+    recargoHEGrupos: { Junkers: 100 }, // % de hora extra distinto para un grupo (Yango usa el general 50%; Junkers paga como la ley, 100%)
     recargoNocturno: 25,       // % de la hora normal que se suma a cada hora extra hecha entre 20:00 y 06:00
     redondearValorHora: false, // false = como la planilla del cliente (valor hora sin redondear)
     versionConfig: 3,
@@ -127,8 +128,18 @@
 
   /* Cálculo completo de una fila de planilla.
      emp: datos del empleado; mov: novedades del mes; periodo: {anio, mes}; cfg */
-  function calcularFila(emp, mov, periodo, cfg) {
+  /* % de recargo de hora extra para el grupo del trabajador (si el grupo tiene uno propio); si no, el general */
+  function claveGrupo(g) { return String(g || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim(); }
+  function recargoHEDe(cfg, grupo) {
+    var m = cfg.recargoHEGrupos || {}, k = claveGrupo(grupo), hallado = null;
+    if (k) Object.keys(m).forEach(function (n) { if (claveGrupo(n) === k && m[n] !== '' && m[n] !== null && m[n] !== undefined) hallado = num(m[n]); });
+    return hallado === null ? num(cfg.recargoHoraExtra) : hallado;
+  }
+
+  /* grupo: el grupo del trabajador (Yango, Junkers…), para usar su % de hora extra si tiene uno propio */
+  function calcularFila(emp, mov, periodo, cfg, grupo) {
     cfg = cfg || CONFIG_BASE;
+    if (grupo === undefined) grupo = emp.grupo;
     var basico = num(emp.sueldoBasico);
     var dias = mov.dias === '' || mov.dias === undefined || mov.dias === null ? diasSugeridos(emp, periodo.anio, periodo.mes) : num(mov.dias);
     dias = Math.min(30, Math.max(0, dias));
@@ -143,7 +154,8 @@
     bonoAntig = r2(bonoAntig);
 
     var valorHora = basico / 30 / cfg.horasDia;
-    var valorHoraExtraExacto = valorHora * (1 + cfg.recargoHoraExtra / 100);
+    var recHE = recargoHEDe(cfg, grupo);
+    var valorHoraExtraExacto = valorHora * (1 + recHE / 100);
     var valorHoraExtra = cfg.redondearValorHora ? r2(valorHoraExtraExacto) : valorHoraExtraExacto;
     var horasExactas = horas(mov.horasExtra);           // 15:20 = 15,3333 h (los minutos se pagan)
     var montoHE = r2(horasExactas * valorHoraExtra);
@@ -189,7 +201,7 @@
     return {
       basico: r2(basico), dias: dias, horasDia: cfg.horasDia, salarioGanado: salarioGanado,
       anios: anios, pctAntiguedad: pct, bonoAntiguedad: bonoAntig,
-      valorHora: r2(valorHora), valorHoraExtra: r2(valorHoraExtra), horasExtra: horasExtra, montoHorasExtra: montoHE,
+      valorHora: r2(valorHora), valorHoraExtra: r2(valorHoraExtra), recargoHoraExtra: recHE, horasExtra: horasExtra, montoHorasExtra: montoHE,
       horasNocturnas: horasNocturnas, montoNocturno: montoNoct, recargoNocturno: recNoct, valorHoraNocturna: r2(valorHoraNoct),
       bonoProduccion: bonoProd, dominicales: dominicales, otrosBonos: otrosBonos,
       totalGanado: totalGanado, afp: afp, ans: ans, rcIva: rc.aPagar, rcIvaDetalle: rc,
@@ -272,7 +284,7 @@
   var api = {
     MESES: MESES, CONFIG_BASE: CONFIG_BASE, r2: r2, num: num, horas: horas, textoHoras: textoHoras, aFecha: aFecha,
     diasSugeridos: diasSugeridos, aniosCompletos: aniosCompletos, pctAntiguedad: pctAntiguedad,
-    ansMonto: ansMonto, rcIva: rcIva, calcularFila: calcularFila, totalizar: totalizar,
+    ansMonto: ansMonto, rcIva: rcIva, calcularFila: calcularFila, recargoHEDe: recargoHEDe, claveGrupo: claveGrupo, totalizar: totalizar,
     calcularAguinaldo: calcularAguinaldo, numeroALetras: numeroALetras, ultimoDiaMes: ultimoDiaMes
   };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;

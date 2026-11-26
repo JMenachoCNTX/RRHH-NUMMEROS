@@ -895,7 +895,7 @@
     var html = '<div class="rejilla r2"><div><h4 class="kicker" style="margin-bottom:8px">Ingresos</h4><div class="detalle-calc">' +
       l('Sueldo básico', bs(r.basico)) + l('Días pagados', r.dias) + l('Salario ganado (básico ÷ 30 × días)', bs(r.salarioGanado)) +
       l('Antigüedad: ' + r.anios + ' año(s) → ' + r.pctAntiguedad + '% de ' + cfg.antiguedadBaseSMN + ' SMN', bs(r.bonoAntiguedad)) +
-      l('Horas extra: ' + Calc.textoHoras(r.horasExtra) + ' h × ' + bs(r.valorHoraExtra) + ' (recargo ' + cfg.recargoHoraExtra + '%)', bs(r.montoHorasExtra)) +
+      l('Horas extra: ' + Calc.textoHoras(r.horasExtra) + ' h × ' + bs(r.valorHoraExtra) + ' (recargo ' + r.recargoHoraExtra + '%' + (x.grupo && r.recargoHoraExtra !== Calc.num(cfg.recargoHoraExtra) ? ', grupo ' + e(x.grupo) : '') + ')', bs(r.montoHorasExtra)) +
       (r.montoNocturno ? l('Horas extra nocturnas: ' + Calc.textoHoras(r.horasNocturnas) + ' h × ' + bs(r.valorHoraNocturna) + ' (hora extra ' + bs(r.valorHoraExtra) + ' + ' + r.recargoNocturno + '% de la hora normal ' + bs(r.valorHora) + ')', bs(r.montoNocturno)) : '') +
       (r.bonoProduccion ? l('Bono producción', bs(r.bonoProduccion)) : '') + (r.dominicales ? l('Dominicales', bs(r.dominicales)) : '') + l('Otros bonos', bs(r.otrosBonos)) + l('TOTAL GANADO', bs(r.totalGanado), true) + '</div></div>' +
       '<div><h4 class="kicker" style="margin-bottom:8px">Descuentos</h4><div class="detalle-calc">' +
@@ -1475,6 +1475,17 @@
   V.configuracion = function (cont) {
     var c = D.config(), local = D.resumenLocalAntiguo();
     var n = function (etq, k, ayuda, paso) { return campo(etq, k, c[k], 'number', { paso: paso || '0.01', ayuda: ayuda }); };
+    /* % de hora extra por grupo: los grupos del personal + los ya configurados. Vacío = usa el general. */
+    var mapaHE = c.recargoHEGrupos || {}, nombresHE = {};
+    Object.keys(mapaHE).forEach(function (g) { nombresHE[Calc.claveGrupo(g)] = g; });
+    D.get().empleados.forEach(function (k) { var g = String(k.grupo || '').trim(); if (g && !nombresHE[Calc.claveGrupo(g)]) nombresHE[Calc.claveGrupo(g)] = g; });
+    var listaHE = Object.keys(nombresHE).map(function (k) { return nombresHE[k]; }).sort(function (a, b) { return a.localeCompare(b, 'es'); });
+    var valorHEGrupo = function (g) { var v = ''; Object.keys(mapaHE).forEach(function (n) { if (Calc.claveGrupo(n) === Calc.claveGrupo(g)) v = mapaHE[n]; }); return v === null || v === undefined ? '' : v; };
+    var gruposHE = listaHE.map(function (g, i) {
+      var pctG = Calc.num(valorHEGrupo(g) === '' ? c.recargoHoraExtra : valorHEGrupo(g)), veces = function (x) { return '×' + String(Math.round(x * 100) / 100).replace('.', ','); };
+      return '<label class="campo">Hora extra del grupo «' + e(g) + '» (%)<input type="number" step="1" inputmode="decimal" data-he-grupo="' + e(g) + '" value="' + e(valorHEGrupo(g)) + '" placeholder="Usa el general (' + e(c.recargoHoraExtra) + ')">' +
+        '<span class="ayuda">' + (i === 0 ? 'Vacío = usa el general. 100% = ×2, como la ley. ' : '') + 'Hora extra ' + veces(1 + pctG / 100) + ' · nocturna ' + veces(1 + (pctG + Calc.num(c.recargoNocturno)) / 100) + ' la hora normal.</span></label>';
+    }).join('');
     var h = '<div class="tarjeta-cab"><div><span class="kicker">Parámetros de ley</span><h2 style="font-size:30px">Configuración</h2><p class="suave">Valores que usa el sistema para calcular. Se aplican a todas las empresas y a las planillas en borrador.</p></div></div>' +
       '<div class="rejilla r2" style="align-items:start"><div class="tarjeta"><form class="form" id="fCfg">' +
       '<fieldset class="ancho"><legend>Generales</legend><div class="form">' + n('Salario Mínimo Nacional (Bs)', 'smn', 'Cambia cada año con el decreto de incremento salarial') + n('Horas por día', 'horasDia', '', '1') + '</div></fieldset>' +
@@ -1484,7 +1495,8 @@
       campo('ANS tramo 3: desde Bs', 'ans2d', c.ansTramos[2].desde, 'number') + campo('ANS tramo 3: %', 'ans2t', c.ansTramos[2].tasa, 'number', { paso: '0.01' }) + '</div></fieldset>' +
       '<fieldset class="ancho"><legend>RC-IVA</legend><div class="form">' + n('Tasa RC-IVA (%)', 'rcIva') + n('Mínimo no imponible (en SMN)', 'rcIvaMinNoImponibleSMN', 'Ley: 2 salarios mínimos', '1') +
       n('Crédito 13% sobre (en SMN)', 'rcIvaCreditoSMN', 'Ley: 13% de 2 salarios mínimos. Tu Excel usaba 1.', '1') + '</div></fieldset>' +
-      '<fieldset class="ancho"><legend>Ingresos</legend><div class="form">' + n('Recargo hora extra (%)', 'recargoHoraExtra', '50% = ×1,5, acordado con el cliente para el trabajo de fin de semana (sábados 4 h activadores y soporte; domingos 8 h soporte). La Ley General del Trabajo indica 100%.', '1') +
+      '<fieldset class="ancho"><legend>Ingresos</legend><div class="form">' + n('Recargo hora extra general (%)', 'recargoHoraExtra', '50% = ×1,5, acordado con Yango para el trabajo de fin de semana (sábados 4 h activadores y soporte; domingos 8 h soporte). La Ley General del Trabajo indica 100%. Se usa para todos, salvo los grupos de abajo.', '1') +
+      gruposHE +
       n('Recargo nocturno (%)', 'recargoNocturno', 'Horas extra hechas entre las 20:00 y las 06:00: se pagan como hora extra y además se suma este % del valor de la hora normal (básico ÷ 30 ÷ 8 × 25 %).', '1') +
       campo('Redondear valor hora a centavos', 'redondearValorHora', c.redondearValorHora ? '1' : '0', 'select', { opciones: [['0', 'No (como la planilla del cliente)'], ['1', 'Sí']] }) +
       n('Bono antigüedad: base en SMN', 'antiguedadBaseSMN', 'D.S. 21137: 3 salarios mínimos. Tu Excel usaba 1.', '1') +
@@ -1508,6 +1520,8 @@
       var d = leerForm(U.$('#fCfg', cont)), nc = JSON.parse(JSON.stringify(c));
       ['smn', 'horasDia', 'afpLaboral', 'rcIva', 'rcIvaMinNoImponibleSMN', 'rcIvaCreditoSMN', 'recargoHoraExtra', 'recargoNocturno', 'antiguedadBaseSMN', 'cajaSalud', 'gestoraPatronal', 'provIndemnizacion', 'provAguinaldo']
         .forEach(function (k) { nc[k] = Calc.num(d[k]); });
+      nc.recargoHEGrupos = {};
+      Array.prototype.forEach.call(cont.querySelectorAll('[data-he-grupo]'), function (inp) { if (String(inp.value).trim() !== '') nc.recargoHEGrupos[inp.getAttribute('data-he-grupo')] = Calc.num(inp.value); });
       nc.antiguedadProporcional = d.antiguedadProporcional === '1';
       nc.redondearValorHora = d.redondearValorHora === '1';
       nc.ansTramos = [0, 1, 2].map(function (i) { return { desde: Calc.num(d['ans' + i + 'd']), tasa: Calc.num(d['ans' + i + 't']) }; });

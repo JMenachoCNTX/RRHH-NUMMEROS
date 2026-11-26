@@ -1,9 +1,9 @@
 {
-  "version": "14",
+  "version": "15",
   "fecha": "26/11/2026",
   "novedades": [
-    "La columna «Horas nocturnas» ahora es «Horas extra nocturnas»: cada hora se paga como hora extra más el 25 % de la hora normal.",
-    "Las horas extra hechas de noche van solo en «Horas extra nocturnas» (no en «Horas extra»), para no pagarlas dos veces.",
-    "La boleta, la planilla, el Excel y el asiento muestran «Horas extras nocturnas»."
+    "Hora extra por grupo: Junkers se paga al 100 % (×2, como la ley) y Yango sigue al 50 % (×1,5).",
+    "La hora extra nocturna suma además el 25 %: Junkers ×2,25 y Yango ×1,75 de la hora normal.",
+    "Los porcentajes de cada grupo se cambian en Configuración → Ingresos. Las planillas cerradas no cambian."
   ]
 }

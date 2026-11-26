@@ -250,10 +250,10 @@
       var filas = p.filas.map(function (f, idx) {
         var emp = f.estado === 'cerrada' || p.estado === 'cerrada' ? (f.empleado || D.empleado(f.empleadoId)) : (D.empleado(f.empleadoId) || f.empleado);
         if (!emp) return null;
-        var r = Calc.calcularFila(emp, f, { anio: p.anio, mes: p.mes }, cfg);
-        /* Grupo (ej. Yango, Junkers): solo para separar en reportes, no cambia ningún monto.
-           Planilla cerrada: el grupo que tenía al cerrar; si no lo guardó (las antiguas), el grupo actual de la persona. */
+        /* Grupo (ej. Yango, Junkers): separa subtotales en reportes y define el % de hora extra si el grupo tiene uno propio
+           (Configuración). Planilla cerrada: el grupo que tenía al cerrar; si no lo guardó (las antiguas), el grupo actual. */
         var grupo = p.estado === 'cerrada' && f.grupo !== undefined ? f.grupo : ((D.empleado(f.empleadoId) || emp).grupo || '');
+        var r = Calc.calcularFila(emp, f, { anio: p.anio, mes: p.mes }, cfg, grupo);
         return { fila: f, emp: emp, r: r, idx: idx, grupo: String(grupo || '').trim() };
       }).filter(Boolean);
       return { filas: filas, totales: Calc.totalizar(filas.map(function (x) { return x.r; })), cfg: cfg };
