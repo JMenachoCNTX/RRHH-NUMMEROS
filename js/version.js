@@ -6,7 +6,7 @@
    AL PUBLICAR un cambio: poner el MISMO número nuevo en VERSION (aquí), en version.json y en los ?v= de index.html. */
 (function (global) {
   'use strict';
-  var VERSION = '6';
+  var VERSION = '7';
   var CADA = 5 * 60 * 1000;          // revisar cada 5 minutos
   var POSPONER = 30 * 60 * 1000;     // «Más tarde» vuelve a avisar en 30 minutos
   var pospuestoHasta = 0, mostrada = null;

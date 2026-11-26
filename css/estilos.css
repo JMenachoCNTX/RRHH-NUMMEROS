@@ -596,3 +596,7 @@ body.sin-sesion .app { visibility: hidden; }
 .etiqueta-grupo { font-size: 11px; padding: 1px 7px; margin-left: 2px; background: var(--acento-suave); }
 .tabla tfoot tr.subtotal td { position: static; font-size: 13px; font-weight: 600; background: var(--superficie); border-top: 1px dashed var(--borde-control); }
 .tabla tfoot tr.subtotal td.fija { position: sticky; left: 0; }
+
+/* Casilla con su texto al lado (ventana Datos del cliente) */
+.modal label.marca-linea, label.marca-linea { display: inline-flex; flex-direction: row; align-items: center; gap: 6px; white-space: nowrap; margin-top: 4px; font-weight: 600; }
+.marca-linea input { width: auto; margin: 0; }

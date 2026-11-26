@@ -46,7 +46,7 @@ cuyo logo está en `assets/empresas/` y se asigna solo. Admite varias empresas.
 - Commits: frases en español que describen el cambio.
 - **Aviso de versión nueva** (`js/version.js` + `version.json`): cada 5 min (y al volver a la pestaña) el sistema lee
   `version.json`; si difiere de `VERSION` muestra un aviso con las novedades y «Actualizar ahora».
-  **En CADA publicación** subir el número de versión de 1 en 1 (va en la 6, desde el 26/11/2026) y poner el MISMO número en:
+  **En CADA publicación** subir el número de versión de 1 en 1 (va en la 7, desde el 26/11/2026) y poner el MISMO número en:
   `VERSION` de `js/version.js`, `version` de `version.json` y todos los `?v=` de `index.html`; y escribir en `novedades`
   1 a 3 frases simples de lo nuevo. Se ve como «Versión 5» en el menú, la pantalla de ingreso y Configuración
   (botón «Buscar actualizaciones»).
@@ -88,4 +88,7 @@ cuyo logo está en `assets/empresas/` y se asigna solo. Admite varias empresas.
 - Si se cambian las reglas o la estructura de documentos, avisar antes: el sistema está en uso por varias personas.
 - Pendientes que Jhonny dejó para «luego»: boletas/certificados por correo, portal del trabajador, firma digital
   (Ley 164, ADSIB/Digicert), y subir documentos de empresa (NIT, Matrícula, ROE) y del personal (CI, contrato).
+- «Datos del cliente» (`js/importar.js` + `revisarDatosCliente`): carga horas extra y compara la columna «Total Ganado (Bs)»
+  del cliente con el sueldo básico (✗ Cambió + casilla «Actualizar sueldo»). Las filas que no están en la planilla se buscan
+  en todo el Personal (casilla «Agregar a la planilla»); si no existen, botón «Registrar trabajador» (formulario prellenado).
 - Se descartó leer capturas con OCR para horas extra (los números salían mal): usar pegar filas o subir Excel.

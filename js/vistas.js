@@ -305,7 +305,8 @@
     U.$('#btnNuevo', cont).onclick = function () { formEmpleado({ estado: 'ACTIVO', nacionalidad: 'BOLIVIANA' }); };
   };
 
-  function formEmpleado(x) {
+  /* alGuardar (opcional): se llama con el trabajador recién guardado */
+  function formEmpleado(x, alGuardar) {
     var bancos = [['', '— Elegir —']].concat(D.BANCOS.map(function (b) { return [b.abrev, b.abrev + ' · ' + b.nombre]; }));
     if (x.banco && !D.bancoPorAbrev(x.banco)) bancos.push([x.banco, x.banco]);
     var html = '<form class="form" id="fEmpl">' +
@@ -368,6 +369,7 @@
         if (d.estado === 'RETIRADO' && !d.fechaRetiro) { U.aviso('Indica la fecha de retiro', 'error'); return false; }
         if (d.terceroActivo === '1' && (!d.terceroNombre || !d.terceroCi || !d.terceroBanco || !d.terceroCuenta)) { U.aviso('Completa nombre, CI, banco y cuenta del tercero autorizado', 'error'); return false; }
         D.guardarEmpleado(d); App.refrescar(); U.aviso('Datos guardados');
+        if (alGuardar) alGuardar(d);
       } }
     ].filter(Boolean), { ancho: true });
   }
@@ -632,7 +634,7 @@
       listaGrupos() +
       '<div class="tabla-caja" style="max-height:52vh"><table class="tabla"><thead><tr><th></th><th>Trabajador</th><th>Grupo</th></tr></thead><tbody>' + filas + '</tbody></table></div>' +
       (cerrada ? '<p class="suave peq" style="margin-top:8px">La planilla está cerrada: los montos no cambian, solo se actualiza el grupo para los reportes.</p>' : '');
-    U.modal('Grupos de la planilla de ' + nombrePeriodo(p), html, [
+    var mG = U.modal('Grupos de la planilla de ' + nombrePeriodo(p), html, [
       { texto: 'Cancelar', clase: 'btn btn-fantasma' },
       { texto: 'Guardar grupos', clase: 'btn btn-primario', accion: function (m) {
         var cambios = 0;
@@ -648,7 +650,7 @@
         App.refrescar(); U.aviso(cambios ? 'Grupos guardados' : 'No hubo cambios');
       } }
     ], { ancho: true });
-    var m = document.querySelector('.modal-fondo:last-of-type');
+    var m = mG.el;
     U.$('#marcarTodos', m).onclick = function () {
       var cajas = U.$$('input[data-marca]', m), todas = cajas.every(function (c) { return c.checked; });
       cajas.forEach(function (c) { c.checked = !todas; });
@@ -689,7 +691,7 @@
     var html = '<p>Abre la hoja que les manda el cliente (Google Sheets o Excel), <b>selecciona las filas con sus encabezados</b> (desde "Nombre(s)" hasta la última persona), copia con <b>Ctrl + C</b> y pega aquí con <b>Ctrl + V</b>.</p>' +
       '<textarea id="pegado" style="min-height:160px;font-family:monospace;font-size:13px" placeholder="Pega aquí las filas copiadas…"></textarea>' +
       '<p class="suave peq">También puedes subir el archivo: <button type="button" class="btn btn-sm" id="archCli">' + ic('subir') + 'Elegir Excel</button> <span id="nomArch"></span></p>' +
-      '<div class="alerta"><span>Solo se actualizan las <b>horas extra</b> de las personas que vienen en la lista. Las demás personas de la planilla no cambian.</span></div>';
+      '<div class="alerta"><span>Se cargan las <b>horas extra</b> de las personas de la lista y se revisa la columna <b>«Total Ganado (Bs)»</b>: avisa si a alguien le cambiaron el sueldo o si viene un trabajador nuevo que no está en el sistema. Las demás personas de la planilla no cambian.</span></div>';
     var entrada = null;
     var m = U.modal('Datos del cliente · ' + nombrePeriodo(p), html, [
       { texto: 'Cancelar', clase: 'btn btn-fantasma' },
@@ -723,6 +725,13 @@
     var emps = calc.filas.map(function (x) { return x.emp; });
     var pares = Imp.emparejar(datos.filas, emps);
     var cfg = calc.cfg;
+    /* Las filas que no están en la planilla se buscan en todo el Personal de la empresa:
+       si están ahí se pueden agregar; si no, son trabajadores NUEVOS que hay que registrar. */
+    var enPlanilla = {}; emps.forEach(function (k) { enPlanilla[k.id] = 1; });
+    var fuera = D.empleados().filter(function (k) { return !enPlanilla[k.id]; });
+    var sinPar = pares.filter(function (x) { return !x.emp; });
+    Imp.emparejar(sinPar.map(function (x) { return x.cliente; }), fuera).forEach(function (r, i) { sinPar[i].fuera = r.emp; });
+
     var opciones = function (sel) {
       return '<option value="">— No aplicar —</option>' + calc.filas.slice().sort(function (a, b) { return U.nombreCompleto(a.emp).localeCompare(U.nombreCompleto(b.emp), 'es'); })
         .map(function (x) { return '<option value="' + x.idx + '"' + (sel && x.emp.id === sel.id ? ' selected' : '') + '>' + e(U.nombreCompleto(x.emp)) + '</option>'; }).join('');
@@ -730,9 +739,12 @@
     var idxDe = function (emp) { var x = emp && calc.filas.find(function (k) { return k.emp.id === emp.id; }); return x ? x.idx : null; };
     /* Importe de horas extra según el sistema, para la persona elegida en la fila */
     var importeSistema = function (emp, horas) { return emp && horas ? Calc.calcularFila(emp, { dias: 30, horasExtra: horas }, { anio: p.anio, mes: p.mes }, cfg).montoHorasExtra : 0; };
+    var sueldoDistinto = function (c, emp) { return !!(emp && c.totalGanado && Math.abs(c.totalGanado - Calc.num(emp.sueldoBasico)) > 0.05); };
+
     var filasHtml = pares.map(function (par, j) {
       var c = par.cliente, emp = par.emp, avisos = [];
-      if (emp && c.totalGanado && Math.abs(c.totalGanado - Calc.num(emp.sueldoBasico)) > 0.05) avisos.push('Sueldo: cliente ' + bs(c.totalGanado) + ' · sistema ' + bs(emp.sueldoBasico) + ' <label style="white-space:nowrap"><input type="checkbox" data-sueldo="' + j + '"> actualizar</label>');
+      if (!emp && par.fuera) avisos.push('<span class="etiqueta borrador">Está en Personal, no en esta planilla</span><br><label class="marca-linea"><input type="checkbox" data-agregar="' + j + '" checked> Agregar a la planilla</label>');
+      if (!emp && !par.fuera) avisos.push('<span class="etiqueta retirado-rojo">Nuevo: no está en el sistema</span><br><button type="button" class="btn btn-sm" data-registrar="' + j + '" style="margin-top:4px">' + ic('mas') + 'Registrar trabajador</button>');
       if (c.fechaFin) avisos.push('<b>Tiene fecha fin: ' + U.fecha(c.fechaFin) + '</b> (¿retiro?)');
       var verif = '';
       if (emp && c.montoHE) {
@@ -740,19 +752,45 @@
         verif = Math.abs(r.montoHorasExtra - c.montoHE) <= 0.05 ? '<span class="etiqueta">✓ Coincide: ' + bs(c.montoHE) + '</span>' : '<span class="etiqueta retirado-rojo">✗ No coincide</span><div class="peq" style="margin-top:4px">Cliente: ' + bs(c.montoHE) + '<br>Sistema: ' + bs(r.montoHorasExtra) + '</div>';
       }
       var actual = emp ? Calc.num((p.filas[idxDe(emp)] || {}).horasExtra) : 0;
-      return '<tr data-j="' + j + '"' + (emp ? '' : ' class="fila-retirada"') + '><td class="nombre">' + e(c.nombres + ' ' + c.apellidos) + '</td>' +
+      return '<tr data-j="' + j + '"' + (emp || par.fuera ? '' : ' class="fila-retirada"') + '><td class="nombre">' + e(c.nombres + ' ' + c.apellidos) + '</td>' +
         '<td><select data-emp="' + j + '" style="min-width:200px">' + opciones(emp) + '</select></td>' +
-        '<td class="num">' + (emp ? actual : '—') + ' → <b>' + c.horasExtra + '</b></td><td class="num" data-imp="' + j + '">' + (emp && c.horasExtra ? bs(importeSistema(emp, c.horasExtra)) : '—') + '</td><td>' + verif + '</td><td class="peq">' + (avisos.join('<br>') || '<span class="suave">—</span>') + '</td></tr>';
+        '<td class="peq" data-sue="' + j + '"></td>' +
+        '<td class="num">' + (emp ? actual : '—') + ' → <b>' + c.horasExtra + '</b></td><td class="num" data-imp="' + j + '">' + (emp && c.horasExtra ? bs(importeSistema(emp, c.horasExtra)) : '—') + '</td><td>' + verif + '</td><td class="peq" data-av="' + j + '">' + (avisos.join('<br>') || '<span class="suave">—</span>') + '</td></tr>';
     }).join('');
-    var sinPareja = pares.filter(function (x) { return !x.emp; }).length;
-    var html = '<p>Se leyeron <b>' + pares.length + '</b> filas. Revisa que cada una corresponda a la persona correcta (puedes cambiarla en la lista).' +
-      (sinPareja ? ' <b style="color:var(--error)">' + sinPareja + ' no se encontraron</b> en la planilla: elige a la persona o déjala en "No aplicar".' : '') + '</p>' +
-      '<div class="tabla-caja" style="max-height:52vh"><table class="tabla"><thead><tr><th>En la lista del cliente</th><th>Persona en la planilla</th><th class="num">Horas extra</th><th class="num">Importe (Bs)</th><th>¿El monto coincide?</th><th>Avisos</th></tr></thead><tbody>' + filasHtml + '</tbody>' +
+
+    var nSueldo = pares.filter(function (x) { return sueldoDistinto(x.cliente, x.emp || x.fuera); }).length;
+    var nNuevos = pares.filter(function (x) { return !x.emp && !x.fuera; }).length;
+    var nFuera = pares.filter(function (x) { return !x.emp && x.fuera; }).length;
+    var resumen = [];
+    if (nSueldo) resumen.push('<b>' + nSueldo + '</b> con sueldo distinto al del sistema (marca «Actualizar sueldo» si el cambio es correcto)');
+    if (nNuevos) resumen.push('<b style="color:var(--error)">' + nNuevos + ' trabajador(es) nuevo(s)</b> que no están en el sistema: usa «Registrar trabajador»');
+    if (nFuera) resumen.push('<b>' + nFuera + '</b> están en Personal pero no en esta planilla: se agregarán al aplicar');
+    var html = '<p>Se leyeron <b>' + pares.length + '</b> filas. Revisa que cada una corresponda a la persona correcta (puedes cambiarla en la lista).</p>' +
+      (datos.conTotalGanado ? '' : '<div class="alerta aviso"><span>No se encontró la columna <b>«Total Ganado (Bs)»</b>: no se pudo revisar el sueldo. Copia también esa columna con su encabezado.</span></div>') +
+      (resumen.length ? '<div class="alerta aviso"><span>' + resumen.join('<br>') + '</span></div>' : (datos.conTotalGanado ? '<div class="alerta"><span>✓ Todos los sueldos coinciden con el sistema y no hay trabajadores nuevos.</span></div>' : '')) +
+      '<div class="tabla-caja" style="max-height:52vh"><table class="tabla"><thead><tr><th>En la lista del cliente</th><th>Persona en la planilla</th><th>Sueldo (Total ganado)</th><th class="num">Horas extra</th><th class="num">Importe (Bs)</th><th>¿El monto coincide?</th><th>Avisos</th></tr></thead><tbody>' + filasHtml + '</tbody>' +
       '<tfoot><tr id="totCli"></tr></tfoot></table></div>' +
-      '<p class="suave peq"><b>¿El monto coincide?</b> El cliente ya calcula cuánto pagar de horas extra; el sistema hace su propio cálculo y los compara. ✓ = son iguales, todo bien. ✗ = son distintos: revisa el sueldo de esa persona o el recargo de horas extra en Configuración antes de aplicar.</p>';
+      '<p class="suave peq"><b>Sueldo:</b> se compara el «Total Ganado (Bs)» del cliente con el sueldo básico registrado. ✓ = igual; ✗ = al cliente le figura otro sueldo. <b>¿El monto coincide?</b> compara el importe de horas extra del cliente con el cálculo del sistema.</p>';
+
+    /* Persona que corresponde a la fila j: la elegida en la lista, o la de Personal que se va a agregar */
+    var personaFila = function (raiz, j) {
+      var sel = U.$('select[data-emp="' + j + '"]', raiz);
+      if (sel && sel.value !== '') { var x = calc.filas.find(function (k) { return k.idx === +sel.value; }); return x ? x.emp : null; }
+      var ag = U.$('input[data-agregar="' + j + '"]', raiz);
+      return ag && ag.checked ? pares[j].fuera : null;
+    };
+    var pintarSueldo = function (raiz, j) {
+      var celda = U.$('[data-sue="' + j + '"]', raiz); if (!celda) return;
+      var c = pares[j].cliente, emp = personaFila(raiz, j), marcado = U.$('input[data-sueldo="' + j + '"]', raiz);
+      if (!emp || !c.totalGanado) { celda.innerHTML = c.totalGanado ? 'Cliente: ' + bs(c.totalGanado) : '<span class="suave">—</span>'; return; }
+      celda.innerHTML = !sueldoDistinto(c, emp) ? '<span class="etiqueta">✓ ' + bs(c.totalGanado) + '</span>' :
+        '<span class="etiqueta retirado-rojo">✗ Cambió</span><div style="margin-top:4px">Sistema: ' + bs(emp.sueldoBasico) + '<br>Cliente: <b>' + bs(c.totalGanado) + '</b></div>' +
+        '<label class="marca-linea"><input type="checkbox" data-sueldo="' + j + '"' + (marcado && marcado.checked ? ' checked' : '') + '> Actualizar sueldo</label>';
+    };
     var totales = function (raiz) {
       var personas = 0, hAntes = 0, hNuevas = 0, impSis = 0, impCli = 0, conMontoCli = 0;
       pares.forEach(function (par, j) {
+        pintarSueldo(raiz, j);
         var sel = U.$('select[data-emp="' + j + '"]', raiz), celda = U.$('[data-imp="' + j + '"]', raiz);
         var x = sel && sel.value !== '' ? calc.filas.find(function (k) { return k.idx === +sel.value; }) : null;
         var imp = x ? importeSistema(x.emp, par.cliente.horasExtra) : 0;
@@ -768,13 +806,15 @@
       var coincide = conMontoCli ? (Math.abs(impSis - impCli) <= 0.05 * Math.max(1, conMontoCli)
         ? '<span class="etiqueta">✓ Coincide: ' + bs(impCli) + '</span>'
         : '<span class="etiqueta retirado-rojo">✗ No coincide</span><div class="peq" style="margin-top:4px">Cliente: ' + bs(impCli) + '</div>') : '';
-      U.$('#totCli', raiz).innerHTML = '<td>TOTAL · ' + personas + ' persona(s)</td><td></td><td class="num">' + Calc.r2(hAntes) + ' → ' + Calc.r2(hNuevas) + ' h</td>' +
+      U.$('#totCli', raiz).innerHTML = '<td>TOTAL · ' + personas + ' persona(s)</td><td></td><td></td><td class="num">' + Calc.r2(hAntes) + ' → ' + Calc.r2(hNuevas) + ' h</td>' +
         '<td class="num destacado">' + bs(impSis) + '</td><td>' + coincide + '</td><td></td>';
     };
+    var filaVacia = function (empleadoId, horas) { return { empleadoId: empleadoId, dias: '', horasExtra: horas || 0, bonoProduccion: 0, dominicales: 0, otrosBonos: 0, facturasF110: 0, anticipos: 0, otrosDescuentos: 0 }; };
     var mRev = U.modal('Revisar datos del cliente', html, [
       { texto: 'Cancelar', clase: 'btn btn-fantasma' },
       { texto: 'Aplicar a la planilla', clase: 'btn btn-primario', accion: function (mm) {
-        var n = 0, ns = 0, vistos = {};
+        var pl = D.planilla(p.id) || p; // la versión más reciente (pudo llegar un cambio de otra persona)
+        var n = 0, ns = 0, na = 0, vistos = {};
         for (var j = 0; j < pares.length; j++) {
           var v = U.$('select[data-emp="' + j + '"]', mm).value;
           if (v === '') continue;
@@ -782,22 +822,50 @@
           vistos[v] = 1;
         }
         pares.forEach(function (par, j) {
-          var v = U.$('select[data-emp="' + j + '"]', mm).value;
-          if (v === '') return;
-          var fila = p.filas[+v]; fila.horasExtra = par.cliente.horasExtra; n++;
-          var chk = U.$('input[data-sueldo="' + j + '"]', mm);
-          if (chk && chk.checked) {
-            var emp = D.empleado(fila.empleadoId);
-            if (emp) { emp.sueldoBasico = par.cliente.totalGanado; D.guardarEmpleado(emp); ns++; }
+          var v = U.$('select[data-emp="' + j + '"]', mm).value, emp = null;
+          if (v !== '') {
+            var fila = pl.filas[+v]; if (!fila) return;
+            fila.horasExtra = par.cliente.horasExtra; n++;
+            emp = D.empleado(fila.empleadoId);
+          } else {
+            var ag = U.$('input[data-agregar="' + j + '"]', mm);
+            if (!ag || !ag.checked || !par.fuera) return;
+            if (pl.filas.some(function (f) { return f.empleadoId === par.fuera.id; })) return;
+            pl.filas.push(filaVacia(par.fuera.id, par.cliente.horasExtra)); na++;
+            emp = D.empleado(par.fuera.id);
           }
+          var chk = U.$('input[data-sueldo="' + j + '"]', mm);
+          if (emp && chk && chk.checked) { emp.sueldoBasico = par.cliente.totalGanado; D.guardarEmpleado(emp); ns++; }
         });
-        D.guardarPlanilla(p); App.refrescar();
-        U.aviso('Horas extra cargadas para ' + n + ' persona(s)' + (ns ? ' · ' + ns + ' sueldo(s) actualizado(s)' : '') + '. Las demás no cambiaron.');
+        D.guardarPlanilla(pl); App.refrescar();
+        U.aviso('Horas extra cargadas para ' + n + ' persona(s)' + (na ? ' · ' + na + ' agregada(s) a la planilla' : '') + (ns ? ' · ' + ns + ' sueldo(s) actualizado(s)' : '') + '. Las demás no cambiaron.');
       } }
     ], { ancho: true });
     var ventana = mRev.el;
     totales(ventana);
-    U.$$('select[data-emp]', ventana).forEach(function (sel) { sel.addEventListener('change', function () { totales(ventana); }); });
+    U.$$('select[data-emp], input[data-agregar]', ventana).forEach(function (el) { el.addEventListener('change', function () { totales(ventana); }); });
+    /* Registrar a un trabajador nuevo con los datos del cliente; al guardar entra a la planilla con sus horas extra */
+    U.$$('[data-registrar]', ventana).forEach(function (bt) {
+      bt.onclick = function () {
+        var j = +bt.dataset.registrar, c = pares[j].cliente, ap = String(c.apellidos || '').trim().split(/\s+/);
+        formEmpleado({ estado: 'ACTIVO', nacionalidad: 'BOLIVIANA', nombres: c.nombres, apPaterno: ap[0] || '', apMaterno: ap.slice(1).join(' '),
+          sueldoBasico: c.totalGanado || '', fechaIngreso: c.fechaInicio || '' }, function (nuevo) {
+          var pl = D.planilla(p.id) || p;
+          if (!pl.filas.some(function (f) { return f.empleadoId === nuevo.id; })) pl.filas.push(filaVacia(nuevo.id, 0));
+          D.guardarPlanilla(pl); p = pl;
+          var idx = pl.filas.findIndex(function (f) { return f.empleadoId === nuevo.id; });
+          calc.filas.push({ fila: pl.filas[idx], emp: nuevo, idx: idx });
+          U.$$('select[data-emp]', ventana).forEach(function (sel) {
+            var o = document.createElement('option'); o.value = idx; o.textContent = U.nombreCompleto(nuevo); sel.appendChild(o);
+          });
+          U.$('select[data-emp="' + j + '"]', ventana).value = String(idx);
+          U.$('[data-av="' + j + '"]', ventana).innerHTML = '<span class="etiqueta">✓ Registrado y agregado a la planilla</span>';
+          U.$('tr[data-j="' + j + '"]', ventana).classList.remove('fila-retirada');
+          totales(ventana);
+          U.aviso('Trabajador registrado. Falta «Aplicar a la planilla» para cargar sus horas extra.');
+        });
+      };
+    });
   }
 
   function gestionarFilas(p) {

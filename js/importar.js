@@ -53,7 +53,8 @@
         montoHE: Calc.num(g('montoHE'))
       };
     }).filter(Boolean);
-    return { filas: datos, conCabecera: iCab >= 0 };
+    var conTotalGanado = idx.totalGanado !== undefined && datos.some(function (d) { return d.totalGanado > 0; });
+    return { filas: datos, conCabecera: iCab >= 0, conTotalGanado: conTotalGanado };
   }
 
   /* Busca a la persona de la planilla que corresponde a cada fila del cliente.
