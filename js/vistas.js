@@ -322,7 +322,7 @@
         var chips = U.$$('[data-modo]', panel);
         var marcarChip = function (modo) { chips.forEach(function (c) { c.classList.toggle('activo', c.dataset.modo === modo); }); };
         chips.forEach(function (c) {
-          c.onclick = function () { desde.value = ''; hasta.value = ''; marcarChip(c.dataset.modo); avisar(n, c.dataset.modo ? { modo: c.dataset.modo, desde: null, hasta: null } : null); };
+          c.onclick = function () { desde.value = ''; hasta.value = ''; marcarChip(c.dataset.modo); avisar(n, c.dataset.modo ? { modo: c.dataset.modo, desde: null, hasta: null } : null); cerrarMenuColumna(); };
         });
         var rango = function () {
           var d = desde.value.trim() === '' ? null : Calc.num(desde.value), a = hasta.value.trim() === '' ? null : Calc.num(hasta.value);
@@ -616,7 +616,8 @@
     if (c === 'nombre') return U.nombreCompleto(x.emp);
     if (c === 'cargo') return String(x.emp.cargo || '').trim();
     if (c === 'grupo') return x.grupo || '';
-    if (c === 'dias' || c === 'horasExtra') return String(numColPl(x, c));
+    if (c === 'dias') return String(numColPl(x, c));
+    if (c === 'horasExtra') return Calc.textoHoras(numColPl(x, c));
     return bs(numColPl(x, c));
   }
   function pasaFiltroPl(x, filtros) {
@@ -698,7 +699,7 @@
       '<button class="btn" id="btnGrupos" title="Separar al personal por grupo (ej. Yango y Junkers) para ver subtotales">' + ic('personal') + 'Grupos</button>' +
       '<a class="btn" href="#/generar/' + p.id + '">' + ic('generar') + 'Generar archivos</a></div></div>' +
       (cerrada ? '<p class="suave peq" style="margin-top:8px">La planilla está cerrada: los montos quedan fijos aunque luego cambien los datos del personal o la configuración. Reábrela si necesitas corregir algo.</p>' :
-        '<p class="suave peq" style="margin-top:8px">Escribe en las casillas verdes; todo se calcula y se guarda solo. Haz clic en un nombre para ver el detalle del cálculo. Deja "Días" vacío para que el sistema los calcule por fecha de ingreso/retiro.</p>') + '</div>';
+        '<p class="suave peq" style="margin-top:8px">Escribe en las casillas verdes; todo se calcula y se guarda solo. Haz clic en un nombre para ver el detalle del cálculo. Deja "Días" vacío para que el sistema los calcule por fecha de ingreso/retiro. Horas extra con minutos: escribe <b>15:20</b> (15 horas y 20 minutos).</p>') + '</div>';
 
     h += '<div id="avisoFiltroPl"></div>';
     h += '<div class="tabla-caja" style="max-height:68vh"><table class="tabla" id="tPl"><thead>' +
@@ -714,7 +715,8 @@
       var inp = function (campoN, cls) {
         var v = f[campoN];
         if (campoN === 'dias' && (v === '' || v === undefined || v === null)) return '<input class="dias" data-i="' + i + '" data-c="dias" placeholder="' + r.dias + '" aria-label="Días"' + (cerrada ? ' disabled' : '') + '>';
-        return '<input class="' + (cls || '') + '" data-i="' + i + '" data-c="' + campoN + '" value="' + (Calc.num(v) ? v : '') + '" placeholder="0" inputmode="decimal" aria-label="' + campoN + '"' + (cerrada ? ' disabled' : '') + '>';
+        var conValor = campoN === 'horasExtra' ? Calc.horas(v) : Calc.num(v);
+        return '<input class="' + (cls || '') + '" data-i="' + i + '" data-c="' + campoN + '" value="' + (conValor ? e(String(v)) : '') + '" placeholder="0"' + (campoN === 'horasExtra' ? ' title="Horas extra. Con minutos escribe 15:20 (15 horas y 20 minutos)"' : ' inputmode="decimal"') + ' aria-label="' + campoN + '"' + (cerrada ? ' disabled' : '') + '>';
       };
       h += '<tr data-i="' + i + '"' + (pasaFiltroPl(x, filtros) ? '' : ' hidden') + '><td class="nombre fija"><a href="#" data-det="' + i + '">' + e(nombreSegunOrden(k, p.orden)) + '</a><div class="suave peq" style="font-weight:400">' + e(k.cargo || '') + (x.grupo ? ' <span class="etiqueta etiqueta-grupo">' + e(x.grupo) + '</span>' : '') + '</div></td>' +
         '<td class="num">' + bs(r.basico) + '</td><td class="num">' + inp('dias', 'dias') + '</td><td class="num" data-o="salarioGanado">' + bs(r.salarioGanado) + '</td>' +
@@ -833,7 +835,7 @@
   }
   function celdasTotales(t, etiquetaFila) {
     return '<td class="fija">' + etiquetaFila + '</td><td class="num">' + bs(t.basico) + '</td><td></td><td class="num">' + bs(t.salarioGanado) +
-      '</td><td class="num">' + t.horasExtra + '</td><td class="num">' + bs(t.montoHorasExtra) + '</td><td class="num">' + bs(t.bonoAntiguedad) + '</td><td class="num">' + bs(t.otrosBonos) + '</td><td class="num destacado">' + bs(t.totalGanado) + '</td><td class="num">' + bs(t.afp) + '</td><td class="num">' + bs(t.ans) + '</td><td class="num">' + bs(t.rcIva) +
+      '</td><td class="num">' + Calc.textoHoras(t.horasExtra) + '</td><td class="num">' + bs(t.montoHorasExtra) + '</td><td class="num">' + bs(t.bonoAntiguedad) + '</td><td class="num">' + bs(t.otrosBonos) + '</td><td class="num destacado">' + bs(t.totalGanado) + '</td><td class="num">' + bs(t.afp) + '</td><td class="num">' + bs(t.ans) + '</td><td class="num">' + bs(t.rcIva) +
       '</td><td class="num">' + bs(t.anticipos) + '</td><td class="num">' + bs(t.otrosDescuentos) + '</td><td class="num">' + bs(t.totalDescuentos) + '</td><td class="num destacado">' + bs(t.liquido) + '</td><td class="num">' + bs(t.cajaSalud + t.gestoraPatronal) + '</td>';
   }
 
@@ -891,7 +893,7 @@
     var html = '<div class="rejilla r2"><div><h4 class="kicker" style="margin-bottom:8px">Ingresos</h4><div class="detalle-calc">' +
       l('Sueldo básico', bs(r.basico)) + l('Días pagados', r.dias) + l('Salario ganado (básico ÷ 30 × días)', bs(r.salarioGanado)) +
       l('Antigüedad: ' + r.anios + ' año(s) → ' + r.pctAntiguedad + '% de ' + cfg.antiguedadBaseSMN + ' SMN', bs(r.bonoAntiguedad)) +
-      l('Horas extra: ' + r.horasExtra + ' × ' + bs(r.valorHoraExtra) + ' (recargo ' + cfg.recargoHoraExtra + '%)', bs(r.montoHorasExtra)) +
+      l('Horas extra: ' + Calc.textoHoras(r.horasExtra) + ' h × ' + bs(r.valorHoraExtra) + ' (recargo ' + cfg.recargoHoraExtra + '%)', bs(r.montoHorasExtra)) +
       (r.bonoProduccion ? l('Bono producción', bs(r.bonoProduccion)) : '') + (r.dominicales ? l('Dominicales', bs(r.dominicales)) : '') + l('Otros bonos', bs(r.otrosBonos)) + l('TOTAL GANADO', bs(r.totalGanado), true) + '</div></div>' +
       '<div><h4 class="kicker" style="margin-bottom:8px">Descuentos</h4><div class="detalle-calc">' +
       l('AFP ' + cfg.afpLaboral + '%', bs(r.afp)) + l('Aporte Nacional Solidario', bs(r.ans)) + l('RC-IVA', bs(r.rcIva)) + l('Anticipos', bs(r.anticipos)) + l('Otros descuentos', bs(r.otrosDescuentos)) +
@@ -974,11 +976,11 @@
         var r = Calc.calcularFila(emp, { dias: 30, horasExtra: c.horasExtra }, { anio: p.anio, mes: p.mes }, cfg);
         verif = Math.abs(r.montoHorasExtra - c.montoHE) <= 0.05 ? '<span class="etiqueta">✓ Coincide: ' + bs(c.montoHE) + '</span>' : '<span class="etiqueta retirado-rojo">✗ No coincide</span><div class="peq" style="margin-top:4px">Cliente: ' + bs(c.montoHE) + '<br>Sistema: ' + bs(r.montoHorasExtra) + '</div>';
       }
-      var actual = emp ? Calc.num((p.filas[idxDe(emp)] || {}).horasExtra) : 0;
+      var actual = emp ? Calc.textoHoras((p.filas[idxDe(emp)] || {}).horasExtra) : 0;
       return '<tr data-j="' + j + '"' + (emp || par.fuera ? '' : ' class="fila-retirada"') + '><td class="nombre">' + e(c.nombres + ' ' + c.apellidos) + '</td>' +
         '<td><select data-emp="' + j + '" style="min-width:200px">' + opciones(emp) + '</select></td>' +
         '<td class="peq" data-sue="' + j + '"></td>' +
-        '<td class="num">' + (emp ? actual : '—') + ' → <b>' + c.horasExtra + '</b></td><td class="num" data-imp="' + j + '">' + (emp && c.horasExtra ? bs(importeSistema(emp, c.horasExtra)) : '—') + '</td><td>' + verif + '</td><td class="peq" data-av="' + j + '">' + (avisos.join('<br>') || '<span class="suave">—</span>') + '</td></tr>';
+        '<td class="num">' + (emp ? actual : '—') + ' → <b>' + Calc.textoHoras(c.horasExtra) + '</b></td><td class="num" data-imp="' + j + '">' + (emp && c.horasExtra ? bs(importeSistema(emp, c.horasExtra)) : '—') + '</td><td>' + verif + '</td><td class="peq" data-av="' + j + '">' + (avisos.join('<br>') || '<span class="suave">—</span>') + '</td></tr>';
     }).join('');
 
     var nSueldo = pares.filter(function (x) { return sueldoDistinto(x.cliente, x.emp || x.fuera); }).length;
@@ -1025,8 +1027,8 @@
         if (celda) celda.textContent = x && par.cliente.horasExtra ? bs(imp) : '—';
         if (!x) return;
         personas++;
-        hAntes += Calc.num((p.filas[x.idx] || {}).horasExtra);
-        hNuevas += Calc.num(par.cliente.horasExtra);
+        hAntes += Calc.horas((p.filas[x.idx] || {}).horasExtra);
+        hNuevas += Calc.horas(par.cliente.horasExtra);
         impSis += imp;
         if (par.cliente.montoHE) { impCli += Calc.num(par.cliente.montoHE); conMontoCli++; }
       });
@@ -1039,7 +1041,7 @@
       var celdaTg = tgCli ? '<div>Cliente: <b>' + bs(tgCli) + '</b></div><div>Sistema: <b>' + bs(tgSis) + '</b></div>' +
         (Math.abs(difTg) <= 0.05 ? '<span class="etiqueta">✓ Sueldos iguales</span>' : '<span class="etiqueta retirado-rojo">✗ Diferencia ' + bs(Math.abs(difTg)) + '</span>') +
         (Calc.r2(tgCli - tgCliConPersona) ? '<div class="peq suave" style="margin-top:4px">' + bs(Calc.r2(tgCli - tgCliConPersona)) + ' de personas sin elegir</div>' : '') : '<span class="suave">—</span>';
-      U.$('#totCli', raiz).innerHTML = '<td>TOTAL · ' + personas + ' persona(s)</td><td></td><td class="peq">' + celdaTg + '</td><td class="num">' + Calc.r2(hAntes) + ' → ' + Calc.r2(hNuevas) + ' h</td>' +
+      U.$('#totCli', raiz).innerHTML = '<td>TOTAL · ' + personas + ' persona(s)</td><td></td><td class="peq">' + celdaTg + '</td><td class="num">' + Calc.textoHoras(hAntes) + ' → ' + Calc.textoHoras(hNuevas) + ' h</td>' +
         '<td class="num destacado">' + bs(impSis) + '</td><td>' + coincide + '</td><td></td>';
     };
     var filaVacia = function (empleadoId, horas) { return { empleadoId: empleadoId, dias: '', horasExtra: horas || 0, bonoProduccion: 0, dominicales: 0, otrosBonos: 0, facturasF110: 0, anticipos: 0, otrosDescuentos: 0 }; };
@@ -1058,13 +1060,13 @@
           var v = U.$('select[data-emp="' + j + '"]', mm).value, emp = null;
           if (v !== '') {
             var fila = pl.filas[+v]; if (!fila) return;
-            fila.horasExtra = par.cliente.horasExtra; n++;
+            fila.horasExtra = Calc.textoHoras(par.cliente.horasExtra); n++;
             emp = D.empleado(fila.empleadoId);
           } else {
             var ag = U.$('input[data-agregar="' + j + '"]', mm);
             if (!ag || !ag.checked || !par.fuera) return;
             if (pl.filas.some(function (f) { return f.empleadoId === par.fuera.id; })) return;
-            pl.filas.push(filaVacia(par.fuera.id, par.cliente.horasExtra)); na++;
+            pl.filas.push(filaVacia(par.fuera.id, Calc.textoHoras(par.cliente.horasExtra))); na++;
             emp = D.empleado(par.fuera.id);
           }
           var chk = U.$('input[data-sueldo="' + j + '"]', mm);

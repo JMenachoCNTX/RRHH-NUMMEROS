@@ -72,7 +72,7 @@
       ['AFP ' + String(cfg.afpLaboral).replace('.', ',') + '% (F)', 'afp'], ['Ap. Nal. Solidario (G)', 'ans'], ['RC-IVA (H)', 'rcIva'],
       ['Anticipos (I)', 'anticipos'], ['Otros desc. (J)', 'otrosDescuentos'], ['Total desc. (K)', 'totalDescuentos'], ['Líquido pagable (E-K)', 'liquido', true]
     ];
-    var celda = function (c, v) { var txt = c[3] ? (v || 0) : bs(v); return '<td class="n' + (c[2] ? ' fuerte' : '') + '">' + txt + '</td>'; };
+    var celda = function (c, v) { var txt = c[3] ? Calc.textoHoras(v || 0) : bs(v); return '<td class="n' + (c[2] ? ' fuerte' : '') + '">' + txt + '</td>'; };
     var filas = calc.filas.map(function (x, i) {
       var em = x.emp, r = x.r;
       return '<tr><td class="c">' + (i + 1) + '</td><td class="c">' + e(em.ci) + (em.complemento ? '-' + e(em.complemento) : '') + '</td><td class="nom">' + e(U.mayus(U.apellidos(em))) + '<br>' + e(U.mayus(em.nombres)) +
@@ -125,7 +125,7 @@
       dato('Cargo', em.cargo || '') + dato('Fecha de ingreso', U.fecha(em.fechaIngreso)) + '</div>' +
       '<div class="dn-dos"><table class="dn-t"><thead><tr><th colspan="2">Ingresos</th></tr></thead><tbody>' +
       filaBoleta('Salario ganado', r.salarioGanado) + filaBoleta('Bono de antigüedad', r.bonoAntiguedad, r.pctAntiguedad ? r.pctAntiguedad + '%' : '') +
-      filaBoleta('Horas extras', r.montoHorasExtra, r.horasExtra ? r.horasExtra + ' h' : '') + filaBoleta('Otros bonos', r.otrosBonos) +
+      filaBoleta('Horas extras', r.montoHorasExtra, r.horasExtra ? Calc.textoHoras(r.horasExtra) + ' h' : '') + filaBoleta('Otros bonos', r.otrosBonos) +
       '</tbody><tfoot><tr><td>TOTAL INGRESOS</td><td class="n">' + bs(r.totalGanado) + '</td></tr></tfoot></table>' +
       '<table class="dn-t"><thead><tr><th colspan="2">Descuentos</th></tr></thead><tbody>' +
       filaBoleta('AFP', r.afp, String(cfg.afpLaboral).replace('.', ',') + '%') + filaBoleta('Aporte Nacional Solidario', r.ans) + filaBoleta('RC-IVA', r.rcIva, '13%') +
@@ -419,12 +419,12 @@
         '<rect x="0" y="0" width="' + Math.max(0, w1 - (w2 > 0 ? 1 : 0)).toFixed(1) + '" height="9" rx="1.5" fill="' + VERDE + '"/>' +
         (w2 > 0 ? '<rect x="' + (w1 + 1).toFixed(1) + '" y="0" width="' + Math.max(0.5, w2 - 1).toFixed(1) + '" height="9" rx="1.5" fill="' + VERDE_CLARO + '"/>' : '') + '</svg>';
       return '<tr><td class="nom">' + e(U.mayus(U.nombreCompleto(x.emp))) + (x.grupo ? ' <span class="dn-gris">· ' + e(x.grupo) + '</span>' : '') + '</td><td class="cargo">' + e(x.emp.cargo || '') + '</td><td>' + barra + '</td><td class="n">' + bs(r.totalGanado) +
-        '</td><td class="n">' + (r.horasExtra ? r.horasExtra + ' h' : '—') + '</td><td class="n">' + bs(r.totalDescuentos) + '</td><td class="n fuerte">' + bs(r.liquido) + '</td></tr>';
+        '</td><td class="n">' + (r.horasExtra ? Calc.textoHoras(r.horasExtra) + ' h' : '—') + '</td><td class="n">' + bs(r.totalDescuentos) + '</td><td class="n fuerte">' + bs(r.liquido) + '</td></tr>';
     }).join('');
     var porPersona = '<h3 class="dn-sub">¿Cuánto recibe cada persona? <span>de mayor a menor</span></h3>' +
       '<div class="dn-leyenda dn-ley-linea"><div><i style="background:' + VERDE + '"></i><span>Sueldo y antigüedad</span></div><div><i style="background:' + VERDE_CLARO + '"></i><span>Horas extra y bonos</span></div></div>' +
       '<table class="dn-t dn-mini dn-persona"><thead><tr><th>Nombre</th><th>Cargo</th><th>Composición del ganado</th><th>Total ganado</th><th>Horas extra</th><th>Descuentos</th><th>Líquido</th></tr></thead><tbody>' + filasP +
-      '</tbody><tfoot><tr><td colspan="3">TOTAL</td><td class="n">' + bs(t.totalGanado) + '</td><td class="n">' + (t.horasExtra || 0) + ' h</td><td class="n">' + bs(t.totalDescuentos) + '</td><td class="n">' + bs(t.liquido) + '</td></tr></tfoot></table>';
+      '</tbody><tfoot><tr><td colspan="3">TOTAL</td><td class="n">' + bs(t.totalGanado) + '</td><td class="n">' + Calc.textoHoras(t.horasExtra || 0) + ' h</td><td class="n">' + bs(t.totalDescuentos) + '</td><td class="n">' + bs(t.liquido) + '</td></tr></tfoot></table>';
     /* Por grupo (ej. Yango, Junkers): se paga en una sola planilla, pero el dueño ve cuánto corresponde a cada uno */
     var grupos = D.porGrupo(calc), porGrupo = '';
     if (grupos.length) {

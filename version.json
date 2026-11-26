@@ -1,8 +1,8 @@
 {
-  "version": "11",
+  "version": "12",
   "fecha": "26/11/2026",
   "novedades": [
-    "Nuevo diseño: el menú de la izquierda ahora es oscuro.",
-    "Los títulos de las tablas (planilla, personal y demás) van en una banda oscura con letra clara, para leerlos mejor."
+    "Horas extra con minutos: escribe 15:20 (15 horas y 20 minutos) y el sistema paga también los minutos.",
+    "Filtros: al elegir «Mayor a 0», «Igual a 0» o «Todos» el menú se cierra solo, para que no tape las casillas donde escribes."
   ]
 }

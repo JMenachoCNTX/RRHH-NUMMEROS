@@ -49,7 +49,7 @@
         totalGanado: Calc.num(g('totalGanado')),
         fechaInicio: U.aIso(g('fechaInicio')),
         fechaFin: /^[-–—]?$/.test(fin) ? '' : U.aIso(fin),
-        horasExtra: Calc.num(g('horasExtra')),
+        horasExtra: Calc.horas(g('horasExtra')),
         montoHE: Calc.num(g('montoHE'))
       };
     }).filter(Boolean);

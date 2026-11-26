@@ -38,6 +38,21 @@
   };
 
   function r2(n) { n = Number(n) || 0; return Math.round(Number((n * 100).toFixed(6))) / 100; }
+  /* Horas con minutos: «15:20», «15h20» o «15 h 20 min» → 15,3333…; también acepta números (15 / 15,5) */
+  function horas(v) {
+    if (typeof v === 'number') return isFinite(v) ? v : 0;
+    var s = String(v === null || v === undefined ? '' : v).trim().toLowerCase();
+    var m = /^(\d+)\s*(?::|h|hrs?|horas?)\s*(?:(\d{1,2})\s*(?:m|min|minutos?)?)?$/.exec(s);
+    if (m) return +m[1] + Math.min(59, +(m[2] || 0)) / 60;
+    return num(s);
+  }
+  /* 15,3333 → «15:20»; 15 → «15» (para mostrar horas extra) */
+  function textoHoras(h) {
+    h = horas(h);
+    var ent = Math.floor(h + 1e-9), min = Math.round((h - ent) * 60);
+    if (min === 60) { ent++; min = 0; }
+    return min ? ent + ':' + (min < 10 ? '0' : '') + min : String(ent);
+  }
   function num(v) {
     if (v === null || v === undefined || v === '') return 0;
     if (typeof v === 'number') return isFinite(v) ? v : 0;
@@ -129,8 +144,9 @@
     var valorHora = basico / 30 / cfg.horasDia;
     var valorHoraExtraExacto = valorHora * (1 + cfg.recargoHoraExtra / 100);
     var valorHoraExtra = cfg.redondearValorHora ? r2(valorHoraExtraExacto) : valorHoraExtraExacto;
-    var horasExtra = num(mov.horasExtra);
-    var montoHE = r2(horasExtra * valorHoraExtra);
+    var horasExactas = horas(mov.horasExtra);           // 15:20 = 15,3333 h (los minutos se pagan)
+    var montoHE = r2(horasExactas * valorHoraExtra);
+    var horasExtra = Math.round(horasExactas * 100) / 100; // para totales y reportes
 
     var bonoProd = r2(num(mov.bonoProduccion));
     var dominicales = r2(num(mov.dominicales));
@@ -244,7 +260,7 @@
   }
 
   var api = {
-    MESES: MESES, CONFIG_BASE: CONFIG_BASE, r2: r2, num: num, aFecha: aFecha,
+    MESES: MESES, CONFIG_BASE: CONFIG_BASE, r2: r2, num: num, horas: horas, textoHoras: textoHoras, aFecha: aFecha,
     diasSugeridos: diasSugeridos, aniosCompletos: aniosCompletos, pctAntiguedad: pctAntiguedad,
     ansMonto: ansMonto, rcIva: rcIva, calcularFila: calcularFila, totalizar: totalizar,
     calcularAguinaldo: calcularAguinaldo, numeroALetras: numeroALetras, ultimoDiaMes: ultimoDiaMes
