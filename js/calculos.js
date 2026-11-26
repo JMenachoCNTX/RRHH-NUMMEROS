@@ -23,7 +23,7 @@
     rcIvaCreditoSMN: 2,        // Se descuenta el 13% de 2 SMN (pago a cuenta)
     horasDia: 8,
     recargoHoraExtra: 50,      // % de recargo de la hora extra (práctica de Milthagor: 50%; la LGT indica 100%)
-    recargoNocturno: 25,       // % extra por hora trabajada entre 20:00 y 06:00 (LGT: 25% a 50% según el trabajo)
+    recargoNocturno: 25,       // % de la hora normal que se suma a cada hora extra hecha entre 20:00 y 06:00
     redondearValorHora: false, // false = como la planilla del cliente (valor hora sin redondear)
     versionConfig: 3,
     antiguedadBaseSMN: 3,      // Bono de antigüedad se calcula sobre 3 SMN
@@ -149,11 +149,12 @@
     var montoHE = r2(horasExactas * valorHoraExtra);
     var horasExtra = Math.round(horasExactas * 100) / 100; // para totales y reportes
 
-    /* Recargo nocturno: horas trabajadas entre las 20:00 y las 06:00. Se paga solo el % extra sobre la hora normal
-       (la hora en sí ya está dentro del sueldo). Acepta minutos: «3:30». */
+    /* Horas extra nocturnas: horas extra hechas entre las 20:00 y las 06:00 (el personal trabaja de día).
+       Se pagan como hora extra MÁS el recargo nocturno: valor hora extra + (básico ÷ 30 ÷ 8 × 25 %). Acepta minutos: «3:30». */
     var recNoct = cfg.recargoNocturno === undefined || cfg.recargoNocturno === null || cfg.recargoNocturno === '' ? 25 : num(cfg.recargoNocturno);
     var hnExactas = horas(mov.horasNocturnas);
-    var montoNoct = r2(hnExactas * valorHora * recNoct / 100);
+    var valorHoraNoct = valorHoraExtra + valorHora * recNoct / 100;
+    var montoNoct = r2(hnExactas * valorHoraNoct);
     var horasNocturnas = Math.round(hnExactas * 100) / 100;
 
     var bonoProd = r2(num(mov.bonoProduccion));
@@ -189,7 +190,7 @@
       basico: r2(basico), dias: dias, horasDia: cfg.horasDia, salarioGanado: salarioGanado,
       anios: anios, pctAntiguedad: pct, bonoAntiguedad: bonoAntig,
       valorHora: r2(valorHora), valorHoraExtra: r2(valorHoraExtra), horasExtra: horasExtra, montoHorasExtra: montoHE,
-      horasNocturnas: horasNocturnas, montoNocturno: montoNoct, recargoNocturno: recNoct,
+      horasNocturnas: horasNocturnas, montoNocturno: montoNoct, recargoNocturno: recNoct, valorHoraNocturna: r2(valorHoraNoct),
       bonoProduccion: bonoProd, dominicales: dominicales, otrosBonos: otrosBonos,
       totalGanado: totalGanado, afp: afp, ans: ans, rcIva: rc.aPagar, rcIvaDetalle: rc,
       anticipos: anticipos, otrosDescuentos: otrosDescuentos, totalDescuentos: totalDesc, liquido: liquido,

@@ -35,7 +35,7 @@
       ['Anticipos (I)', 'anticipos'], ['Otros descuentos (J)', 'otrosDescuentos'], ['Total descuentos (K)', 'totalDescuentos'], ['Líquido pagable', 'liquido'],
       ['Caja salud patronal', 'cajaSalud'], ['Gestora patronal', 'gestoraPatronal'], ['Total Gestora', 'totalGestora'], ['Prev. indemnización', 'provIndemnizacion'], ['Prev. aguinaldo', 'provAguinaldo']];
     var grupos = D.porGrupo(calc);
-    if (calc.totales.montoNocturno > 0) M.splice(4, 0, ['HN cantidad', 'horasNocturnas'], ['Recargo nocturno', 'montoNocturno']);
+    if (calc.totales.montoNocturno > 0) M.splice(4, 0, ['HE nocturnas cantidad', 'horasNocturnas'], ['HE nocturnas monto', 'montoNocturno']);
     var cab = ['Nro', 'CI', 'Nombre(s)', 'Apellido(s)', 'Nacionalidad', 'Fecha de nacimiento', 'Sexo', 'Ocupación', 'Fecha de ingreso', 'Sueldo básico', 'Días pagados', 'Horas/día']
       .concat(M.map(function (c) { return c[0]; })).concat(grupos.length ? ['Grupo'] : []);
     var filas = [[empresa.razonSocial], ['NIT: ' + empresa.nit], ['PLANILLA DE SUELDOS Y SALARIOS - ' + U.mayus(Calc.MESES[p.mes - 1]) + ' ' + p.anio], ['(Expresado en bolivianos)'], [], cab];

@@ -74,7 +74,7 @@
     ];
     if (t.montoNocturno > 0) {
       M[3] = ['HE monto (C1)', 'montoHorasExtra'];
-      M.splice(4, 0, ['HN cant.', 'horasNocturnas', false, true], ['Rec. nocturno (C2)', 'montoNocturno']);
+      M.splice(4, 0, ['HE noct. cant.', 'horasNocturnas', false, true], ['HE nocturnas (C2)', 'montoNocturno']);
     }
     var celda = function (c, v) { var txt = c[3] ? Calc.textoHoras(v || 0) : bs(v); return '<td class="n' + (c[2] ? ' fuerte' : '') + '">' + txt + '</td>'; };
     var filas = calc.filas.map(function (x, i) {
@@ -130,7 +130,7 @@
       '<div class="dn-dos"><table class="dn-t"><thead><tr><th colspan="2">Ingresos</th></tr></thead><tbody>' +
       filaBoleta('Salario ganado', r.salarioGanado) + filaBoleta('Bono de antigüedad', r.bonoAntiguedad, r.pctAntiguedad ? r.pctAntiguedad + '%' : '') +
       filaBoleta('Horas extras', r.montoHorasExtra, r.horasExtra ? Calc.textoHoras(r.horasExtra) + ' h' : '') +
-      (r.montoNocturno ? filaBoleta('Recargo nocturno', r.montoNocturno, Calc.textoHoras(r.horasNocturnas) + ' h') : '') + filaBoleta('Otros bonos', r.otrosBonos) +
+      (r.montoNocturno ? filaBoleta('Horas extras nocturnas', r.montoNocturno, Calc.textoHoras(r.horasNocturnas) + ' h') : '') + filaBoleta('Otros bonos', r.otrosBonos) +
       '</tbody><tfoot><tr><td>TOTAL INGRESOS</td><td class="n">' + bs(r.totalGanado) + '</td></tr></tfoot></table>' +
       '<table class="dn-t"><thead><tr><th colspan="2">Descuentos</th></tr></thead><tbody>' +
       filaBoleta('AFP', r.afp, String(cfg.afpLaboral).replace('.', ',') + '%') + filaBoleta('Aporte Nacional Solidario', r.ans) + filaBoleta('RC-IVA', r.rcIva, '13%') +
@@ -249,7 +249,7 @@
       ['Sueldos y salarios', t.salarioGanado + t.bonoProduccion + t.dominicales + t.otrosBonos],
       ['Bono de antigüedad', t.bonoAntiguedad],
       ['Horas extras', t.montoHorasExtra],
-      ['Recargo nocturno', t.montoNocturno || 0],
+      ['Horas extras nocturnas', t.montoNocturno || 0],
       ['Aportes patronales - Caja de salud', t.cajaSalud],
       ['Aportes patronales - Gestora', t.gestoraPatronal],
       ['Previsión para indemnizaciones', t.provIndemnizacion],

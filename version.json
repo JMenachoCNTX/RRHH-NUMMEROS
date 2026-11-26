@@ -1,9 +1,9 @@
 {
-  "version": "13",
+  "version": "14",
   "fecha": "26/11/2026",
   "novedades": [
-    "Horas nocturnas: nueva columna en la planilla para las horas trabajadas entre las 20:00 y las 06:00 (acepta minutos, ej. 3:30).",
-    "Se pagan con un recargo del 25 % sobre la hora normal; el porcentaje se cambia en Configuración.",
-    "El recargo nocturno sale en la boleta, la planilla, el Excel, el Ministerio de Trabajo y el asiento contable."
+    "La columna «Horas nocturnas» ahora es «Horas extra nocturnas»: cada hora se paga como hora extra más el 25 % de la hora normal.",
+    "Las horas extra hechas de noche van solo en «Horas extra nocturnas» (no en «Horas extra»), para no pagarlas dos veces.",
+    "La boleta, la planilla, el Excel y el asiento muestran «Horas extras nocturnas»."
   ]
 }
