@@ -1,8 +1,9 @@
 {
-  "version": "12",
+  "version": "13",
   "fecha": "26/11/2026",
   "novedades": [
-    "Horas extra con minutos: escribe 15:20 (15 horas y 20 minutos) y el sistema paga también los minutos.",
-    "Filtros: al elegir «Mayor a 0», «Igual a 0» o «Todos» el menú se cierra solo, para que no tape las casillas donde escribes."
+    "Horas nocturnas: nueva columna en la planilla para las horas trabajadas entre las 20:00 y las 06:00 (acepta minutos, ej. 3:30).",
+    "Se pagan con un recargo del 25 % sobre la hora normal; el porcentaje se cambia en Configuración.",
+    "El recargo nocturno sale en la boleta, la planilla, el Excel, el Ministerio de Trabajo y el asiento contable."
   ]
 }

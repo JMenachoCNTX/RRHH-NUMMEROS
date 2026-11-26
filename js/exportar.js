@@ -35,6 +35,7 @@
       ['Anticipos (I)', 'anticipos'], ['Otros descuentos (J)', 'otrosDescuentos'], ['Total descuentos (K)', 'totalDescuentos'], ['Líquido pagable', 'liquido'],
       ['Caja salud patronal', 'cajaSalud'], ['Gestora patronal', 'gestoraPatronal'], ['Total Gestora', 'totalGestora'], ['Prev. indemnización', 'provIndemnizacion'], ['Prev. aguinaldo', 'provAguinaldo']];
     var grupos = D.porGrupo(calc);
+    if (calc.totales.montoNocturno > 0) M.splice(4, 0, ['HN cantidad', 'horasNocturnas'], ['Recargo nocturno', 'montoNocturno']);
     var cab = ['Nro', 'CI', 'Nombre(s)', 'Apellido(s)', 'Nacionalidad', 'Fecha de nacimiento', 'Sexo', 'Ocupación', 'Fecha de ingreso', 'Sueldo básico', 'Días pagados', 'Horas/día']
       .concat(M.map(function (c) { return c[0]; })).concat(grupos.length ? ['Grupo'] : []);
     var filas = [[empresa.razonSocial], ['NIT: ' + empresa.nit], ['PLANILLA DE SUELDOS Y SALARIOS - ' + U.mayus(Calc.MESES[p.mes - 1]) + ' ' + p.anio], ['(Expresado en bolivianos)'], [], cab];
@@ -155,7 +156,7 @@
     calc.filas.forEach(function (x, i) {
       var e = x.emp, r = x.r, tg = r.totalGanado;
       t1.push([i + 1, U.nombreCompleto(e), comoNumero(e.ci), U.mayus(e.nacionalidad || 'BOLIVIANA'), e.fechaNac, e.sexo || '', e.cargo || '', e.fechaIngreso,
-        r.dias, r.horasExtra, r.basico, r.salarioGanado, r.bonoAntiguedad, r.bonoProduccion || 0, 0, 0, r.dominicales || 0, r.montoHorasExtra, r.otrosBonos,
+        r.dias, r.horasExtra, r.basico, r.salarioGanado, r.bonoAntiguedad, r.bonoProduccion || 0, 0, r.montoNocturno || 0, r.dominicales || 0, r.montoHorasExtra, r.otrosBonos,
         tg, r.afp, r.ans, r.anticipos, r.otrosDescuentos, r.rcIva, r.totalDescuentos, r.liquido]);
       var f = r2(tg * 0.10), g = r2(tg * 0.0171), h = r2(tg * 0.02), ii = r2(tg * 0.035);
       t2.push([i + 1, U.nombreCompleto(e), comoNumero(e.ci), e.cargo || '', tg, f, g, h, ii, r2(f + g + h + ii), r2(tg * 0.0833), r2(tg * 0.0833), r2(tg * 0.00833)]);
@@ -260,7 +261,7 @@
         U.mayus(e.nombres), U.mayus(e.nacionalidad || 'BOLIVIANA'), e.sexo || '', +(e.jubilado || 0), e.aportaAfp === '0' || e.aportaAfp === 0 ? 0 : 1, +(e.discapacidad || 0), +(e.tutorDiscapacidad || 0),
         U.fecha(e.fechaIngreso), retiro ? U.fecha(e.fechaRetiro) : '', retiro ? (e.motivoRetiro || '') : '', +(e.cajaSaludCod || empresa.cajaSaludCod || 6), +(e.afpCod || 3), String(e.cua || ''),
         +(e.sucursal || 1), +(e.clasificacion || 4), e.cargo || '', +(e.modalidad || 1), +(e.tipoContrato || 1), r.dias, r.horasDia,
-        U.punto(r.salarioGanado), U.punto(r.bonoAntiguedad), r.horasExtra || 0, U.punto(r.montoHorasExtra), 0, 0, 0, 0, '', '', '', r.dominicales ? U.punto(r.dominicales) : '',
+        U.punto(r.salarioGanado), U.punto(r.bonoAntiguedad), r.horasExtra || 0, U.punto(r.montoHorasExtra), r.horasNocturnas || 0, U.punto(r.montoNocturno || 0), 0, 0, '', '', '', r.dominicales ? U.punto(r.dominicales) : '',
         r.bonoProduccion ? U.punto(r.bonoProduccion) : '', '', U.punto(r.otrosBonos), U.punto(r.rcIva), U.punto(r.cajaSalud), U.punto(r.afp + r.ans), U.punto(r.anticipos + r.otrosDescuentos)]);
     });
     X.excel(nombreArchivo(empresa, p, 'Ministerio_Trabajo', 'xlsx'), [{ nombre: 'Planilla', filas: filas, anchos: Array(46).fill(14) }]);

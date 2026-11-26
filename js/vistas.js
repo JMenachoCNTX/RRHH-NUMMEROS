@@ -608,7 +608,7 @@
 
   /* Columnas de la planilla: [clave, título, destacada] */
   var COLS_PL = [['nombre', 'Trabajador'], ['basico', 'Básico'], ['dias', 'Días'], ['salarioGanado', 'Salario ganado'], ['horasExtra', 'Cantidad'], ['montoHorasExtra', 'Monto'],
-    ['bonoAntiguedad', 'Antigüedad'], ['otrosBonos', 'Otros bonos'], ['totalGanado', 'Total ganado', true], ['afp', 'AFP'], ['ans', 'ANS'], ['rcIva', 'RC-IVA <span title="Facturas presentadas en el F-110">(Fact.)</span>'],
+    ['horasNocturnas', 'Cantidad'], ['montoNocturno', 'Monto'], ['bonoAntiguedad', 'Antigüedad'], ['otrosBonos', 'Otros bonos'], ['totalGanado', 'Total ganado', true], ['afp', 'AFP'], ['ans', 'ANS'], ['rcIva', 'RC-IVA <span title="Facturas presentadas en el F-110">(Fact.)</span>'],
     ['anticipos', 'Anticipos'], ['otrosDescuentos', 'Otros desc.'], ['totalDescuentos', 'Total desc.'], ['liquido', 'Líquido pagable', true], ['patronal', 'Patronal']];
   var filtrosPl = {}; // filtros de cada planilla (solo en esta pantalla; no cambian la planilla)
   function numColPl(x, c) { return c === 'patronal' ? x.r.cajaSalud + x.r.gestoraPatronal : Calc.num(x.r[c]); }
@@ -617,7 +617,7 @@
     if (c === 'cargo') return String(x.emp.cargo || '').trim();
     if (c === 'grupo') return x.grupo || '';
     if (c === 'dias') return String(numColPl(x, c));
-    if (c === 'horasExtra') return Calc.textoHoras(numColPl(x, c));
+    if (c === 'horasExtra' || c === 'horasNocturnas') return Calc.textoHoras(numColPl(x, c));
     return bs(numColPl(x, c));
   }
   function pasaFiltroPl(x, filtros) {
@@ -699,11 +699,11 @@
       '<button class="btn" id="btnGrupos" title="Separar al personal por grupo (ej. Yango y Junkers) para ver subtotales">' + ic('personal') + 'Grupos</button>' +
       '<a class="btn" href="#/generar/' + p.id + '">' + ic('generar') + 'Generar archivos</a></div></div>' +
       (cerrada ? '<p class="suave peq" style="margin-top:8px">La planilla está cerrada: los montos quedan fijos aunque luego cambien los datos del personal o la configuración. Reábrela si necesitas corregir algo.</p>' :
-        '<p class="suave peq" style="margin-top:8px">Escribe en las casillas verdes; todo se calcula y se guarda solo. Haz clic en un nombre para ver el detalle del cálculo. Deja "Días" vacío para que el sistema los calcule por fecha de ingreso/retiro. Horas extra con minutos: escribe <b>15:20</b> (15 horas y 20 minutos).</p>') + '</div>';
+        '<p class="suave peq" style="margin-top:8px">Escribe en las casillas verdes; todo se calcula y se guarda solo. Haz clic en un nombre para ver el detalle del cálculo. Deja "Días" vacío para que el sistema los calcule por fecha de ingreso/retiro. Horas extra y nocturnas con minutos: escribe <b>15:20</b> (15 horas y 20 minutos). Horas nocturnas = trabajadas entre las 20:00 y las 06:00.</p>') + '</div>';
 
     h += '<div id="avisoFiltroPl"></div>';
     h += '<div class="tabla-caja" style="max-height:68vh"><table class="tabla" id="tPl"><thead>' +
-      '<tr class="grupo-cab"><th class="fija"></th><th colspan="3">Haber</th><th colspan="2">Horas extra</th><th colspan="2">Bonos</th><th></th><th colspan="6">Descuentos</th><th></th><th></th></tr>' +
+      '<tr class="grupo-cab"><th class="fija"></th><th colspan="3">Haber</th><th colspan="2">Horas extra</th><th colspan="2" title="Trabajo entre las 20:00 y las 06:00">Horas nocturnas</th><th colspan="2">Bonos</th><th></th><th colspan="6">Descuentos</th><th></th><th></th></tr>' +
       '<tr>' + COLS_PL.map(function (c) {
         var ord = (p.orden || 'nombre-asc').split('-'), act = ord[0] === c[0] || (c[0] === 'nombre' && (ord[0] === 'apellido' || ord[0] === 'grupo'));
         var filtrado = c[0] === 'nombre' ? !!(filtros.nombre || filtros.grupo || filtros.cargo) : !!filtros[c[0]];
@@ -715,12 +715,14 @@
       var inp = function (campoN, cls) {
         var v = f[campoN];
         if (campoN === 'dias' && (v === '' || v === undefined || v === null)) return '<input class="dias" data-i="' + i + '" data-c="dias" placeholder="' + r.dias + '" aria-label="Días"' + (cerrada ? ' disabled' : '') + '>';
-        var conValor = campoN === 'horasExtra' ? Calc.horas(v) : Calc.num(v);
-        return '<input class="' + (cls || '') + '" data-i="' + i + '" data-c="' + campoN + '" value="' + (conValor ? e(String(v)) : '') + '" placeholder="0"' + (campoN === 'horasExtra' ? ' title="Horas extra. Con minutos escribe 15:20 (15 horas y 20 minutos)"' : ' inputmode="decimal"') + ' aria-label="' + campoN + '"' + (cerrada ? ' disabled' : '') + '>';
+        var esHoras = campoN === 'horasExtra' || campoN === 'horasNocturnas';
+        var conValor = esHoras ? Calc.horas(v) : Calc.num(v);
+        return '<input class="' + (cls || '') + '" data-i="' + i + '" data-c="' + campoN + '" value="' + (conValor ? e(String(v)) : '') + '" placeholder="0"' + (esHoras ? ' title="' + (campoN === 'horasExtra' ? 'Horas extra' : 'Horas nocturnas (entre 20:00 y 06:00)') + '. Con minutos escribe 15:20 (15 horas y 20 minutos)"' : ' inputmode="decimal"') + ' aria-label="' + campoN + '"' + (cerrada ? ' disabled' : '') + '>';
       };
       h += '<tr data-i="' + i + '"' + (pasaFiltroPl(x, filtros) ? '' : ' hidden') + '><td class="nombre fija"><a href="#" data-det="' + i + '">' + e(nombreSegunOrden(k, p.orden)) + '</a><div class="suave peq" style="font-weight:400">' + e(k.cargo || '') + (x.grupo ? ' <span class="etiqueta etiqueta-grupo">' + e(x.grupo) + '</span>' : '') + '</div></td>' +
         '<td class="num">' + bs(r.basico) + '</td><td class="num">' + inp('dias', 'dias') + '</td><td class="num" data-o="salarioGanado">' + bs(r.salarioGanado) + '</td>' +
         '<td class="num">' + inp('horasExtra', 'dias') + '</td><td class="num" data-o="montoHorasExtra">' + bs(r.montoHorasExtra) + '</td>' +
+        '<td class="num">' + inp('horasNocturnas', 'dias') + '</td><td class="num" data-o="montoNocturno">' + bs(r.montoNocturno) + '</td>' +
         '<td class="num" data-o="bonoAntiguedad" title="' + r.anios + ' año(s) · ' + r.pctAntiguedad + '%">' + bs(r.bonoAntiguedad) + '</td>' +
         '<td class="num">' + inp('otrosBonos') + '</td>' +
         '<td class="num destacado" data-o="totalGanado"><b>' + bs(r.totalGanado) + '</b></td><td class="num" data-o="afp">' + bs(r.afp) + '</td><td class="num" data-o="ans">' + bs(r.ans) + '</td>' +
@@ -786,11 +788,11 @@
       U.$('#datosCliente', cont).onclick = function () { datosCliente(p); };
       U.$('#limpiarPl', cont).onclick = function () {
         U.modal('Limpiar planilla de ' + nombrePeriodo(p),
-          '<p>Se borrará todo lo escrito en la planilla: <b>días</b> (vuelven al cálculo automático), <b>horas extra</b>, <b>otros bonos</b>, <b>facturas F-110</b>, <b>anticipos</b> y <b>otros descuentos</b>.</p>' +
+          '<p>Se borrará todo lo escrito en la planilla: <b>días</b> (vuelven al cálculo automático), <b>horas extra</b>, <b>horas nocturnas</b>, <b>otros bonos</b>, <b>facturas F-110</b>, <b>anticipos</b> y <b>otros descuentos</b>.</p>' +
           '<p class="suave">El personal de la planilla, la fecha de pago y la glosa se mantienen.</p>',
           [{ texto: 'Cancelar', clase: 'btn btn-fantasma' }, { texto: 'Limpiar', clase: 'btn btn-peligro', accion: function () {
             p.filas.forEach(function (f) {
-              f.dias = ''; f.horasExtra = 0; f.bonoProduccion = 0; f.dominicales = 0; f.otrosBonos = 0; f.facturasF110 = 0; f.anticipos = 0; f.otrosDescuentos = 0;
+              f.dias = ''; f.horasExtra = 0; f.horasNocturnas = 0; f.bonoProduccion = 0; f.dominicales = 0; f.otrosBonos = 0; f.facturasF110 = 0; f.anticipos = 0; f.otrosDescuentos = 0;
             });
             D.guardarPlanilla(p); App.refrescar(); U.aviso('Planilla limpia');
           } }]);
@@ -835,7 +837,7 @@
   }
   function celdasTotales(t, etiquetaFila) {
     return '<td class="fija">' + etiquetaFila + '</td><td class="num">' + bs(t.basico) + '</td><td></td><td class="num">' + bs(t.salarioGanado) +
-      '</td><td class="num">' + Calc.textoHoras(t.horasExtra) + '</td><td class="num">' + bs(t.montoHorasExtra) + '</td><td class="num">' + bs(t.bonoAntiguedad) + '</td><td class="num">' + bs(t.otrosBonos) + '</td><td class="num destacado">' + bs(t.totalGanado) + '</td><td class="num">' + bs(t.afp) + '</td><td class="num">' + bs(t.ans) + '</td><td class="num">' + bs(t.rcIva) +
+      '</td><td class="num">' + Calc.textoHoras(t.horasExtra) + '</td><td class="num">' + bs(t.montoHorasExtra) + '</td><td class="num">' + Calc.textoHoras(t.horasNocturnas) + '</td><td class="num">' + bs(t.montoNocturno) + '</td><td class="num">' + bs(t.bonoAntiguedad) + '</td><td class="num">' + bs(t.otrosBonos) + '</td><td class="num destacado">' + bs(t.totalGanado) + '</td><td class="num">' + bs(t.afp) + '</td><td class="num">' + bs(t.ans) + '</td><td class="num">' + bs(t.rcIva) +
       '</td><td class="num">' + bs(t.anticipos) + '</td><td class="num">' + bs(t.otrosDescuentos) + '</td><td class="num">' + bs(t.totalDescuentos) + '</td><td class="num destacado">' + bs(t.liquido) + '</td><td class="num">' + bs(t.cajaSalud + t.gestoraPatronal) + '</td>';
   }
 
@@ -894,6 +896,7 @@
       l('Sueldo básico', bs(r.basico)) + l('Días pagados', r.dias) + l('Salario ganado (básico ÷ 30 × días)', bs(r.salarioGanado)) +
       l('Antigüedad: ' + r.anios + ' año(s) → ' + r.pctAntiguedad + '% de ' + cfg.antiguedadBaseSMN + ' SMN', bs(r.bonoAntiguedad)) +
       l('Horas extra: ' + Calc.textoHoras(r.horasExtra) + ' h × ' + bs(r.valorHoraExtra) + ' (recargo ' + cfg.recargoHoraExtra + '%)', bs(r.montoHorasExtra)) +
+      (r.montoNocturno ? l('Recargo nocturno: ' + Calc.textoHoras(r.horasNocturnas) + ' h × ' + bs(r.valorHora) + ' × ' + r.recargoNocturno + '%', bs(r.montoNocturno)) : '') +
       (r.bonoProduccion ? l('Bono producción', bs(r.bonoProduccion)) : '') + (r.dominicales ? l('Dominicales', bs(r.dominicales)) : '') + l('Otros bonos', bs(r.otrosBonos)) + l('TOTAL GANADO', bs(r.totalGanado), true) + '</div></div>' +
       '<div><h4 class="kicker" style="margin-bottom:8px">Descuentos</h4><div class="detalle-calc">' +
       l('AFP ' + cfg.afpLaboral + '%', bs(r.afp)) + l('Aporte Nacional Solidario', bs(r.ans)) + l('RC-IVA', bs(r.rcIva)) + l('Anticipos', bs(r.anticipos)) + l('Otros descuentos', bs(r.otrosDescuentos)) +
@@ -1482,6 +1485,7 @@
       '<fieldset class="ancho"><legend>RC-IVA</legend><div class="form">' + n('Tasa RC-IVA (%)', 'rcIva') + n('Mínimo no imponible (en SMN)', 'rcIvaMinNoImponibleSMN', 'Ley: 2 salarios mínimos', '1') +
       n('Crédito 13% sobre (en SMN)', 'rcIvaCreditoSMN', 'Ley: 13% de 2 salarios mínimos. Tu Excel usaba 1.', '1') + '</div></fieldset>' +
       '<fieldset class="ancho"><legend>Ingresos</legend><div class="form">' + n('Recargo hora extra (%)', 'recargoHoraExtra', '50% = ×1,5, acordado con el cliente para el trabajo de fin de semana (sábados 4 h activadores y soporte; domingos 8 h soporte). La Ley General del Trabajo indica 100%.', '1') +
+      n('Recargo nocturno (%)', 'recargoNocturno', 'Horas trabajadas entre las 20:00 y las 06:00: se paga este % extra sobre el valor de la hora normal. La ley indica de 25% a 50% según el trabajo.', '1') +
       campo('Redondear valor hora a centavos', 'redondearValorHora', c.redondearValorHora ? '1' : '0', 'select', { opciones: [['0', 'No (como la planilla del cliente)'], ['1', 'Sí']] }) +
       n('Bono antigüedad: base en SMN', 'antiguedadBaseSMN', 'D.S. 21137: 3 salarios mínimos. Tu Excel usaba 1.', '1') +
       campo('Bono antigüedad proporcional a días', 'antiguedadProporcional', c.antiguedadProporcional ? '1' : '0', 'select', { opciones: [['1', 'Sí'], ['0', 'No']] }) + '</div></fieldset>' +
@@ -1502,7 +1506,7 @@
     cont.innerHTML = h;
     U.$('#gCfg', cont).onclick = function () {
       var d = leerForm(U.$('#fCfg', cont)), nc = JSON.parse(JSON.stringify(c));
-      ['smn', 'horasDia', 'afpLaboral', 'rcIva', 'rcIvaMinNoImponibleSMN', 'rcIvaCreditoSMN', 'recargoHoraExtra', 'antiguedadBaseSMN', 'cajaSalud', 'gestoraPatronal', 'provIndemnizacion', 'provAguinaldo']
+      ['smn', 'horasDia', 'afpLaboral', 'rcIva', 'rcIvaMinNoImponibleSMN', 'rcIvaCreditoSMN', 'recargoHoraExtra', 'recargoNocturno', 'antiguedadBaseSMN', 'cajaSalud', 'gestoraPatronal', 'provIndemnizacion', 'provAguinaldo']
         .forEach(function (k) { nc[k] = Calc.num(d[k]); });
       nc.antiguedadProporcional = d.antiguedadProporcional === '1';
       nc.redondearValorHora = d.redondearValorHora === '1';

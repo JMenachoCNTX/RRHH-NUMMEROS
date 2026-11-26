@@ -72,6 +72,10 @@
       ['AFP ' + String(cfg.afpLaboral).replace('.', ',') + '% (F)', 'afp'], ['Ap. Nal. Solidario (G)', 'ans'], ['RC-IVA (H)', 'rcIva'],
       ['Anticipos (I)', 'anticipos'], ['Otros desc. (J)', 'otrosDescuentos'], ['Total desc. (K)', 'totalDescuentos'], ['Líquido pagable (E-K)', 'liquido', true]
     ];
+    if (t.montoNocturno > 0) {
+      M[3] = ['HE monto (C1)', 'montoHorasExtra'];
+      M.splice(4, 0, ['HN cant.', 'horasNocturnas', false, true], ['Rec. nocturno (C2)', 'montoNocturno']);
+    }
     var celda = function (c, v) { var txt = c[3] ? Calc.textoHoras(v || 0) : bs(v); return '<td class="n' + (c[2] ? ' fuerte' : '') + '">' + txt + '</td>'; };
     var filas = calc.filas.map(function (x, i) {
       var em = x.emp, r = x.r;
@@ -125,7 +129,8 @@
       dato('Cargo', em.cargo || '') + dato('Fecha de ingreso', U.fecha(em.fechaIngreso)) + '</div>' +
       '<div class="dn-dos"><table class="dn-t"><thead><tr><th colspan="2">Ingresos</th></tr></thead><tbody>' +
       filaBoleta('Salario ganado', r.salarioGanado) + filaBoleta('Bono de antigüedad', r.bonoAntiguedad, r.pctAntiguedad ? r.pctAntiguedad + '%' : '') +
-      filaBoleta('Horas extras', r.montoHorasExtra, r.horasExtra ? Calc.textoHoras(r.horasExtra) + ' h' : '') + filaBoleta('Otros bonos', r.otrosBonos) +
+      filaBoleta('Horas extras', r.montoHorasExtra, r.horasExtra ? Calc.textoHoras(r.horasExtra) + ' h' : '') +
+      (r.montoNocturno ? filaBoleta('Recargo nocturno', r.montoNocturno, Calc.textoHoras(r.horasNocturnas) + ' h') : '') + filaBoleta('Otros bonos', r.otrosBonos) +
       '</tbody><tfoot><tr><td>TOTAL INGRESOS</td><td class="n">' + bs(r.totalGanado) + '</td></tr></tfoot></table>' +
       '<table class="dn-t"><thead><tr><th colspan="2">Descuentos</th></tr></thead><tbody>' +
       filaBoleta('AFP', r.afp, String(cfg.afpLaboral).replace('.', ',') + '%') + filaBoleta('Aporte Nacional Solidario', r.ans) + filaBoleta('RC-IVA', r.rcIva, '13%') +
@@ -244,6 +249,7 @@
       ['Sueldos y salarios', t.salarioGanado + t.bonoProduccion + t.dominicales + t.otrosBonos],
       ['Bono de antigüedad', t.bonoAntiguedad],
       ['Horas extras', t.montoHorasExtra],
+      ['Recargo nocturno', t.montoNocturno || 0],
       ['Aportes patronales - Caja de salud', t.cajaSalud],
       ['Aportes patronales - Gestora', t.gestoraPatronal],
       ['Previsión para indemnizaciones', t.provIndemnizacion],
@@ -413,7 +419,7 @@
     /* Página 2: por persona */
     var maxG = Math.max.apply(null, calc.filas.map(function (x) { return x.r.totalGanado; }).concat([1]));
     var filasP = calc.filas.slice().sort(function (a, b) { return b.r.liquido - a.r.liquido; }).map(function (x) {
-      var r = x.r, base = r2(r.salarioGanado + r.bonoAntiguedad), extra = r2(r.montoHorasExtra + r.otrosBonos + r.bonoProduccion + r.dominicales);
+      var r = x.r, base = r2(r.salarioGanado + r.bonoAntiguedad), extra = r2(r.montoHorasExtra + (r.montoNocturno || 0) + r.otrosBonos + r.bonoProduccion + r.dominicales);
       var W = 150, w1 = base / maxG * W, w2 = extra / maxG * W;
       var barra = '<svg viewBox="0 0 ' + W + ' 9" width="' + W + 'pt" height="9pt"><title>Sueldo Bs ' + bs(base) + ' · Horas extra y bonos Bs ' + bs(extra) + '</title>' +
         '<rect x="0" y="0" width="' + Math.max(0, w1 - (w2 > 0 ? 1 : 0)).toFixed(1) + '" height="9" rx="1.5" fill="' + VERDE + '"/>' +
